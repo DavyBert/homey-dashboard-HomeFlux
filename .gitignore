@@ -1,0 +1,67 @@
+# Dependencies
+node_modules/
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# IDE / editor
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.old
+*.orig
+*~
+
+# Test / coverage output
+coverage/
+.nyc_output/
+
+# Build / cache directories
+.cache/
+tmp/
+temp/
+
+# Homey CLI / local development files
+.homeybuild/
+.homeycache/
+
+# Archives / packaged builds
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+
+# Local certificates / keys
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+
+# Local database / storage files
+*.db
+*.sqlite
+*.sqlite3
