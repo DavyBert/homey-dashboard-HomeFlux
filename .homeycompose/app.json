@@ -1,0 +1,60 @@
+{
+  "id": "com.dashboard.homeflux",
+  "version": "0.6.21",
+  "compatibility": ">=12.3.0",
+  "sdk": 3,
+  "name": {
+    "en": "HomeFlux"
+  },
+  "description": {
+    "en": "See where your energy goes."
+  },
+  "permissions": [
+    "homey:manager:api"
+  ],
+  "api": {
+    "listSources": {
+      "method": "GET",
+      "path": "/sources"
+    },
+    "getSelection": {
+      "method": "GET",
+      "path": "/selection"
+    },
+    "saveSelection": {
+      "method": "PUT",
+      "path": "/selection"
+    },
+    "getConfig": {
+      "method": "GET",
+      "path": "/config"
+    },
+    "saveConfig": {
+      "method": "PUT",
+      "path": "/config"
+    },
+    "testConnection": {
+      "method": "POST",
+      "path": "/test"
+    }
+  },
+  "author": {
+    "name": "Davy Bert"
+  },
+  "category": "energy",
+  "brandColor": "#4F8A10",
+  "tags": {
+    "en": [
+      "energy",
+      "dashboard",
+      "solar",
+      "battery",
+      "ev"
+    ]
+  },
+  "images": {
+    "small": "/assets/images/small.png",
+    "large": "/assets/images/large.png",
+    "xlarge": "/assets/images/xlarge.png"
+  }
+}

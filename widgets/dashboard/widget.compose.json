@@ -1,0 +1,12 @@
+{
+  "name": {
+    "en": "HomeFlux"
+  },
+  "settings": [],
+  "api": {
+    "getDashboard": {
+      "method": "GET",
+      "path": "/dashboard"
+    }
+  }
+}
