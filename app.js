@@ -136,19 +136,47 @@ class DashboardBridgeApp extends Homey.App {
     return capabilityId.replace(/[._-]+/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
   }
 
+  _translatedTitle(title) {
+    if (typeof title === 'string') return title;
+    if (!title || typeof title !== 'object') return '';
+    const language = String(this.homey.i18n?.getLanguage?.() || '').toLowerCase();
+    return title[language] || title.nl || title.en || Object.values(title).find(value => typeof value === 'string') || '';
+  }
+
+  _capabilityValueTitle(device, capabilityId, cap, value) {
+    // Enum capabilities often expose a machine value/code while Homey's UI
+    // displays a translated title (e.g. code 95 with title "Heldere lucht").
+    // Prefer that human-readable title for weather mapping.
+    const candidates = [
+      cap?.values,
+      cap?.options?.values,
+      cap?.opts?.values,
+      device?.capabilitiesOptions?.[capabilityId]?.values
+    ];
+    const values = candidates.find(Array.isArray) || [];
+    const match = values.find(item => {
+      if (!item) return false;
+      const ids = [item.id, item.value, item.key].filter(v => v !== undefined && v !== null);
+      return ids.some(id => String(id) === String(value));
+    });
+    return match ? this._translatedTitle(match.title || match.label || match.name) : '';
+  }
+
   _deviceSources(device) {
     const sources = [];
     const capsObj = device.capabilitiesObj || {};
     const capabilityIds = device.capabilities || Object.keys(capsObj);
     for (const capabilityId of capabilityIds) {
       const cap = capsObj[capabilityId] || {};
+      const value = cap.value !== undefined ? cap.value : (device.state ? device.state[capabilityId] : null);
       sources.push({
         key: `device:${device.id}:${capabilityId}`,
         type: 'device', deviceId: device.id, capabilityId,
         deviceName: device.name || device.id,
         label: `${device.name || device.id} — ${this._capabilityTitle(capabilityId, cap)}`,
         name: this._capabilityTitle(capabilityId, cap),
-        value: cap.value !== undefined ? cap.value : (device.state ? device.state[capabilityId] : null),
+        value,
+        displayValue: this._capabilityValueTitle(device, capabilityId, cap, value),
         unit: cap.units || cap.unit || '',
         valueType: cap.type || typeof cap.value
       });
@@ -683,6 +711,20 @@ class DashboardBridgeApp extends Homey.App {
     return hour >= 7 && hour < 20 ? 'day' : 'night';
   }
 
+  _weatherFromText(value) {
+    const text = String(value ?? '').trim().toLowerCase();
+    if (!text) return null;
+    if (/(thunder|thunderstorm|storm|onweer|lightning|bliksem)/.test(text)) return 'thunder';
+    if (/(snow|sneeuw|blizzard|winter|ice pellets|ijzel)/.test(text)) return 'snow';
+    if (/(mist|fog|mistig|nevel|haze)/.test(text)) return 'mist';
+    if (/(rain|regen|drizzle|motregen|shower|bui|hail|hagel|sleet)/.test(text)) return 'rain';
+    // Specific clear descriptions must precede generic cloud matching because
+    // words such as "onbewolkt" contain the substring "bewolk".
+    if (/(onbewolkt|onbewolkte|wolkenloos|heldere lucht|heldere hemel|helder|zonnig|clear sky|clear|sunny|sun|fair)/.test(text)) return 'clear';
+    if (/(cloud|bewolk|overcast|partly|mostly)/.test(text)) return 'cloudy';
+    return null;
+  }
+
   _mapWeatherSource() {
     const key = this.visualConfig.weatherSource;
     if (!key) return { weather: this.visualConfig.weather || 'clear', raw: null, label: '', mapped: false };
@@ -690,6 +732,14 @@ class DashboardBridgeApp extends Homey.App {
     if (!source) return { weather: this.visualConfig.weather || 'clear', raw: null, label: '', mapped: false };
     const raw = source.value;
     const context = `${source.name || ''} ${source.label || ''} ${source.capabilityId || ''}`.toLowerCase();
+
+    // Homey's UI can show a translated enum title while the capability value
+    // itself is a numeric weather code. Map the displayed condition first;
+    // only interpret the numeric code when no meaningful title is available.
+    const displayWeather = this._weatherFromText(source.displayValue);
+    if (displayWeather) {
+      return { weather: displayWeather, raw, label: source.label, mapped: true };
+    }
 
     if (typeof raw === 'boolean') {
       const looksWet = /(rain|regen|precip|neerslag|shower|drizzle|storm|onweer)/.test(context);
@@ -707,33 +757,47 @@ class DashboardBridgeApp extends Homey.App {
         return { weather: raw >= 25 ? 'cloudy' : 'clear', raw, label: source.label, mapped: true };
       }
       if (/(weather|weer|condition|code)/.test(context)) {
-        if (raw === 0) return { weather: 'clear', raw, label: source.label, mapped: true };
-        if (raw >= 1 && raw <= 3) return { weather: 'cloudy', raw, label: source.label, mapped: true };
-        if (raw === 45 || raw === 48) return { weather: 'mist', raw, label: source.label, mapped: true };
-        if ((raw >= 51 && raw <= 67) || (raw >= 80 && raw <= 82)) return { weather: 'rain', raw, label: source.label, mapped: true };
-        if ((raw >= 71 && raw <= 77) || (raw >= 85 && raw <= 86)) return { weather: 'snow', raw, label: source.label, mapped: true };
-        if (raw >= 95) return { weather: 'thunder', raw, label: source.label, mapped: true };
+        // Only interpret 0-99 as WMO when the source explicitly identifies
+        // itself as WMO. Generic Homey weather capabilities may use their own
+        // small numeric enum codes, so treating every value as WMO can turn a
+        // clear condition into snow/thunder.
+        const explicitWmo = /(wmo|weather[_ .-]?code|weercode)/.test(context);
+        if (explicitWmo && raw >= 0 && raw <= 99) {
+          if (raw === 0) return { weather: 'clear', raw, label: source.label, mapped: true };
+          if (raw >= 1 && raw <= 3) return { weather: 'cloudy', raw, label: source.label, mapped: true };
+          if (raw === 45 || raw === 48) return { weather: 'mist', raw, label: source.label, mapped: true };
+          if ((raw >= 51 && raw <= 67) || (raw >= 80 && raw <= 82)) return { weather: 'rain', raw, label: source.label, mapped: true };
+          if ((raw >= 71 && raw <= 77) || (raw >= 85 && raw <= 86)) return { weather: 'snow', raw, label: source.label, mapped: true };
+          if (raw >= 95 && raw <= 99) return { weather: 'thunder', raw, label: source.label, mapped: true };
+        }
+
+        // OpenWeather condition IDs are unambiguous because they occupy the
+        // 2xx-8xx ranges.
+        if (raw >= 200 && raw <= 232) return { weather: 'thunder', raw, label: source.label, mapped: true };
+        if ((raw >= 300 && raw <= 321) || (raw >= 500 && raw <= 531)) return { weather: 'rain', raw, label: source.label, mapped: true };
+        if (raw >= 600 && raw <= 622) return { weather: 'snow', raw, label: source.label, mapped: true };
+        if (raw >= 701 && raw <= 781) return { weather: 'mist', raw, label: source.label, mapped: true };
+        if (raw === 800) return { weather: 'clear', raw, label: source.label, mapped: true };
+        if (raw >= 801 && raw <= 804) return { weather: 'cloudy', raw, label: source.label, mapped: true };
       }
     }
 
-    const text = String(raw ?? '').trim().toLowerCase();
-    if (/(thunder|thunderstorm|storm|onweer|lightning|bliksem)/.test(text)) {
-      return { weather: 'thunder', raw, label: source.label, mapped: true };
+    const textWeather = this._weatherFromText(raw);
+    if (textWeather) {
+      return { weather: textWeather, raw, label: source.label, mapped: true };
     }
-    if (/(snow|sneeuw|blizzard|winter|ice pellets|ijzel)/.test(text)) {
-      return { weather: 'snow', raw, label: source.label, mapped: true };
+
+    // Log only when the selected weather source/value changes. This lets us
+    // identify proprietary Homey weather codes without generating log spam.
+    const weatherSignature = JSON.stringify([key, raw, source.displayValue, source.valueType, source.name]);
+    if (this._lastWeatherDebugSignature !== weatherSignature) {
+      this._lastWeatherDebugSignature = weatherSignature;
     }
-    if (/(mist|fog|mistig|nevel|haze)/.test(text)) {
-      return { weather: 'mist', raw, label: source.label, mapped: true };
-    }
-    if (/(rain|regen|drizzle|motregen|shower|bui|hail|hagel|sleet)/.test(text)) {
-      return { weather: 'rain', raw, label: source.label, mapped: true };
-    }
-    if (/(cloud|bewolk|overcast|partly|mostly)/.test(text)) {
-      return { weather: 'cloudy', raw, label: source.label, mapped: true };
-    }
-    if (/(clear|sunny|sun|fair|helder|zonnig)/.test(text)) {
-      return { weather: 'clear', raw, label: source.label, mapped: true };
+
+    // Unknown small numeric codes are not assumed to be WMO. Keep the visual
+    // conservative instead of showing a false snow/thunder scene.
+    if (typeof raw === 'number' && Number.isFinite(raw) && raw >= 0 && raw < 200) {
+      return { weather: 'clear', raw, label: source.label, mapped: false };
     }
     return { weather: this.visualConfig.weather || 'clear', raw, label: source.label, mapped: false };
   }

@@ -91,3 +91,24 @@ v0.6.22 diagnostics: adds low-overhead aggregated runtime logging every 60 secon
 - Battery charging power is green; discharging power is blue.
 - Grid import is blue; grid export is green.
 
+## v0.6.29
+- Fixed Dutch clear-sky weather mapping (including "onbewolkt" and "heldere lucht").
+- Added safe handling for both WMO and OpenWeather numeric condition codes.
+- Prevented OpenWeather clear code 800 from being interpreted as thunder.
+
+
+
+## v0.6.30
+- Fixed Homey weather enum mapping by using the translated displayed condition before numeric weather codes.
+- Added clear-sky aliases including 'heldere hemel'.
+
+### v0.6.31
+- Avoid treating generic Homey numeric weather values as WMO codes.
+- Improved translated enum value lookup for weather capabilities.
+- Added change-only `[HomeFlux WEATHER]` diagnostics for unknown weather source values.
+
+
+## v0.6.32
+- Clarified that the automatic weather source must be a capability exposed by an installed weather device (for example KMI).
+- Clarified that Homey's built-in weather condition may not appear as a selectable device capability.
+- Removed temporary weather debug logging.
