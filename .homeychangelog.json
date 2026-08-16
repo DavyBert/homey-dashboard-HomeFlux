@@ -13,5 +13,8 @@
   },
   "0.6.33": {
     "en": "weather source clarification"
+  },
+  "0.6.36": {
+    "en": "Added multiple sources, added grid lines for better interpretation"
   }
 }
