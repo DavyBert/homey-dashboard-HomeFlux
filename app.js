@@ -51,12 +51,20 @@ class DashboardBridgeApp extends Homey.App {
       batteryPower: c.batteryPower || '',
       batteryStatus: c.batteryStatus || '',
       batteryCapacityKwh: Number.isFinite(Number(c.batteryCapacityKwh)) ? Math.max(0, Number(c.batteryCapacityKwh)) : 0,
+      batteryDirection: c.batteryDirection || (c.batteryInvert ? 'positive_discharge' : 'positive_discharge'),
       batteryInvert: Boolean(c.batteryInvert),
+      batteryLineDirection: c.batteryLineDirection || 'follow_power',
+      batteryLineMotion: c.batteryLineMotion || 'invert_flow',
+      solarCount: Math.max(1, Math.min(2, Number(c.solarCount || (c.solar2 ? 2 : 1)) || 1)),
+      batteryCount: Math.max(1, Math.min(2, Number(c.batteryCount || ((c.battery2Soc || c.battery2Power || c.battery2Status) ? 2 : 1)) || 1)),
+      chargerCount: Math.max(1, Math.min(2, Number(c.chargerCount || ((c.ev2Power || c.ev2Status) ? 2 : 1)) || 1)),
       battery2Soc: c.battery2Soc || '',
       battery2Power: c.battery2Power || '',
       battery2Status: c.battery2Status || '',
       battery2CapacityKwh: Number.isFinite(Number(c.battery2CapacityKwh)) ? Math.max(0, Number(c.battery2CapacityKwh)) : 0,
+      battery2Direction: c.battery2Direction || (c.battery2Invert ? 'positive_discharge' : 'positive_discharge'),
       battery2Invert: Boolean(c.battery2Invert),
+      battery2LineDirection: c.battery2LineDirection || 'follow_power',
       evPower: c.evPower || '',
       evStatus: c.evStatus || '',
       ev2Power: c.ev2Power || '',
@@ -616,6 +624,15 @@ class DashboardBridgeApp extends Homey.App {
     return value;
   }
 
+  _normalizeBatteryWatts(watts, direction = 'positive_charge') {
+    if (watts === null || !Number.isFinite(watts)) return null;
+    return direction === 'positive_discharge' ? -watts : watts;
+  }
+
+  _resolveBatteryLineDirection(direction, fallbackDirection) {
+    return direction === 'follow_power' || !direction ? fallbackDirection : direction;
+  }
+
   _powerDataFromWatts(key, watts, label) {
     if (!Number.isFinite(watts)) return null;
     const kw = watts / 1000;
@@ -649,19 +666,49 @@ class DashboardBridgeApp extends Homey.App {
 
   _batteryPowerWatts() {
     const batteries = [
-      { key: this.energyConfig.batteryPower, invert: this.energyConfig.batteryInvert },
-      { key: this.energyConfig.battery2Power, invert: this.energyConfig.battery2Invert }
+      { key: this.energyConfig.batteryPower, direction: this.energyConfig.batteryDirection || (this.energyConfig.batteryInvert ? 'positive_discharge' : 'positive_discharge') },
+      { key: this.energyConfig.battery2Power, direction: this.energyConfig.battery2Direction || (this.energyConfig.battery2Invert ? 'positive_discharge' : 'positive_discharge') }
     ];
+
     let total = 0;
     let count = 0;
     for (const battery of batteries) {
       if (!battery.key) continue;
       let watts = this._powerToWatts(this._sourceData(battery.key));
       if (watts === null) continue;
-      if (battery.invert) watts *= -1;
+      watts = this._normalizeBatteryWatts(watts, battery.direction);
       total += watts;
       count += 1;
     }
+
+    return count ? total : null;
+  }
+
+  _batteryLineWatts() {
+    const batteries = [
+      {
+        key: this.energyConfig.batteryPower,
+        powerDirection: this.energyConfig.batteryDirection || (this.energyConfig.batteryInvert ? 'positive_discharge' : 'positive_discharge'),
+        lineDirection: this.energyConfig.batteryLineDirection || 'follow_power'
+      },
+      {
+        key: this.energyConfig.battery2Power,
+        powerDirection: this.energyConfig.battery2Direction || (this.energyConfig.battery2Invert ? 'positive_discharge' : 'positive_discharge'),
+        lineDirection: this.energyConfig.battery2LineDirection || 'follow_power'
+      }
+    ];
+
+    let total = 0;
+    let count = 0;
+    for (const battery of batteries) {
+      if (!battery.key) continue;
+      let watts = this._powerToWatts(this._sourceData(battery.key));
+      if (watts === null) continue;
+      watts = this._normalizeBatteryWatts(watts, this._resolveBatteryLineDirection(battery.lineDirection, battery.powerDirection));
+      total += watts;
+      count += 1;
+    }
+
     return count ? total : null;
   }
 
@@ -723,6 +770,15 @@ class DashboardBridgeApp extends Homey.App {
     return 'idle';
   }
 
+  _batteryLineFlowState() {
+    const watts = this._batteryLineWatts();
+    if (watts === null) return 'idle';
+    const thresholdW = Math.max(0, Number(this.energyConfig.batteryThresholdKw) || 0.2) * 1000;
+    if (watts > thresholdW) return 'charge';
+    if (watts < -thresholdW) return 'discharge';
+    return 'idle';
+  }
+
   _gridFlowState() {
     const grid = this._sourceData(this.energyConfig.gridPower);
     const watts = this._powerToWatts(grid);
@@ -770,19 +826,20 @@ class DashboardBridgeApp extends Homey.App {
   }
 
   _batteryStatus() {
+    const flow = this._batteryFlowState();
+    if (flow === 'charge') return { text: 'Laden', source: 'derived', flow };
+    if (flow === 'discharge') return { text: 'Ontladen', source: 'derived', flow };
+
     const hasSecondBattery = Boolean(this.energyConfig.battery2Power || this.energyConfig.battery2Soc || this.energyConfig.battery2Status);
     if (!hasSecondBattery) {
       const explicit = this._sourceData(this.energyConfig.batteryStatus);
       if (explicit && explicit.online && explicit.rawValue !== null && explicit.rawValue !== '') {
         let status = String(explicit.rawValue).trim();
         if (typeof explicit.rawValue === 'boolean') status = explicit.rawValue ? 'Laden' : 'Stand-by';
-        return { text: status, source: 'explicit', flow: this._batteryFlowState() };
+        return { text: status, source: 'explicit', flow: 'idle' };
       }
     }
 
-    const flow = this._batteryFlowState();
-    if (flow === 'charge') return { text: 'Laden', source: 'derived', flow };
-    if (flow === 'discharge') return { text: 'Ontladen', source: 'derived', flow };
     const power = this._combinedBatteryPowerData();
     if (!power) return { text: '—', source: 'unknown', flow: 'idle' };
     return { text: 'Stand-by', source: 'derived', flow: 'idle' };
@@ -973,6 +1030,8 @@ class DashboardBridgeApp extends Homey.App {
       batteryStatus: batteryStatus.text,
       batteryStatusSource: batteryStatus.source,
       batteryFlow: batteryStatus.flow || this._batteryFlowState(),
+      batteryLineFlow: this._batteryLineFlowState(),
+      batteryLineMotion: this.energyConfig.batteryLineMotion || 'invert_flow',
       battery24hAgo: this._battery24hAgoBest(),
       evPower: this._combinedEvPowerData(),
       evStatus: this.energyConfig.ev2Power ? { value: '2 laders', rawValue: '2 laders', unit: '', online: true } : this._sourceData(this.energyConfig.evStatus),

@@ -132,3 +132,31 @@ v0.6.26: live updates restored with selective polling of configured HomeFlux sou
 
 v0.6.35
 - Grid flow line rerouted to enter the house from the right with a vertical drop and 90° turn.
+
+
+v0.6.36
+- Restored the configurable grid-flow threshold in Settings.
+
+
+v0.6.37
+- Added per-battery power direction settings for battery flow interpretation.
+- Battery flow line rerouted with clean 90° bends to avoid crossing the house image.
+
+
+v0.6.38
+- Refined battery flow line to use a single 90° corner and stay above the yellow line in the scene.
+
+
+v0.6.41
+- Batterijlijn iets hoger geplaatst.
+- Animatierichting-instelling hersteld: de keuze wordt nu correct bewaard en doorgegeven aan de widget.
+
+
+v0.6.42
+- Reversed the default battery line animation direction.
+- Replaced the long 24u geleden label with a compact ◷ 24h indicator.
+
+
+v0.6.43
+- Autoladerkaart verdwijnt automatisch wanneer het totale laadvermogen lager is dan 50 W of niet beschikbaar is.
+- De kaart verschijnt opnieuw zodra de autolader actief wordt, met een korte overgang voor meer dynamiek.

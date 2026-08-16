@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <script type="text/javascript" src="/homey.js" data-origin="settings"></script>
 <style>
-:root{color-scheme:light dark}*{box-sizing:border-box}body{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;margin:0;padding:18px;max-width:1050px;color:var(--homey-text-color,#111);background:var(--homey-background-color,#fff)}h1{margin:0 0 4px;font-size:28px}h2{margin:0 0 10px;font-size:18px}h3{margin:0 0 6px;font-size:15px}.sub{opacity:.72;line-height:1.45}.card{background:rgba(127,127,127,.08);border:1px solid rgba(127,127,127,.18);border-radius:16px;padding:16px;margin:14px 0}.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}button{cursor:pointer;border:0;border-radius:10px;padding:10px 14px;font-weight:700;background:#1677ff;color:#fff}button.primary{background:#0a63ff}.status{margin-top:10px;font-size:14px;padding:10px 12px;border-radius:10px;background:rgba(127,127,127,.12)}.energy-grid,.visual-grid{display:grid;grid-template-columns:1fr;gap:12px}.map-row{display:grid;grid-template-columns:minmax(180px,260px) 1fr;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid rgba(127,127,127,.14)}.map-label{font-weight:720}.hint{font-size:11px;opacity:.52;margin-top:3px}.map-row select,.map-row input[type=number],.threshold input,.visual-grid select{width:100%;box-sizing:border-box;padding:9px 10px;border:1px solid rgba(127,127,127,.45);border-radius:10px;background:var(--homey-background-color,#fff);color:inherit}.battery-options{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.threshold{padding:10px;border-radius:12px;background:rgba(127,127,127,.08)}.toggle{display:flex;gap:9px;align-items:center}.toggle input{width:18px;height:18px}.group{font-size:12px;font-weight:800;opacity:.55;margin:18px 0 7px;text-transform:uppercase}.row{display:grid;grid-template-columns:28px 1fr auto;gap:8px;align-items:center;padding:10px 6px;border-bottom:1px solid rgba(127,127,127,.18)}.title{font-weight:650}.meta{font-size:11px;opacity:.5;margin-top:2px;word-break:break-all}.value{font-variant-numeric:tabular-nums;opacity:.8}.selected{margin-top:14px}.selected-row{display:grid;grid-template-columns:1fr auto;gap:8px;margin-bottom:8px}.selected-row input{padding:9px;border-radius:9px;border:1px solid rgba(127,127,127,.45);background:var(--homey-background-color,#fff);color:inherit}.remove{background:rgba(127,127,127,.18);color:inherit}#search{box-sizing:border-box;flex:1;min-width:220px;padding:10px 12px;border-radius:10px;border:1px solid rgba(127,127,127,.45);font-size:15px;background:var(--homey-background-color,#fff);color:inherit}.ok{font-weight:700}.savebar{position:sticky;bottom:0;padding:12px 0 0;background:linear-gradient(transparent,var(--homey-background-color,#fff) 30%);display:flex;justify-content:flex-end}.preview-note{font-size:12px;opacity:.65;margin-top:6px}@media(max-width:650px){.map-row{grid-template-columns:1fr}.battery-options{grid-template-columns:1fr}}
+:root{color-scheme:light dark}*{box-sizing:border-box}body{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;margin:0;padding:18px;max-width:1050px;color:var(--homey-text-color,#111);background:var(--homey-background-color,#fff)}h1{margin:0 0 4px;font-size:28px}h2{margin:0 0 10px;font-size:18px}h3{margin:0 0 6px;font-size:15px}.sub{opacity:.72;line-height:1.45}.card{background:rgba(127,127,127,.08);border:1px solid rgba(127,127,127,.18);border-radius:16px;padding:16px;margin:14px 0}.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}button{cursor:pointer;border:0;border-radius:10px;padding:10px 14px;font-weight:700;background:#1677ff;color:#fff}button.primary{background:#0a63ff}.status{margin-top:10px;font-size:14px;padding:10px 12px;border-radius:10px;background:rgba(127,127,127,.12)}.energy-grid,.visual-grid{display:grid;grid-template-columns:1fr;gap:12px}.install-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:10px}.hidden-row{display:none !important}.map-row{display:grid;grid-template-columns:minmax(180px,260px) 1fr;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid rgba(127,127,127,.14)}.map-label{font-weight:720}.hint{font-size:11px;opacity:.52;margin-top:3px}.map-row select,.map-row input[type=number],.threshold input,.threshold select,.visual-grid select{width:100%;box-sizing:border-box;padding:9px 10px;border:1px solid rgba(127,127,127,.45);border-radius:10px;background:var(--homey-background-color,#fff);color:inherit}.battery-options{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.threshold{padding:10px;border-radius:12px;background:rgba(127,127,127,.08)}.toggle{display:flex;gap:9px;align-items:center}.toggle input{width:18px;height:18px}.group{font-size:12px;font-weight:800;opacity:.55;margin:18px 0 7px;text-transform:uppercase}.row{display:grid;grid-template-columns:28px 1fr auto;gap:8px;align-items:center;padding:10px 6px;border-bottom:1px solid rgba(127,127,127,.18)}.title{font-weight:650}.meta{font-size:11px;opacity:.5;margin-top:2px;word-break:break-all}.value{font-variant-numeric:tabular-nums;opacity:.8}.selected{margin-top:14px}.selected-row{display:grid;grid-template-columns:1fr auto;gap:8px;margin-bottom:8px}.selected-row input{padding:9px;border-radius:9px;border:1px solid rgba(127,127,127,.45);background:var(--homey-background-color,#fff);color:inherit}.remove{background:rgba(127,127,127,.18);color:inherit}.picker{display:flex;flex-direction:column;gap:8px;position:relative}.picker-search{width:100%;padding:9px 10px;border:1px solid rgba(127,127,127,.45);border-radius:10px;background:var(--homey-background-color,#fff);color:inherit}.picker-results{display:flex;flex-direction:column;gap:6px;max-height:220px;overflow:auto;padding:6px;border:1px solid rgba(127,127,127,.18);border-radius:12px;background:rgba(127,127,127,.08)}.picker-option{padding:8px 10px;border-radius:9px;cursor:pointer}.picker-option:hover{background:rgba(127,127,127,.14)}.picker-selected{padding:8px 10px;border-radius:10px;background:rgba(127,127,127,.08);font-size:13px;line-height:1.35}.picker-selected.empty{opacity:.6;font-style:italic}.picker-selected-name{font-weight:650}.picker-selected-meta{font-size:11px;opacity:.65;margin-top:2px;word-break:break-word}.picker-clear{padding:7px 9px;border-radius:9px;border:1px solid rgba(127,127,127,.18);background:rgba(127,127,127,.12);cursor:pointer;align-self:flex-start}.inline-note{padding:10px 2px;font-size:13px;opacity:.68}#search{box-sizing:border-box;flex:1;min-width:220px;padding:10px 12px;border-radius:10px;border:1px solid rgba(127,127,127,.45);font-size:15px;background:var(--homey-background-color,#fff);color:inherit}.ok{font-weight:700}.savebar{position:sticky;bottom:0;padding:12px 0 0;background:linear-gradient(transparent,var(--homey-background-color,#fff) 30%);display:flex;justify-content:flex-end}.preview-note{font-size:12px;opacity:.65;margin-top:6px}@media(max-width:650px){.map-row{grid-template-columns:1fr}.battery-options,.install-grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -23,27 +23,37 @@
   <h2>Energie-overzicht</h2>
   <div class="sub">Selecteer voor elk onderdeel de Homey capability of Logic variabele die de live waarde levert.</div>
   <div class="energy-grid">
-    <div class="map-row"><div><div class="map-label">☀️ Zonnepanelen 1</div><div class="hint">Actuele productie van de eerste omvormer/installatie</div></div><select id="solar"></select></div>
-    <div class="map-row"><div><div class="map-label">☀️ Zonnepanelen 2</div><div class="hint">Optioneel. Wordt opgeteld bij zonnepanelen 1.</div></div><select id="solar2"></select></div>
-    <div class="map-row"><div><div class="map-label">🔋 Batterij 1 SOC</div><div class="hint">Laadpercentage van batterij 1</div></div><select id="batterySoc"></select></div>
-    <div class="map-row"><div><div class="map-label">🔋 Batterij 1 capaciteit</div><div class="hint">Bruikbare capaciteit in kWh. Nodig voor een gewogen totaal-SOC wanneer twee batterijen gebruikt worden.</div></div><input id="batteryCapacityKwh" type="number" min="0" step="0.1" placeholder="bijv. 10"></div>
-    <div class="map-row"><div><div class="map-label">⚡ Batterij 1 vermogen</div><div class="hint">Voor laden / ontladen en totaalvermogen</div></div><select id="batteryPower"></select></div>
-    <div class="map-row"><div><div class="map-label">↔️ Batterij 1 status</div><div class="hint">Optioneel: expliciete status. Bij twee batterijen wordt de gezamenlijke status uit het totale vermogen afgeleid.</div></div><select id="batteryStatus"></select></div>
-    <div class="map-row"><div><div class="map-label">🔋 Batterij 2 SOC</div><div class="hint">Optioneel tweede batterijsysteem</div></div><select id="battery2Soc"></select></div>
-    <div class="map-row"><div><div class="map-label">🔋 Batterij 2 capaciteit</div><div class="hint">Bruikbare capaciteit in kWh. Voorbeeld: 10 kWh vol + 5 kWh leeg = totaal-SOC 66,7%.</div></div><input id="battery2CapacityKwh" type="number" min="0" step="0.1" placeholder="bijv. 5"></div>
-    <div class="map-row"><div><div class="map-label">⚡ Batterij 2 vermogen</div><div class="hint">Optioneel. Wordt opgeteld bij batterij 1 na polariteitscorrectie.</div></div><select id="battery2Power"></select></div>
-    <div class="map-row"><div><div class="map-label">↔️ Batterij 2 status</div><div class="hint">Optioneel. Het totaal wordt voor de widget uit beide vermogens afgeleid.</div></div><select id="battery2Status"></select></div>
-    <div class="map-row"><div><div class="map-label">🚗 Autolader 1 vermogen</div><div class="hint">Actueel laadvermogen</div></div><select id="evPower"></select></div>
-    <div class="map-row"><div><div class="map-label">🔌 Autolader 1 status</div><div class="hint">Optioneel: laden / verbonden / uit</div></div><select id="evStatus"></select></div>
-    <div class="map-row"><div><div class="map-label">🚗 Autolader 2 vermogen</div><div class="hint">Optioneel. Wordt opgeteld bij autolader 1.</div></div><select id="ev2Power"></select></div>
-    <div class="map-row"><div><div class="map-label">🔌 Autolader 2 status</div><div class="hint">Optioneel tweede laderstatus</div></div><select id="ev2Status"></select></div>
+    <div class="install-grid">
+      <label class="threshold"><div class="map-label">Aantal PV-installaties</div><div class="hint">Toon alleen extra velden als je meer dan één bron hebt.</div><select id="solarCount"><option value="1">1</option><option value="2">2</option></select></label>
+      <label class="threshold"><div class="map-label">Aantal batterijen</div><div class="hint">Bepaal hoeveel batterijsystemen je wilt koppelen.</div><select id="batteryCount"><option value="1">1</option><option value="2">2</option></select></label>
+      <label class="threshold"><div class="map-label">Aantal autoladers</div><div class="hint">Toon extra laadvelden alleen indien nodig.</div><select id="chargerCount"><option value="1">1</option><option value="2">2</option></select></label>
+    </div>
+    <div class="map-row" id="rowSolar1"><div><div class="map-label">☀️ Zonnepanelen 1</div><div class="hint">Actuele productie van de eerste omvormer/installatie</div></div><select id="solar"></select></div>
+    <div class="map-row hidden-row" id="rowSolar2"><div><div class="map-label">☀️ Zonnepanelen 2</div><div class="hint">Optioneel. Wordt opgeteld bij zonnepanelen 1.</div></div><select id="solar2"></select></div>
+    <div class="map-row" id="rowBatterySoc1"><div><div class="map-label">🔋 Batterij 1 SOC</div><div class="hint">Laadpercentage van batterij 1</div></div><select id="batterySoc"></select></div>
+    <div class="map-row" id="rowBatteryCapacity1"><div><div class="map-label">🔋 Batterij 1 capaciteit</div><div class="hint">Bruikbare capaciteit in kWh. Nodig voor een gewogen totaal-SOC wanneer twee batterijen gebruikt worden.</div></div><input id="batteryCapacityKwh" type="number" min="0" step="0.1" placeholder="bijv. 10"></div>
+    <div class="map-row" id="rowBatteryPower1"><div><div class="map-label">⚡ Batterij 1 vermogen</div><div class="hint">Voor laden / ontladen en totaalvermogen</div></div><select id="batteryPower"></select></div>
+    <div class="map-row" id="rowBatteryStatus1"><div><div class="map-label">↔️ Batterij 1 status</div><div class="hint">Optioneel: expliciete status. Als vermogen beschikbaar is, gebruikt HomeFlux dat als waarheid.</div></div><select id="batteryStatus"></select></div>
+    <div class="map-row hidden-row" id="rowBatterySoc2"><div><div class="map-label">🔋 Batterij 2 SOC</div><div class="hint">Optioneel tweede batterijsysteem</div></div><select id="battery2Soc"></select></div>
+    <div class="map-row hidden-row" id="rowBatteryCapacity2"><div><div class="map-label">🔋 Batterij 2 capaciteit</div><div class="hint">Bruikbare capaciteit in kWh. Voorbeeld: 10 kWh vol + 5 kWh leeg = totaal-SOC 66,7%.</div></div><input id="battery2CapacityKwh" type="number" min="0" step="0.1" placeholder="bijv. 5"></div>
+    <div class="map-row hidden-row" id="rowBatteryPower2"><div><div class="map-label">⚡ Batterij 2 vermogen</div><div class="hint">Optioneel. Wordt opgeteld bij batterij 1 na polariteitscorrectie.</div></div><select id="battery2Power"></select></div>
+    <div class="map-row hidden-row" id="rowBatteryStatus2"><div><div class="map-label">↔️ Batterij 2 status</div><div class="hint">Optioneel. Het totaal wordt voor de widget uit beide vermogens afgeleid.</div></div><select id="battery2Status"></select></div>
+    <div class="map-row" id="rowEvPower1"><div><div class="map-label">🚗 Autolader 1 vermogen</div><div class="hint">Actueel laadvermogen</div></div><select id="evPower"></select></div>
+    <div class="map-row" id="rowEvStatus1"><div><div class="map-label">🔌 Autolader 1 status</div><div class="hint">Optioneel: laden / verbonden / uit</div></div><select id="evStatus"></select></div>
+    <div class="map-row hidden-row" id="rowEvPower2"><div><div class="map-label">🚗 Autolader 2 vermogen</div><div class="hint">Optioneel. Wordt opgeteld bij autolader 1.</div></div><select id="ev2Power"></select></div>
+    <div class="map-row hidden-row" id="rowEvStatus2"><div><div class="map-label">🔌 Autolader 2 status</div><div class="hint">Optioneel tweede laderstatus</div></div><select id="ev2Status"></select></div>
     <div class="map-row"><div><div class="map-label">⚡ Elektriciteitsnet</div><div class="hint">Import / export vermogen</div></div><select id="gridPower"></select></div>
     <div class="map-row"><div><div class="map-label">🏠 Huisverbruik</div><div class="hint">Optioneel. Zonder koppeling berekent HomeFlux dit uit zon + net − batterij.</div></div><select id="homePower"></select></div>
   </div>
+  </div>
   <div class="battery-options">
     <label class="threshold"><div class="map-label">Batterij drempel</div><div class="hint">Stand-by rond 0 kW voor het gezamenlijke batterijvermogen</div><input id="batteryThresholdKw" type="number" min="0" step="0.05" value="0.2"></label>
-    <label class="threshold toggle"><input id="batteryInvert" type="checkbox"><div><div class="map-label">Polariteit batterij 1 omkeren</div><div class="hint">Gebruik dit als positief vermogen bij batterij 1 ontladen betekent.</div></div></label>
-    <label class="threshold toggle"><input id="battery2Invert" type="checkbox"><div><div class="map-label">Polariteit batterij 2 omkeren</div><div class="hint">Gebruik dit als positief vermogen bij batterij 2 ontladen betekent.</div></div></label>
+    <label class="threshold"><div class="map-label">Netstroom drempel</div><div class="hint">Onder deze grens blijft de netstroomlijn verborgen. Voorbeeld: 50 W = tussen -50 W en +50 W geen lijn.</div><input id="gridThresholdW" type="number" min="0" step="10" value="50"></label>
+    <label class="threshold"><div class="map-label">Batterij 1 vermogensrichting</div><div class="hint">Standaard nu: positief = ontladen · negatief = laden.</div><select id="batteryDirection"><option value="positive_discharge">Positief = ontladen · negatief = laden</option><option value="positive_charge">Positief = laden · negatief = ontladen</option></select></label>
+    <label class="threshold"><div class="map-label">Batterij 1 lijnrichting</div><div class="hint">Bepaalt welke status/kleur gebruikt wordt voor de batterijlijn.</div><select id="batteryLineDirection"><option value="follow_power">Zelfde als vermogensrichting</option><option value="positive_discharge">Positief = ontladen · negatief = laden</option><option value="positive_charge">Positief = laden · negatief = ontladen</option></select></label>
+    <label class="threshold"><div class="map-label">Batterij 1 animatierichting</div><div class="hint">Extra optie om alleen de richting van de bewegende lijn om te keren.</div><select id="batteryLineMotion"><option value="invert_flow">Omgekeerde bewegingsrichting (standaard)</option><option value="follow_flow">Automatisch volgens laden/ontladen</option></select></label>
+    <label class="threshold hidden-row" id="battery2DirectionWrap"><div class="map-label">Batterij 2 vermogensrichting</div><div class="hint">Optioneel apart instelbaar voor een tweede batterij.</div><select id="battery2Direction"><option value="positive_discharge">Positief = ontladen · negatief = laden</option><option value="positive_charge">Positief = laden · negatief = ontladen</option></select></label>
+    <label class="threshold hidden-row" id="battery2LineDirectionWrap"><div class="map-label">Batterij 2 lijnrichting</div><div class="hint">Alleen nodig als de lijnrichting anders moet zijn dan het vermogen.</div><select id="battery2LineDirection"><option value="follow_power">Zelfde als vermogensrichting</option><option value="positive_discharge">Positief = ontladen · negatief = laden</option><option value="positive_charge">Positief = laden · negatief = ontladen</option></select></label>
   </div>
 </div>
 
@@ -74,12 +84,65 @@
 function onHomeyReady(Homey){
  const energyFields=['solar','solar2','batterySoc','batteryPower','batteryStatus','battery2Soc','battery2Power','battery2Status','evPower','evStatus','ev2Power','ev2Status','gridPower','homePower'];
  const state={sources:[],selected:[],energyConfig:{},visualConfig:{}}, $=id=>document.getElementById(id), list=$('list'), selected=$('selected'), search=$('search'), status=$('status');
+ const pickerFields=[...energyFields,'weatherSource'];
+ const pickerMap={};
  const api=(method,path,body)=>new Promise((resolve,reject)=>Homey.api(method,path,body,(err,result)=>err?reject(err):resolve(result)));
  const msg=e=>(e&&e.message)||String(e);
 
  function sourceText(s){return `${s.label}${s.value!==undefined?'  ·  '+(s.value??'—')+(s.unit?' '+s.unit:''):''}`}
  function weatherScore(s){const t=`${s.name||''} ${s.label||''} ${s.key||''}`.toLowerCase();let score=0;if(/weather|weer|condition/.test(t))score+=100;if(/rain|regen|precip|neerslag/.test(t))score+=80;if(/cloud|bewolk|overcast/.test(t))score+=50;if(/status|state/.test(t))score+=20;return score;}
  function updateBackgroundMode(){const auto=$('backgroundMode').value==='auto';$('autoWeatherRow').style.display=auto?'grid':'none';$('manualPeriodRow').style.display=auto?'none':'grid';$('manualWeatherRow').style.display=auto?'none':'grid';}
+ function showRow(id,show){const el=$(id);if(el)el.classList.toggle('hidden-row',!show);}
+ function updateInstallCountsVisibility(){const solarCount=Number($('solarCount').value||1),batteryCount=Number($('batteryCount').value||1),chargerCount=Number($('chargerCount').value||1);showRow('rowSolar2',solarCount>1);showRow('rowBatterySoc2',batteryCount>1);showRow('rowBatteryCapacity2',batteryCount>1);showRow('rowBatteryPower2',batteryCount>1);showRow('rowBatteryStatus2',batteryCount>1);showRow('battery2DirectionWrap',batteryCount>1);showRow('battery2LineDirectionWrap',batteryCount>1);showRow('rowEvPower2',chargerCount>1);showRow('rowEvStatus2',chargerCount>1);}
+
+ function pickerOptions(field){
+   if(field==='weatherSource'){
+     return [...state.sources].sort((a,b)=>weatherScore(b)-weatherScore(a)||a.label.localeCompare(b.label)).map(src=>({value:src.key,text:sourceText(src),label:src.label,meta:src.key}));
+   }
+   return state.sources.map(src=>({value:src.key,text:sourceText(src),label:src.label,meta:src.key}));
+ }
+ function updatePickerSelected(field){
+   const picker=pickerMap[field]; if(!picker) return;
+   const value=$(field).value||'';
+   const selectedOption=pickerOptions(field).find(opt=>opt.value===value);
+   if(!selectedOption){picker.selected.className='picker-selected empty';picker.selected.innerHTML=field==='weatherSource'?'— Geen weerbron gekozen —':'— Niet gekoppeld —';picker.clear.classList.add('hidden-row');return;}
+   picker.selected.className='picker-selected';
+   picker.selected.innerHTML=`<div class="picker-selected-name">${selectedOption.label}</div><div class="picker-selected-meta">${selectedOption.text}</div>`;
+   picker.clear.classList.remove('hidden-row');
+ }
+ function closePickerResults(field){ const picker=pickerMap[field]; if(!picker) return; picker.results.innerHTML=''; picker.results.classList.add('hidden-row'); }
+ function renderPickerResults(field){
+   const picker=pickerMap[field]; if(!picker) return;
+   const q=picker.search.value.trim().toLowerCase();
+   picker.results.innerHTML='';
+   if(!q){picker.results.classList.add('hidden-row'); return;}
+   const options=pickerOptions(field).filter(opt=>opt.text.toLowerCase().includes(q)||opt.label.toLowerCase().includes(q)||opt.meta.toLowerCase().includes(q));
+   if(!options.length){const empty=document.createElement('div');empty.className='inline-note';empty.textContent='Geen apparaten gevonden voor deze zoekterm.';picker.results.appendChild(empty);picker.results.classList.remove('hidden-row');return;}
+   for(const option of options.slice(0,60)){
+     const row=document.createElement('div'); row.className='picker-option';
+     row.innerHTML=`<div class="title">${option.label}</div><div class="meta">${option.text}</div>`;
+     row.onclick=()=>{ $(field).value=option.value; picker.search.value=''; updatePickerSelected(field); closePickerResults(field); };
+     picker.results.appendChild(row);
+   }
+   picker.results.classList.remove('hidden-row');
+ }
+ function setupPicker(field){
+   const select=$(field); if(!select||pickerMap[field]) return;
+   const picker=document.createElement('div'); picker.className='picker';
+   const searchInput=document.createElement('input'); searchInput.className='picker-search'; searchInput.type='search'; searchInput.placeholder='Typ om te zoeken…';
+   const results=document.createElement('div'); results.className='picker-results hidden-row';
+   const selectedView=document.createElement('div'); selectedView.className='picker-selected empty';
+   const clearBtn=document.createElement('button'); clearBtn.type='button'; clearBtn.className='picker-clear hidden-row'; clearBtn.textContent=field==='weatherSource'?'Weerbron wissen':'Koppeling wissen';
+   picker.appendChild(searchInput); picker.appendChild(results); picker.appendChild(selectedView); picker.appendChild(clearBtn);
+   select.parentNode.insertBefore(picker, select); select.style.display='none';
+   pickerMap[field]={search:searchInput,results,selected:selectedView,clear:clearBtn};
+   searchInput.addEventListener('input',()=>renderPickerResults(field));
+   searchInput.addEventListener('focus',()=>renderPickerResults(field));
+   clearBtn.onclick=()=>{ select.value=''; searchInput.value=''; updatePickerSelected(field); closePickerResults(field); };
+   updatePickerSelected(field);
+ }
+ function setupPickers(){ pickerFields.forEach(setupPicker); }
+ document.addEventListener('click',e=>{ for(const field of pickerFields){ const picker=pickerMap[field]; if(picker && !picker.search.parentElement.contains(e.target)) closePickerResults(field); } });
  function fillEnergySelects(){
    for(const field of energyFields){
      const select=$(field); const current=state.energyConfig[field]||''; select.innerHTML='';
@@ -88,27 +151,43 @@ function onHomeyReady(Homey){
        const o=document.createElement('option');o.value=s.key;o.textContent=sourceText(s);select.appendChild(o);
      }
      select.value=current;
+     updatePickerSelected(field);
    }
-   $('batteryThresholdKw').value=state.energyConfig.batteryThresholdKw ?? 0.2;
-   $('batteryCapacityKwh').value=state.energyConfig.batteryCapacityKwh || '';
-   $('battery2CapacityKwh').value=state.energyConfig.battery2CapacityKwh || '';
-   $('batteryInvert').checked=Boolean(state.energyConfig.batteryInvert);
-   $('battery2Invert').checked=Boolean(state.energyConfig.battery2Invert);
-   $('backgroundMode').value=state.visualConfig.backgroundMode || 'auto';
-   $('scenePeriod').value=state.visualConfig.periodMode || 'auto';
-   $('sceneWeather').value=state.visualConfig.weather || 'clear';
-   $('refreshSeconds').value=String(state.visualConfig.refreshSeconds || 30);
    const weatherSelect=$('weatherSource'); const currentWeather=state.visualConfig.weatherSource||''; weatherSelect.innerHTML='';
    const noWeather=document.createElement('option');noWeather.value='';noWeather.textContent='— Kies Homey weerbron —';weatherSelect.appendChild(noWeather);
    const weatherCandidates=[...state.sources].sort((a,b)=>weatherScore(b)-weatherScore(a)||a.label.localeCompare(b.label));
    for(const src of weatherCandidates){const o=document.createElement('option');o.value=src.key;o.textContent=sourceText(src);weatherSelect.appendChild(o);}weatherSelect.value=currentWeather;
+   updatePickerSelected('weatherSource');
+   $('batteryThresholdKw').value=state.energyConfig.batteryThresholdKw ?? 0.2;
+   $('gridThresholdW').value=state.energyConfig.gridThresholdW ?? 50;
+   $('solarCount').value=String(state.energyConfig.solarCount || (state.energyConfig.solar2 ? 2 : 1));
+   $('batteryCount').value=String(state.energyConfig.batteryCount || ((state.energyConfig.battery2Soc || state.energyConfig.battery2Power || state.energyConfig.battery2Status) ? 2 : 1));
+   $('chargerCount').value=String(state.energyConfig.chargerCount || ((state.energyConfig.ev2Power || state.energyConfig.ev2Status) ? 2 : 1));
+   $('batteryCapacityKwh').value=state.energyConfig.batteryCapacityKwh || '';
+   $('battery2CapacityKwh').value=state.energyConfig.battery2CapacityKwh || '';
+   $('batteryDirection').value=state.energyConfig.batteryDirection || (state.energyConfig.batteryInvert ? 'positive_discharge' : 'positive_discharge');
+   $('batteryLineDirection').value=state.energyConfig.batteryLineDirection || 'follow_power';
+   $('batteryLineMotion').value=state.energyConfig.batteryLineMotion || 'invert_flow';
+   $('battery2Direction').value=state.energyConfig.battery2Direction || (state.energyConfig.battery2Invert ? 'positive_discharge' : 'positive_discharge');
+   $('battery2LineDirection').value=state.energyConfig.battery2LineDirection || 'follow_power';
+   $('backgroundMode').value=state.visualConfig.backgroundMode || 'auto';
+   $('scenePeriod').value=state.visualConfig.periodMode || 'auto';
+   $('sceneWeather').value=state.visualConfig.weather || 'clear';
+   $('refreshSeconds').value=String(state.visualConfig.refreshSeconds || 30);
    updateBackgroundMode();
+   updateInstallCountsVisibility();
  }
 
  function renderSources(){
    const q=search.value.trim().toLowerCase();
-   const filtered=state.sources.filter(s=>!q||s.label.toLowerCase().includes(q)||String(s.value??'').toLowerCase().includes(q));
-   list.innerHTML=''; let last='';
+   list.innerHTML='';
+   if(!q){
+     const note=document.createElement('div'); note.className='inline-note'; note.textContent='Typ eerst om apparaten of variabelen te zoeken.'; list.appendChild(note);
+     status.textContent=`${state.sources.length} bronnen gevonden · ${state.selected.length} extra item(s)`;
+     return;
+   }
+   const filtered=state.sources.filter(s=>s.label.toLowerCase().includes(q)||String(s.value??'').toLowerCase().includes(q)||s.key.toLowerCase().includes(q));
+   let last='';
    filtered.forEach(s=>{
      if(s.type!==last){const g=document.createElement('div');g.className='group';g.textContent=s.type==='device'?'Device capabilities':'Logic variabelen';list.appendChild(g);last=s.type;}
      const row=document.createElement('label');row.className='row';const checked=state.selected.some(x=>x.key===s.key);
@@ -117,6 +196,7 @@ function onHomeyReady(Homey){
      row.querySelector('input').onchange=e=>{if(e.target.checked){if(!state.selected.some(x=>x.key===s.key))state.selected.push({key:s.key,label:s.type==='device'?(s.deviceName||s.name):s.name,sourceLabel:s.label,unit:s.unit||''});}else state.selected=state.selected.filter(x=>x.key!==s.key);renderSelected();};
      list.appendChild(row);
    });
+   if(!filtered.length){const note=document.createElement('div'); note.className='inline-note'; note.textContent='Geen extra items gevonden voor deze zoekterm.'; list.appendChild(note);}
    status.textContent=`${state.sources.length} bronnen gevonden · ${state.selected.length} extra item(s)`;
  }
 
@@ -134,14 +214,28 @@ function onHomeyReady(Homey){
  async function testConnection(){try{status.textContent='Homey toegang testen…';const r=await api('POST','/test',{});status.textContent=`Homey toegang OK · ${r.devices} devices · ${r.variables} Logic variabelen`;Homey.alert(status.textContent);}catch(e){status.textContent='Homey toegang mislukt: '+msg(e);Homey.alert(status.textContent);}}
  async function scan(){status.textContent='Homey scannen…';try{state.sources=await api('GET','/sources');fillEnergySelects();renderSources();}catch(e){status.textContent='Scan mislukt: '+msg(e);Homey.alert(status.textContent);}}
 
- $('testconn').onclick=testConnection;$('scan').onclick=scan;search.oninput=renderSources;$('backgroundMode').onchange=updateBackgroundMode;
+ setupPickers();
+ $('testconn').onclick=testConnection;$('scan').onclick=scan;search.oninput=renderSources;$('backgroundMode').onchange=updateBackgroundMode;$('solarCount').onchange=updateInstallCountsVisibility;$('batteryCount').onchange=updateInstallCountsVisibility;$('chargerCount').onchange=updateInstallCountsVisibility;
  $('save').onclick=async()=>{
    const energyConfig={}; for(const field of energyFields) energyConfig[field]=$(field).value||'';
    energyConfig.batteryThresholdKw=Number($('batteryThresholdKw').value||0.2);
+   energyConfig.gridThresholdW=Math.max(0,Number($('gridThresholdW').value||50));
+   energyConfig.solarCount=Number($('solarCount').value||1);
+   energyConfig.batteryCount=Number($('batteryCount').value||1);
+   energyConfig.chargerCount=Number($('chargerCount').value||1);
    energyConfig.batteryCapacityKwh=Number($('batteryCapacityKwh').value||0);
    energyConfig.battery2CapacityKwh=Number($('battery2CapacityKwh').value||0);
-   energyConfig.batteryInvert=$('batteryInvert').checked;energyConfig.battery2Invert=$('battery2Invert').checked;
-   const hasBattery2=Boolean(energyConfig.battery2Soc||energyConfig.battery2Power||energyConfig.battery2Status);
+   energyConfig.batteryDirection=$('batteryDirection').value||'positive_discharge';
+   energyConfig.batteryLineDirection=$('batteryLineDirection').value||'follow_power';
+   energyConfig.batteryLineMotion=$('batteryLineMotion').value||'invert_flow';
+   energyConfig.battery2Direction=$('battery2Direction').value||'positive_discharge';
+   energyConfig.battery2LineDirection=$('battery2LineDirection').value||'follow_power';
+   energyConfig.batteryInvert=energyConfig.batteryDirection==='positive_discharge';
+   energyConfig.battery2Invert=energyConfig.battery2Direction==='positive_discharge';
+   if(energyConfig.solarCount<2) energyConfig.solar2='';
+   if(energyConfig.batteryCount<2){energyConfig.battery2Soc='';energyConfig.battery2Power='';energyConfig.battery2Status='';energyConfig.battery2CapacityKwh=0;energyConfig.battery2Direction='positive_discharge';energyConfig.battery2LineDirection='follow_power';energyConfig.battery2Invert=true;}
+   if(energyConfig.chargerCount<2){energyConfig.ev2Power='';energyConfig.ev2Status='';}
+   const hasBattery2=energyConfig.batteryCount>1 && Boolean(energyConfig.battery2Soc||energyConfig.battery2Power||energyConfig.battery2Status);
    if(hasBattery2&&(!(energyConfig.batteryCapacityKwh>0)||!(energyConfig.battery2CapacityKwh>0))){Homey.alert('Vul voor beide batterijen de bruikbare capaciteit in kWh in. Dit is nodig om het totale SOC correct gewogen te berekenen.');return;}
    const visualConfig={backgroundMode:$('backgroundMode').value||'auto',weatherSource:$('weatherSource').value||'',periodMode:$('scenePeriod').value||'auto',weather:$('sceneWeather').value||'clear',refreshSeconds:Number($('refreshSeconds').value||30)};
    status.textContent='Dashboard opslaan…';
