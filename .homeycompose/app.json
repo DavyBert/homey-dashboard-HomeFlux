@@ -1,6 +1,6 @@
 {
   "id": "com.dashboard.homeflux",
-  "version": "0.6.54",
+  "version": "0.6.56",
   "compatibility": ">=12.3.0",
   "sdk": 3,
   "name": {

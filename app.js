@@ -17,8 +17,10 @@ const ENERGY_FIELDS = [
 
 const HISTORY_SAMPLE_MS = 10 * 60 * 1000;
 const HISTORY_KEEP_MS = 30 * 60 * 60 * 1000;
-const INSIGHTS_REFRESH_MS = 15 * 60 * 1000;
+const INSIGHTS_REFRESH_MS = 6 * 60 * 60 * 1000;
 const FALLBACK_REFRESH_MS = 60 * 1000;
+const BACKGROUND_STALE_MS = 5 * 60 * 1000;
+const REALTIME_REFRESH_MIN_MS = 3 * 1000;
 
 class DashboardBridgeApp extends Homey.App {
   async onInit() {
@@ -34,10 +36,18 @@ class DashboardBridgeApp extends Homey.App {
     this._refreshTimer = null;
     this._refreshDebounce = new Map();
     this._refreshSourcesPromise = null;
-    this._lastSourceRefreshAt = 0;
+    this._targetRefreshAt = new Map();
+    this._targetRealtimeAt = new Map();
+    this._targetRealtimeRefreshAt = new Map();
+    this._configuredKeyList = [];
+    this._configuredKeySet = new Set();
+    this._configuredDeviceIds = [];
+    this._configuredVariableIds = [];
+    this._configuredDeviceCapabilities = new Map();
     this._batteryInsights24h = null;
     this._lastInsightsRefreshAt = 0;
 
+    this._rebuildRuntimeConfigIndex();
     await this._ensureOwnerSession();
     await this._refreshConfiguredSources('initial').catch(err => this.error('Initial source refresh failed:', err));
     await this._refreshBattery24hFromInsights(true).catch(err => this.error('Initial battery Insights refresh failed:', err));
@@ -101,17 +111,28 @@ class DashboardBridgeApp extends Homey.App {
     const weather = ['clear', 'cloudy', 'rain', 'mist', 'snow', 'thunder'].includes(c.weather) ? c.weather : 'clear';
     const weatherSource = typeof c.weatherSource === 'string' ? c.weatherSource : '';
     const refreshSeconds = Math.min(300, Math.max(1, Number(c.refreshSeconds) || 30));
-    return { backgroundMode, periodMode, weather, weatherSource, refreshSeconds };
+    const widgetTextScale = [50, 60, 70, 80, 90, 100, 110].includes(Number(c.widgetTextScale)) ? Number(c.widgetTextScale) : 90;
+    const widgetTitleScale = [50, 60, 70, 80, 90, 100, 110, 120, 130].includes(Number(c.widgetTitleScale)) ? Number(c.widgetTitleScale) : 100;
+    const labels = {
+      solar: String(c.labels && c.labels.solar || '').trim().slice(0, 32),
+      grid: String(c.labels && c.labels.grid || '').trim().slice(0, 32),
+      battery: String(c.labels && c.labels.battery || '').trim().slice(0, 32),
+      home: String(c.labels && c.labels.home || '').trim().slice(0, 32),
+      ev: String(c.labels && c.labels.ev || '').trim().slice(0, 32)
+    };
+    return { backgroundMode, periodMode, weather, weatherSource, refreshSeconds, widgetTextScale, widgetTitleScale, labels };
   }
 
   _restartRefreshTimer() {
     if (this._refreshTimer) this.homey.clearInterval(this._refreshTimer);
 
-    // Realtime events are the primary update path. The widget itself requests a
-    // selective refresh at the configured interval. This slow fallback keeps the
-    // cache healthy when no widget is open, without polling every Homey device.
+    // Realtime events are the primary update path. The timer only checks for
+    // sources that have gone stale. When no widget is open, a source that keeps
+    // producing realtime events is never polled; silent sources get a light
+    // background refresh at most every five minutes.
     this._refreshTimer = this.homey.setInterval(() => {
-      this._refreshConfiguredSources('fallback').catch(err => this.error('Fallback source refresh failed:', err));
+      this._refreshStaleConfiguredSources('fallback', BACKGROUND_STALE_MS)
+        .catch(err => this.error('Fallback source refresh failed:', err));
       this._refreshBattery24hFromInsights().catch(err => this.error('Battery Insights refresh failed:', err));
     }, FALLBACK_REFRESH_MS);
   }
@@ -201,26 +222,27 @@ class DashboardBridgeApp extends Homey.App {
     return match ? this._translatedTitle(match.title || match.label || match.name) : '';
   }
 
+  _deviceSource(device, capabilityId) {
+    const capsObj = device.capabilitiesObj || {};
+    const cap = capsObj[capabilityId] || {};
+    const value = cap.value !== undefined ? cap.value : (device.state ? device.state[capabilityId] : null);
+    return {
+      key: `device:${device.id}:${capabilityId}`,
+      type: 'device', deviceId: device.id, capabilityId,
+      deviceName: device.name || device.id,
+      label: `${device.name || device.id} — ${this._capabilityTitle(capabilityId, cap)}`,
+      name: this._capabilityTitle(capabilityId, cap),
+      value,
+      displayValue: this._capabilityValueTitle(device, capabilityId, cap, value),
+      unit: cap.units || cap.unit || '',
+      valueType: cap.type || typeof cap.value
+    };
+  }
+
   _deviceSources(device) {
-    const sources = [];
     const capsObj = device.capabilitiesObj || {};
     const capabilityIds = device.capabilities || Object.keys(capsObj);
-    for (const capabilityId of capabilityIds) {
-      const cap = capsObj[capabilityId] || {};
-      const value = cap.value !== undefined ? cap.value : (device.state ? device.state[capabilityId] : null);
-      sources.push({
-        key: `device:${device.id}:${capabilityId}`,
-        type: 'device', deviceId: device.id, capabilityId,
-        deviceName: device.name || device.id,
-        label: `${device.name || device.id} — ${this._capabilityTitle(capabilityId, cap)}`,
-        name: this._capabilityTitle(capabilityId, cap),
-        value,
-        displayValue: this._capabilityValueTitle(device, capabilityId, cap, value),
-        unit: cap.units || cap.unit || '',
-        valueType: cap.type || typeof cap.value
-      });
-    }
-    return sources;
+    return capabilityIds.map(capabilityId => this._deviceSource(device, capabilityId));
   }
 
   _variableSource(variable) {
@@ -263,6 +285,10 @@ class DashboardBridgeApp extends Homey.App {
       unit: item.unit ? String(item.unit) : ''
     }));
 
+    // Rebuild the compact runtime index once per configuration change. This
+    // avoids rebuilding Sets/arrays on every widget request and realtime event.
+    this._rebuildRuntimeConfigIndex();
+
     // Drop values that belonged to a previous configuration immediately.
     this._pruneSourceCache();
 
@@ -291,7 +317,7 @@ class DashboardBridgeApp extends Homey.App {
     return { type: 'unknown' };
   }
 
-  _configuredKeys() {
+  _rebuildRuntimeConfigIndex() {
     const keys = new Set(this.selection.map(item => item.key).filter(Boolean));
     for (const field of ENERGY_FIELDS) {
       const key = this.energyConfig[field];
@@ -300,11 +326,41 @@ class DashboardBridgeApp extends Homey.App {
     if (this.visualConfig.backgroundMode === 'auto' && this.visualConfig.weatherSource) {
       keys.add(this.visualConfig.weatherSource);
     }
-    return [...keys];
+
+    this._configuredKeyList = [...keys];
+    this._configuredKeySet = keys;
+
+    const deviceCapabilities = new Map();
+    const variableIds = new Set();
+    for (const key of this._configuredKeyList) {
+      const parsed = this._parseKey(key);
+      if (parsed.type === 'device' && parsed.deviceId && parsed.capabilityId) {
+        if (!deviceCapabilities.has(parsed.deviceId)) deviceCapabilities.set(parsed.deviceId, new Set());
+        deviceCapabilities.get(parsed.deviceId).add(parsed.capabilityId);
+      } else if (parsed.type === 'variable' && parsed.variableId) {
+        variableIds.add(parsed.variableId);
+      }
+    }
+    this._configuredDeviceCapabilities = deviceCapabilities;
+    this._configuredDeviceIds = [...deviceCapabilities.keys()];
+    this._configuredVariableIds = [...variableIds];
+
+    const validTargets = new Set([
+      ...this._configuredDeviceIds.map(id => this._targetKey('device', id)),
+      ...this._configuredVariableIds.map(id => this._targetKey('variable', id))
+    ]);
+    for (const map of [this._targetRefreshAt, this._targetRealtimeAt, this._targetRealtimeRefreshAt]) {
+      if (!map) continue;
+      for (const key of map.keys()) if (!validTargets.has(key)) map.delete(key);
+    }
+  }
+
+  _configuredKeys() {
+    return this._configuredKeyList;
   }
 
   _pruneSourceCache() {
-    const configured = new Set(this._configuredKeys());
+    const configured = this._configuredKeySet;
     let removed = 0;
     for (const key of this.sourceCache.keys()) {
       if (!configured.has(key)) {
@@ -315,15 +371,44 @@ class DashboardBridgeApp extends Homey.App {
     return removed;
   }
 
+  _targetKey(type, id) {
+    return `${type}:${id}`;
+  }
+
+  _markTargetRefreshed(type, id, now = Date.now()) {
+    this._targetRefreshAt.set(this._targetKey(type, id), now);
+  }
+
+  _markTargetRealtime(type, id, now = Date.now()) {
+    this._targetRealtimeAt.set(this._targetKey(type, id), now);
+  }
+
+  _targetLastActivity(type, id) {
+    const key = this._targetKey(type, id);
+    // Only a completed read proves that the cached value is fresh. Some Homey
+    // integrations emit generic realtime events without the configured
+    // capability value, so those events must not suppress fallback polling.
+    return Number(this._targetRefreshAt.get(key) || 0);
+  }
+
+  _configuredTargets() {
+    return {
+      deviceIds: this._configuredDeviceIds,
+      variableIds: this._configuredVariableIds
+    };
+  }
+
+  _staleConfiguredTargets(maxAgeMs, now = Date.now()) {
+    const { deviceIds, variableIds } = this._configuredTargets();
+    const age = Math.max(1000, Number(maxAgeMs) || 1000);
+    return {
+      deviceIds: deviceIds.filter(id => now - this._targetLastActivity('device', id) >= age),
+      variableIds: variableIds.filter(id => now - this._targetLastActivity('variable', id) >= age)
+    };
+  }
+
   _configuredCapabilitiesForDevice(deviceId) {
-    const capabilities = new Set();
-    for (const key of this._configuredKeys()) {
-      const parsed = this._parseKey(key);
-      if (parsed.type === 'device' && parsed.deviceId === deviceId && parsed.capabilityId) {
-        capabilities.add(parsed.capabilityId);
-      }
-    }
-    return capabilities;
+    return this._configuredDeviceCapabilities.get(deviceId) || new Set();
   }
 
   async _refreshConfiguredDevice(deviceId, emit = true) {
@@ -332,9 +417,11 @@ class DashboardBridgeApp extends Homey.App {
 
     try {
       const device = await this._apiGet(`/api/manager/devices/device/${encodeURIComponent(deviceId)}`);
-      for (const source of this._deviceSources(device)) {
-        if (wantedCapabilities.has(source.capabilityId)) this.sourceCache.set(source.key, source);
+      for (const capabilityId of wantedCapabilities) {
+        const source = this._deviceSource(device, capabilityId);
+        this.sourceCache.set(source.key, source);
       }
+      this._markTargetRefreshed('device', deviceId);
       await this._recordBatteryHistory();
       if (emit) this._emitDashboard();
     } catch (err) {
@@ -344,11 +431,12 @@ class DashboardBridgeApp extends Homey.App {
 
   async _refreshConfiguredVariable(variableId, emit = true) {
     const key = `variable:${variableId}`;
-    if (!this._configuredKeys().includes(key)) return;
+    if (!this._configuredKeySet.has(key)) return;
 
     try {
       const variable = await this._apiGet(`/api/manager/logic/variable/${encodeURIComponent(variableId)}`);
       this.sourceCache.set(key, this._variableSource(variable));
+      this._markTargetRefreshed('variable', variableId);
       if (emit) this._emitDashboard();
     } catch (err) {
       this.error(`Unable to refresh Logic variable ${variableId}:`, err);
@@ -356,54 +444,54 @@ class DashboardBridgeApp extends Homey.App {
   }
 
   async _refreshConfiguredVariables(emit = true) {
-    const variableIds = [...new Set(this._configuredKeys()
-      .map(key => this._parseKey(key))
-      .filter(parsed => parsed.type === 'variable')
-      .map(parsed => parsed.variableId))];
-
+    const variableIds = this._configuredVariableIds;
     await Promise.all(variableIds.map(variableId => this._refreshConfiguredVariable(variableId, false)));
     if (emit && variableIds.length) this._emitDashboard();
   }
 
   async _refreshConfiguredSources(reason = 'manual') {
-    // Collapse overlapping widget, realtime and fallback refreshes into one read.
+    const { deviceIds, variableIds } = this._configuredTargets();
+    return this._refreshConfiguredTargets(reason, deviceIds, variableIds);
+  }
+
+  async _refreshStaleConfiguredSources(reason, maxAgeMs) {
+    const { deviceIds, variableIds } = this._staleConfiguredTargets(maxAgeMs);
+    if (!deviceIds.length && !variableIds.length) return false;
+    await this._refreshConfiguredTargets(reason, deviceIds, variableIds);
+    return true;
+  }
+
+  async _refreshConfiguredTargets(reason, deviceIds, variableIds) {
+    // Collapse overlapping widget, realtime and fallback reads into one batch.
+    // Realtime-triggered single-device refreshes are handled separately and also
+    // update per-target freshness, so they naturally suppress later polling.
     if (this._refreshSourcesPromise) return this._refreshSourcesPromise;
-    this._refreshSourcesPromise = this._doRefreshConfiguredSources(reason)
+    this._refreshSourcesPromise = this._doRefreshConfiguredTargets(reason, deviceIds, variableIds)
       .finally(() => { this._refreshSourcesPromise = null; });
     return this._refreshSourcesPromise;
   }
 
-  async _doRefreshConfiguredSources(reason = 'manual') {
+  async _doRefreshConfiguredTargets(reason = 'manual', deviceIds = [], variableIds = []) {
     this._pruneSourceCache();
-    const keys = this._configuredKeys();
-    if (!keys.length) {
-      this._lastSourceRefreshAt = Date.now();
-      this._emitDashboard();
-      return;
-    }
-
-    const parsed = keys.map(key => this._parseKey(key));
-    const deviceIds = [...new Set(parsed.filter(x => x.type === 'device').map(x => x.deviceId))];
-    const variableIds = [...new Set(parsed.filter(x => x.type === 'variable').map(x => x.variableId))];
+    if (!deviceIds.length && !variableIds.length) return;
 
     await Promise.all([
       ...deviceIds.map(deviceId => this._refreshConfiguredDevice(deviceId, false)),
       ...variableIds.map(variableId => this._refreshConfiguredVariable(variableId, false))
     ]);
 
-    this._lastSourceRefreshAt = Date.now();
     await this._recordBatteryHistory();
     this._emitDashboard();
   }
 
   async getDashboardForWidget() {
+    // Realtime remains the primary update path. If a configured integration is
+    // silent (or emits unusable generic realtime events), refresh only the
+    // targets whose cached value is actually stale. This keeps the widget live
+    // without returning to full-device polling on every widget request.
     const refreshMs = Math.min(300, Math.max(1, Number(this.visualConfig.refreshSeconds) || 30)) * 1000;
-    // A small tolerance prevents two widgets that poll at nearly the same moment
-    // from causing duplicate device reads. Only configured sources are refreshed.
-    const maxAge = Math.max(500, Math.floor(refreshMs * 0.8));
-    if (!this._lastSourceRefreshAt || Date.now() - this._lastSourceRefreshAt >= maxAge) {
-      await this._refreshConfiguredSources('widget-poll');
-    }
+    const maxAge = Math.max(3000, Math.floor(refreshMs * 0.9));
+    await this._refreshStaleConfiguredSources('widget-stale-fallback', maxAge);
     if (Date.now() - this._lastInsightsRefreshAt >= INSIGHTS_REFRESH_MS) {
       this._refreshBattery24hFromInsights().catch(err => this.error('Battery Insights refresh failed:', err));
     }
@@ -576,9 +664,9 @@ class DashboardBridgeApp extends Homey.App {
   }
 
   _debouncedRefresh(key, refreshFn, delay = 150) {
-    if (this._refreshDebounce.has(key)) {
-      this.homey.clearTimeout(this._refreshDebounce.get(key));
-    }
+    // Do not keep pushing the timer forward on every event. A chatty device can
+    // otherwise prevent the refresh callback from ever running.
+    if (this._refreshDebounce.has(key)) return;
     const timer = this.homey.setTimeout(async () => {
       this._refreshDebounce.delete(key);
       await refreshFn().catch(err => this.error('Realtime refresh failed:', err));
@@ -588,31 +676,49 @@ class DashboardBridgeApp extends Homey.App {
 
   _subscribeConfiguredSources() {
     this._clearSubscriptions();
-    const parsed = this._configuredKeys().map(key => this._parseKey(key));
-    const deviceIds = [...new Set(parsed.filter(x => x.type === 'device').map(x => x.deviceId))];
+    const deviceIds = this._configuredDeviceIds;
 
     for (const deviceId of deviceIds) {
       try {
         const api = this.homey.api.getApi(`homey:device:${deviceId}`);
         api.on('realtime', () => {
+          const now = Date.now();
+          this._markTargetRealtime('device', deviceId, now);
+          const targetKey = this._targetKey('device', deviceId);
+          const lastRead = Number(this._targetRealtimeRefreshAt.get(targetKey) || 0);
+          if (now - lastRead < REALTIME_REFRESH_MIN_MS) return;
+          this._targetRealtimeRefreshAt.set(targetKey, now);
           this._debouncedRefresh(
-          `device:${deviceId}`,
-          () => this._refreshConfiguredDevice(deviceId)
-        );
+            `device:${deviceId}`,
+            () => this._refreshConfiguredDevice(deviceId),
+            300
+          );
         });
         this._subscriptions.push(api);
       } catch (err) { this.error(`Unable to subscribe to device ${deviceId}:`, err); }
     }
 
-    if (parsed.some(x => x.type === 'variable')) {
+    if (this._configuredVariableIds.length) {
       try {
         const api = this.homey.api.getApi('homey:manager:logic');
         api.on('realtime', () => {
+          const now = Date.now();
+          let shouldRefresh = false;
+          for (const variableId of this._configuredVariableIds) {
+            this._markTargetRealtime('variable', variableId, now);
+            const targetKey = this._targetKey('variable', variableId);
+            const lastRead = Number(this._targetRealtimeRefreshAt.get(targetKey) || 0);
+            if (now - lastRead >= REALTIME_REFRESH_MIN_MS) {
+              this._targetRealtimeRefreshAt.set(targetKey, now);
+              shouldRefresh = true;
+            }
+          }
+          if (!shouldRefresh) return;
           this._debouncedRefresh(
-          'logic',
-          () => this._refreshConfiguredVariables(),
-          250
-        );
+            'logic',
+            () => this._refreshConfiguredVariables(),
+            400
+          );
         });
         this._subscriptions.push(api);
       } catch (err) { this.error('Unable to subscribe to Logic changes:', err); }
@@ -1082,6 +1188,12 @@ class DashboardBridgeApp extends Homey.App {
   async onUninit() {
     this._clearSubscriptions();
     if (this._refreshTimer) this.homey.clearInterval(this._refreshTimer);
+    this._refreshTimer = null;
+    this.sourceCache.clear();
+    this._targetRefreshAt.clear();
+    this._targetRealtimeAt.clear();
+    this._targetRealtimeRefreshAt.clear();
+    this._configuredDeviceCapabilities.clear();
   }
 }
 

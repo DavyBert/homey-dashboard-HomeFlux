@@ -180,3 +180,55 @@ https://buymeacoffee.com/davybert
 v0.6.46
 - Added native Dutch and English localization for the widget and settings page using Homey's locale system.
 - English is the fallback language; Dutch is shown automatically when Homey uses Dutch.
+
+
+v0.6.47
+- Added automatic widget text scaling so energy values remain inside their cards when the phone/system text size is enlarged.
+
+
+v0.6.49
+- Reworked large system-font handling: energy cards keep their normal layout and only their inner content is proportionally scaled when needed.
+- Removed the v0.6.48 fitting approach that could enlarge or hide card content.
+
+
+v0.6.50
+- Replaced dynamic energy-card text fitting with a fixed configurable widget text size (80%, 90%, 100% or 110%).
+- Widget text size is kept independent from the system font scaling for a more stable layout.
+
+
+v0.6.51
+- Removed dynamic card/text autoscaling from the widget.
+- Widget text size now changes only through the fixed app setting.
+- Added an Extra compact (70%) text-size option.
+
+
+v0.6.52
+- Added 50% and 60% fixed widget text sizes.
+- Added a separate fixed title-size setting for energy-card names.
+- Added custom names for Solar, Grid, Battery, Home consumption and EV charger cards.
+
+
+v0.6.53
+- Added the official Homey manifest support URL for GitHub Issues.
+- Added a subtle Buy Me a Coffee link to the settings page.
+
+
+v0.6.54
+- Reduced periodic CPU usage by tracking freshness per configured device and Logic variable.
+- Realtime updates now suppress unnecessary polling for recently active sources.
+- Widget refreshes only reread stale sources instead of all configured sources.
+- Background fallback polling for silent sources is reduced to at most once every five minutes.
+
+
+v0.6.55
+- Reduced CPU usage by making widget refreshes cache-only.
+- Runtime device refreshes now build only configured capabilities instead of every capability on a device.
+- Realtime-triggered API reads are throttled to avoid bursts.
+- Cached configuration indexes reduce repeated allocations and memory churn.
+- Battery Insights refresh reduced to once every 6 hours after startup.
+
+
+v0.6.56
+- Restored live widget updates with a selective stale-source fallback.
+- Fixed realtime debounce so busy devices can no longer postpone updates indefinitely.
+- Realtime event noise no longer marks cached values as fresh until a real source read completes.
