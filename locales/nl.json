@@ -77,7 +77,7 @@
     "snow": "Sneeuw",
     "thunder": "Onweer",
     "refresh": "Vernieuwingsfrequentie",
-    "refresh_hint": "Periodieke synchronisatie en widget fallback. Realtime updates blijven daarnaast actief.",
+    "refresh_hint": "Widget fallback voor stille bronnen. Buiten een geopende widget voert HomeFlux geen periodieke bronpolling uit.",
     "second": "1 seconde",
     "seconds": "__count__ seconden",
     "minute": "1 minuut",

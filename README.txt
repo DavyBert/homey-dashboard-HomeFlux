@@ -246,3 +246,17 @@ v0.6.58
 v0.6.59
 - Audited all 10 PV, battery and EV charger slots for feature parity.
 - Added per-battery animation direction for batteries 2 through 10.
+
+
+## v0.6.60
+- Idle optimization: removed the recurring backend polling timer.
+- Device/API reads now run only while a widget is active or when explicitly requested.
+- Realtime refresh cadence now follows the configured widget refresh interval instead of a 3-second cap.
+- Silent-source fallback is request-driven by the widget; Insights refresh is also request-driven.
+
+
+v0.6.61
+- Reduced idle CPU work by making realtime subscriptions bookkeeping-only; device reads are now request-driven by the widget.
+- Batched dirty-source refreshes and removed duplicate dashboard emissions during widget polling.
+- Reduced temporary memory allocations while parsing API and Insights responses.
+- Battery history is capped in memory and Insights refreshes are lazy and single-flight.
