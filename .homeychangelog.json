@@ -19,5 +19,8 @@
   },
   "0.6.44": {
     "en": "Improved energy flow animations, smarter battery handling, cleaner device selection, and a dynamic EV charger card."
+  },
+  "0.6.45": {
+    "en": "Fixed widget loading error"
   }
 }
