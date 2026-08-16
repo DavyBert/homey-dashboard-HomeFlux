@@ -1,4 +1,4 @@
 'use strict';
 module.exports = {
-  async getDashboard({ homey }) { return homey.app.getDashboard(); }
+  async getDashboard({ homey }) { return homey.app.getDashboardForWidget(); }
 };

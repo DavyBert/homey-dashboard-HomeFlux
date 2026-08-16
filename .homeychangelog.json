@@ -4,5 +4,8 @@
   },
   "0.6.21": {
     "en": "Updated weather scenes"
+  },
+  "0.6.26": {
+    "en": "Optimize runtime cache and CPU usage"
   }
 }

@@ -9,7 +9,8 @@ const ENERGY_FIELDS = [
 
 const HISTORY_SAMPLE_MS = 10 * 60 * 1000;
 const HISTORY_KEEP_MS = 30 * 60 * 60 * 1000;
-const BACKEND_FALLBACK_REFRESH_MS = 60 * 1000;
+const INSIGHTS_REFRESH_MS = 15 * 60 * 1000;
+const FALLBACK_REFRESH_MS = 60 * 1000;
 
 class DashboardBridgeApp extends Homey.App {
   async onInit() {
@@ -24,9 +25,14 @@ class DashboardBridgeApp extends Homey.App {
     this._subscriptions = [];
     this._refreshTimer = null;
     this._refreshDebounce = new Map();
+    this._refreshSourcesPromise = null;
+    this._lastSourceRefreshAt = 0;
+    this._batteryInsights24h = null;
+    this._lastInsightsRefreshAt = 0;
 
     await this._ensureOwnerSession();
     await this._refreshConfiguredSources('initial').catch(err => this.error('Initial source refresh failed:', err));
+    await this._refreshBattery24hFromInsights(true).catch(err => this.error('Initial battery Insights refresh failed:', err));
     await this._migrateLegacyDeviceLabels().catch(err => this.error('Label migration failed:', err));
     this._subscribeConfiguredSources();
     this._restartRefreshTimer();
@@ -62,12 +68,13 @@ class DashboardBridgeApp extends Homey.App {
   _restartRefreshTimer() {
     if (this._refreshTimer) this.homey.clearInterval(this._refreshTimer);
 
-    // The widget refresh interval only controls how often the UI reads HomeFlux' cache.
-    // Runtime device polling is deliberately much slower because realtime events are
-    // the primary update path. This keeps 1-3 second widget refreshes inexpensive.
+    // Realtime events are the primary update path. The widget itself requests a
+    // selective refresh at the configured interval. This slow fallback keeps the
+    // cache healthy when no widget is open, without polling every Homey device.
     this._refreshTimer = this.homey.setInterval(() => {
       this._refreshConfiguredSources('fallback').catch(err => this.error('Fallback source refresh failed:', err));
-    }, BACKEND_FALLBACK_REFRESH_MS);
+      this._refreshBattery24hFromInsights().catch(err => this.error('Battery Insights refresh failed:', err));
+    }, FALLBACK_REFRESH_MS);
   }
 
   _values(obj) {
@@ -292,9 +299,21 @@ class DashboardBridgeApp extends Homey.App {
   }
 
   async _refreshConfiguredSources(reason = 'manual') {
+    // Collapse overlapping widget, realtime and fallback refreshes into one read.
+    if (this._refreshSourcesPromise) return this._refreshSourcesPromise;
+    this._refreshSourcesPromise = this._doRefreshConfiguredSources(reason)
+      .finally(() => { this._refreshSourcesPromise = null; });
+    return this._refreshSourcesPromise;
+  }
+
+  async _doRefreshConfiguredSources(reason = 'manual') {
     this._pruneSourceCache();
     const keys = this._configuredKeys();
-    if (!keys.length) { this._emitDashboard(); return; }
+    if (!keys.length) {
+      this._lastSourceRefreshAt = Date.now();
+      this._emitDashboard();
+      return;
+    }
 
     const parsed = keys.map(key => this._parseKey(key));
     const deviceIds = [...new Set(parsed.filter(x => x.type === 'device').map(x => x.deviceId))];
@@ -305,8 +324,23 @@ class DashboardBridgeApp extends Homey.App {
       ...variableIds.map(variableId => this._refreshConfiguredVariable(variableId, false))
     ]);
 
+    this._lastSourceRefreshAt = Date.now();
     await this._recordBatteryHistory();
     this._emitDashboard();
+  }
+
+  async getDashboardForWidget() {
+    const refreshMs = Math.min(300, Math.max(1, Number(this.visualConfig.refreshSeconds) || 30)) * 1000;
+    // A small tolerance prevents two widgets that poll at nearly the same moment
+    // from causing duplicate device reads. Only configured sources are refreshed.
+    const maxAge = Math.max(500, Math.floor(refreshMs * 0.8));
+    if (!this._lastSourceRefreshAt || Date.now() - this._lastSourceRefreshAt >= maxAge) {
+      await this._refreshConfiguredSources('widget-poll');
+    }
+    if (Date.now() - this._lastInsightsRefreshAt >= INSIGHTS_REFRESH_MS) {
+      this._refreshBattery24hFromInsights().catch(err => this.error('Battery Insights refresh failed:', err));
+    }
+    return this.getDashboard();
   }
 
   async _recordBatteryHistory(now = Date.now()) {
@@ -342,6 +376,89 @@ class DashboardBridgeApp extends Homey.App {
     }
     if (!best || bestDiff > 45 * 60 * 1000) return null;
     return { ...best, valueFormatted: this._formatValue(best.value) };
+  }
+
+
+  _normalizeInsightEntries(payload) {
+    const rows = Array.isArray(payload) ? payload : (payload && Array.isArray(payload.values) ? payload.values : []);
+    const out = [];
+    for (const row of rows) {
+      let ts;
+      let value;
+      if (Array.isArray(row)) {
+        ts = row[0];
+        value = row[1];
+      } else if (row && typeof row === 'object') {
+        ts = row.t ?? row.ts ?? row.time ?? row.date ?? row.datetime ?? row.createdAt;
+        value = row.v ?? row.value;
+      }
+      const parsedTs = typeof ts === 'number' ? ts : Date.parse(ts);
+      const parsedValue = Number(value);
+      if (Number.isFinite(parsedTs) && Number.isFinite(parsedValue)) out.push({ ts: parsedTs, value: parsedValue });
+    }
+    return out;
+  }
+
+  async _refreshBattery24hFromInsights(force = false) {
+    if (!force && Date.now() - this._lastInsightsRefreshAt < INSIGHTS_REFRESH_MS) return this._batteryInsights24h;
+    this._lastInsightsRefreshAt = Date.now();
+
+    const parsed = this._parseKey(this.energyConfig.batterySoc);
+    if (parsed.type !== 'device' || !parsed.deviceId || !parsed.capabilityId) {
+      this._batteryInsights24h = null;
+      return null;
+    }
+
+    const uri = `homey:device:${parsed.deviceId}`;
+    // Homey Pro generations have used both the fully-qualified log id and the
+    // plain capability id. Try the current fully-qualified form first.
+    const ids = [`${uri}:${parsed.capabilityId}`, parsed.capabilityId];
+    let payload = null;
+    for (const id of ids) {
+      try {
+        payload = await this._apiGet(`/api/manager/insights/log/${encodeURIComponent(uri)}/${encodeURIComponent(id)}/entry?resolution=last24Hours`);
+        if (payload) break;
+      } catch (err) {
+        // Try the legacy id form before falling back to locally sampled history.
+      }
+    }
+
+    const entries = this._normalizeInsightEntries(payload);
+    if (!entries.length) {
+      this._batteryInsights24h = null;
+      return null;
+    }
+
+    const target = Date.now() - (24 * 60 * 60 * 1000);
+    let best = null;
+    let bestDiff = Infinity;
+    for (const entry of entries) {
+      const diff = Math.abs(entry.ts - target);
+      if (diff < bestDiff) { bestDiff = diff; best = entry; }
+    }
+
+    // Insights may aggregate points. Two hours is deliberately tolerant while
+    // still preventing a misleading value from a much newer part of the graph.
+    if (!best || bestDiff > 2 * 60 * 60 * 1000) {
+      this._batteryInsights24h = null;
+      return null;
+    }
+
+    const current = this._sourceData(this.energyConfig.batterySoc);
+    this._batteryInsights24h = {
+      ts: best.ts,
+      value: best.value,
+      unit: (current && current.unit) || '%',
+      valueFormatted: this._formatValue(best.value),
+      source: 'insights'
+    };
+    return this._batteryInsights24h;
+  }
+
+  _battery24hAgoBest() {
+    if (this._batteryInsights24h) return this._batteryInsights24h;
+    const local = this._battery24hAgo();
+    return local ? { ...local, source: 'local' } : null;
   }
 
   async _migrateLegacyDeviceLabels() {
@@ -648,7 +765,7 @@ class DashboardBridgeApp extends Homey.App {
       batteryPower: this._sourceData(this.energyConfig.batteryPower),
       batteryStatus: batteryStatus.text,
       batteryStatusSource: batteryStatus.source,
-      battery24hAgo: this._battery24hAgo(),
+      battery24hAgo: this._battery24hAgoBest(),
       evPower: this._sourceData(this.energyConfig.evPower),
       evStatus: this._sourceData(this.energyConfig.evStatus),
       gridPower: this._sourceData(this.energyConfig.gridPower),

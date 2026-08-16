@@ -75,3 +75,19 @@ v0.6.22 diagnostics: adds low-overhead aggregated runtime logging every 60 secon
 - Production build without diagnostics logging or diagnostics API.
 - Keeps the v0.6.24 cache optimization: only configured HomeFlux sources are retained in the runtime cache.
 - Realtime events remain the primary update path, with a 60-second selected-source fallback refresh.
+
+## v0.6.26
+- Herstelt live widget-updates met selectieve polling op het ingestelde refreshinterval.
+- Tijdens runtime worden uitsluitend de geconfigureerde devices/capabilities uitgelezen; er wordt geen volledige devicescan uitgevoerd.
+- Realtime events blijven actief als extra snelle updatebron.
+
+## v0.6.27
+- Battery SOC from 24 hours ago now prefers Homey Insights and falls back to local samples when Insights is unavailable.
+- Widget refreshes selectively refresh only configured sources on demand, with single-flight cache updates to prevent duplicate polling.
+- Background fallback refresh remains low-frequency while realtime events stay enabled.
+
+## v0.6.28
+- Battery status and battery power are more prominent in the widget.
+- Battery charging power is green; discharging power is blue.
+- Grid import is blue; grid export is green.
+
