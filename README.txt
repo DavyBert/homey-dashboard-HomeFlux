@@ -57,3 +57,27 @@ HomeFlux - Zie waar je energie naartoe gaat.
 - Unieke weerachtergronden toegevoegd voor mist, sneeuw en onweer.
 - Zowel dag- als avondschemering/nachtvarianten geïntegreerd.
 - Automatische weermapping uitgebreid: mist, sneeuw en onweer worden nu als aparte scene getoond.
+
+
+## v0.6.21
+- CPU optimization: runtime only refreshes configured devices/capabilities.
+- Realtime device events now refresh only the affected configured device instead of all configured sources.
+- The 1-300 second widget refresh interval now only controls UI cache reads; backend fallback polling is limited to once per minute.
+- Full device/Logic scans remain limited to configuration/source selection.
+
+
+v0.6.22 diagnostics: adds low-overhead aggregated runtime logging every 60 seconds for CPU, memory, widget API calls, Homey API calls, realtime events, refresh/debounce activity, subscriptions and battery-history writes.
+
+v0.6.23
+- Fixed diagnostics API registration so the diagnostics build starts correctly on Homey.
+
+## v0.6.24 diagnostics
+- Runtime source cache is now limited to configured HomeFlux sources only.
+- Opening/scanning the settings page no longer fills the runtime cache with every Homey capability.
+- Stale cache entries are pruned after configuration changes and before fallback refreshes.
+- Diagnostics now report configuredCacheKeys and unexpectedCacheEntries.
+
+## v0.6.25
+- Production build without diagnostics logging or diagnostics API.
+- Keeps the v0.6.24 cache optimization: only configured HomeFlux sources are retained in the runtime cache.
+- Realtime events remain the primary update path, with a 60-second selected-source fallback refresh.

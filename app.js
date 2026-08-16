@@ -9,6 +9,7 @@ const ENERGY_FIELDS = [
 
 const HISTORY_SAMPLE_MS = 10 * 60 * 1000;
 const HISTORY_KEEP_MS = 30 * 60 * 60 * 1000;
+const BACKEND_FALLBACK_REFRESH_MS = 60 * 1000;
 
 class DashboardBridgeApp extends Homey.App {
   async onInit() {
@@ -25,12 +26,11 @@ class DashboardBridgeApp extends Homey.App {
     this._refreshDebounce = new Map();
 
     await this._ensureOwnerSession();
-    await this._refreshConfiguredSources().catch(err => this.error('Initial source refresh failed:', err));
+    await this._refreshConfiguredSources('initial').catch(err => this.error('Initial source refresh failed:', err));
     await this._migrateLegacyDeviceLabels().catch(err => this.error('Label migration failed:', err));
     this._subscribeConfiguredSources();
     this._restartRefreshTimer();
-
-    this.log(`Dashboard Bridge v${this.homey.manifest.version} initialized`);
+    this.log(`HomeFlux v${this.homey.manifest.version} initialized`);
   }
 
   _normalizeEnergyConfig(config) {
@@ -61,10 +61,13 @@ class DashboardBridgeApp extends Homey.App {
 
   _restartRefreshTimer() {
     if (this._refreshTimer) this.homey.clearInterval(this._refreshTimer);
-    const ms = this.visualConfig.refreshSeconds * 1000;
+
+    // The widget refresh interval only controls how often the UI reads HomeFlux' cache.
+    // Runtime device polling is deliberately much slower because realtime events are
+    // the primary update path. This keeps 1-3 second widget refreshes inexpensive.
     this._refreshTimer = this.homey.setInterval(() => {
-      this._refreshConfiguredSources().catch(err => this.error('Periodic source refresh failed:', err));
-    }, ms);
+      this._refreshConfiguredSources('fallback').catch(err => this.error('Fallback source refresh failed:', err));
+    }, BACKEND_FALLBACK_REFRESH_MS);
   }
 
   _values(obj) {
@@ -157,12 +160,14 @@ class DashboardBridgeApp extends Homey.App {
   }
 
   async listSources() {
+    // Source discovery is only used by the settings page. Do NOT copy the full
+    // Homey device/capability list into the runtime cache: that cache must stay
+    // limited to sources that HomeFlux is actually configured to use.
     const [devices, variables] = await Promise.all([this._getDevices(), this._getVariables()]);
     const sources = [];
     for (const device of devices) sources.push(...this._deviceSources(device));
     for (const variable of variables) sources.push(this._variableSource(variable));
     sources.sort((a, b) => a.label.localeCompare(b.label));
-    this.sourceCache = new Map(sources.map(source => [source.key, source]));
     return sources;
   }
 
@@ -184,12 +189,15 @@ class DashboardBridgeApp extends Homey.App {
       unit: item.unit ? String(item.unit) : ''
     }));
 
+    // Drop values that belonged to a previous configuration immediately.
+    this._pruneSourceCache();
+
     this.revision += 1;
     await this.homey.settings.set('energyConfig', this.energyConfig);
     await this.homey.settings.set('selection', this.selection);
     await this.homey.settings.set('visualConfig', this.visualConfig);
     await this.homey.settings.set('revision', this.revision);
-    await this._refreshConfiguredSources();
+    await this._refreshConfiguredSources('config-save');
     this._subscribeConfiguredSources();
     this._restartRefreshTimer();
     this._emitDashboard();
@@ -221,28 +229,81 @@ class DashboardBridgeApp extends Homey.App {
     return [...keys];
   }
 
-  async _refreshConfiguredSources() {
+  _pruneSourceCache() {
+    const configured = new Set(this._configuredKeys());
+    let removed = 0;
+    for (const key of this.sourceCache.keys()) {
+      if (!configured.has(key)) {
+        this.sourceCache.delete(key);
+        removed += 1;
+      }
+    }
+    return removed;
+  }
+
+  _configuredCapabilitiesForDevice(deviceId) {
+    const capabilities = new Set();
+    for (const key of this._configuredKeys()) {
+      const parsed = this._parseKey(key);
+      if (parsed.type === 'device' && parsed.deviceId === deviceId && parsed.capabilityId) {
+        capabilities.add(parsed.capabilityId);
+      }
+    }
+    return capabilities;
+  }
+
+  async _refreshConfiguredDevice(deviceId, emit = true) {
+    const wantedCapabilities = this._configuredCapabilitiesForDevice(deviceId);
+    if (!wantedCapabilities.size) return;
+
+    try {
+      const device = await this._apiGet(`/api/manager/devices/device/${encodeURIComponent(deviceId)}`);
+      for (const source of this._deviceSources(device)) {
+        if (wantedCapabilities.has(source.capabilityId)) this.sourceCache.set(source.key, source);
+      }
+      await this._recordBatteryHistory();
+      if (emit) this._emitDashboard();
+    } catch (err) {
+      this.error(`Unable to refresh device ${deviceId}:`, err);
+    }
+  }
+
+  async _refreshConfiguredVariable(variableId, emit = true) {
+    const key = `variable:${variableId}`;
+    if (!this._configuredKeys().includes(key)) return;
+
+    try {
+      const variable = await this._apiGet(`/api/manager/logic/variable/${encodeURIComponent(variableId)}`);
+      this.sourceCache.set(key, this._variableSource(variable));
+      if (emit) this._emitDashboard();
+    } catch (err) {
+      this.error(`Unable to refresh Logic variable ${variableId}:`, err);
+    }
+  }
+
+  async _refreshConfiguredVariables(emit = true) {
+    const variableIds = [...new Set(this._configuredKeys()
+      .map(key => this._parseKey(key))
+      .filter(parsed => parsed.type === 'variable')
+      .map(parsed => parsed.variableId))];
+
+    await Promise.all(variableIds.map(variableId => this._refreshConfiguredVariable(variableId, false)));
+    if (emit && variableIds.length) this._emitDashboard();
+  }
+
+  async _refreshConfiguredSources(reason = 'manual') {
+    this._pruneSourceCache();
     const keys = this._configuredKeys();
     if (!keys.length) { this._emitDashboard(); return; }
 
-    const parsed = keys.map(key => ({ key, parsed: this._parseKey(key) }));
-    const deviceIds = [...new Set(parsed.filter(x => x.parsed.type === 'device').map(x => x.parsed.deviceId))];
-    const variableIds = [...new Set(parsed.filter(x => x.parsed.type === 'variable').map(x => x.parsed.variableId))];
+    const parsed = keys.map(key => this._parseKey(key));
+    const deviceIds = [...new Set(parsed.filter(x => x.type === 'device').map(x => x.deviceId))];
+    const variableIds = [...new Set(parsed.filter(x => x.type === 'variable').map(x => x.variableId))];
 
-    await Promise.all(deviceIds.map(async deviceId => {
-      try {
-        const device = await this._apiGet(`/api/manager/devices/device/${encodeURIComponent(deviceId)}`);
-        for (const source of this._deviceSources(device)) this.sourceCache.set(source.key, source);
-      } catch (err) { this.error(`Unable to refresh device ${deviceId}:`, err); }
-    }));
-
-    await Promise.all(variableIds.map(async variableId => {
-      try {
-        const variable = await this._apiGet(`/api/manager/logic/variable/${encodeURIComponent(variableId)}`);
-        const source = this._variableSource(variable);
-        this.sourceCache.set(source.key, source);
-      } catch (err) { this.error(`Unable to refresh Logic variable ${variableId}:`, err); }
-    }));
+    await Promise.all([
+      ...deviceIds.map(deviceId => this._refreshConfiguredDevice(deviceId, false)),
+      ...variableIds.map(variableId => this._refreshConfiguredVariable(variableId, false))
+    ]);
 
     await this._recordBatteryHistory();
     this._emitDashboard();
@@ -307,11 +368,13 @@ class DashboardBridgeApp extends Homey.App {
     this._refreshDebounce.clear();
   }
 
-  _debouncedRefresh(key, delay = 150) {
-    if (this._refreshDebounce.has(key)) this.homey.clearTimeout(this._refreshDebounce.get(key));
+  _debouncedRefresh(key, refreshFn, delay = 150) {
+    if (this._refreshDebounce.has(key)) {
+      this.homey.clearTimeout(this._refreshDebounce.get(key));
+    }
     const timer = this.homey.setTimeout(async () => {
       this._refreshDebounce.delete(key);
-      await this._refreshConfiguredSources().catch(err => this.error('Realtime refresh failed:', err));
+      await refreshFn().catch(err => this.error('Realtime refresh failed:', err));
     }, delay);
     this._refreshDebounce.set(key, timer);
   }
@@ -324,7 +387,12 @@ class DashboardBridgeApp extends Homey.App {
     for (const deviceId of deviceIds) {
       try {
         const api = this.homey.api.getApi(`homey:device:${deviceId}`);
-        api.on('realtime', () => this._debouncedRefresh(`device:${deviceId}`));
+        api.on('realtime', () => {
+          this._debouncedRefresh(
+          `device:${deviceId}`,
+          () => this._refreshConfiguredDevice(deviceId)
+        );
+        });
         this._subscriptions.push(api);
       } catch (err) { this.error(`Unable to subscribe to device ${deviceId}:`, err); }
     }
@@ -332,7 +400,13 @@ class DashboardBridgeApp extends Homey.App {
     if (parsed.some(x => x.type === 'variable')) {
       try {
         const api = this.homey.api.getApi('homey:manager:logic');
-        api.on('realtime', () => this._debouncedRefresh('logic', 250));
+        api.on('realtime', () => {
+          this._debouncedRefresh(
+          'logic',
+          () => this._refreshConfiguredVariables(),
+          250
+        );
+        });
         this._subscriptions.push(api);
       } catch (err) { this.error('Unable to subscribe to Logic changes:', err); }
     }
