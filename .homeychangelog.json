@@ -10,5 +10,8 @@
   },
   "0.6.29": {
     "en": "Improved live data updates and energy flow visualization."
+  },
+  "0.6.33": {
+    "en": "weather source clarification"
   }
 }
