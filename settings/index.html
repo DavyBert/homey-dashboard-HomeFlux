@@ -54,6 +54,7 @@
     <label class="threshold"><div class="map-label">Batterij 1 animatierichting</div><div class="hint">Extra optie om alleen de richting van de bewegende lijn om te keren.</div><select id="batteryLineMotion"><option value="invert_flow">Omgekeerde bewegingsrichting (standaard)</option><option value="follow_flow">Automatisch volgens laden/ontladen</option></select></label>
     <label class="threshold hidden-row" id="battery2DirectionWrap"><div class="map-label">Batterij 2 vermogensrichting</div><div class="hint">Optioneel apart instelbaar voor een tweede batterij.</div><select id="battery2Direction"><option value="positive_discharge">Positief = ontladen · negatief = laden</option><option value="positive_charge">Positief = laden · negatief = ontladen</option></select></label>
     <label class="threshold hidden-row" id="battery2LineDirectionWrap"><div class="map-label">Batterij 2 lijnrichting</div><div class="hint">Alleen nodig als de lijnrichting anders moet zijn dan het vermogen.</div><select id="battery2LineDirection"><option value="follow_power">Zelfde als vermogensrichting</option><option value="positive_discharge">Positief = ontladen · negatief = laden</option><option value="positive_charge">Positief = laden · negatief = ontladen</option></select></label>
+    <label class="threshold hidden-row" id="battery2LineMotionWrap"><div class="map-label">Batterij 2 animatierichting</div><div class="hint">Bepaalt afzonderlijk de bewegingsrichting van batterij 2.</div><select id="battery2LineMotion"><option value="invert_flow">Omgekeerde bewegingsrichting (standaard)</option><option value="follow_flow">Automatisch volgens laden/ontladen</option></select></label>
   </div>
 </div>
 
@@ -132,10 +133,11 @@ function onHomeyReady(Homey){
      setOptionText(`battery${suffix}Direction`,'positive_discharge','settings.positive_discharge'); setOptionText(`battery${suffix}Direction`,'positive_charge','settings.positive_charge');
      setFieldText(`battery${suffix}LineDirection`,'settings.battery_line_direction',index===1?'settings.battery_line_direction1_hint':'settings.battery_line_direction_hint',{index});
      setOptionText(`battery${suffix}LineDirection`,'follow_power','settings.follow_power'); setOptionText(`battery${suffix}LineDirection`,'positive_discharge','settings.positive_discharge'); setOptionText(`battery${suffix}LineDirection`,'positive_charge','settings.positive_charge');
+     setFieldText(`battery${suffix}LineMotion`,'settings.battery_motion',index===1?'settings.battery_motion1_hint':'settings.battery_motion_hint',{index});
+     setOptionText(`battery${suffix}LineMotion`,'invert_flow','settings.motion_invert'); setOptionText(`battery${suffix}LineMotion`,'follow_flow','settings.motion_auto');
    }
    setFieldText('gridPower','settings.grid_label','settings.grid_hint'); setFieldText('homePower','settings.home_label','settings.home_hint');
    setFieldText('batteryThresholdKw','settings.battery_threshold','settings.battery_threshold_hint'); setFieldText('gridThresholdW','settings.grid_threshold','settings.grid_threshold_hint');
-   setFieldText('batteryLineMotion','settings.battery_motion','settings.battery_motion_hint'); setOptionText('batteryLineMotion','invert_flow','settings.motion_invert'); setOptionText('batteryLineMotion','follow_flow','settings.motion_auto');
    if(cards[2]){const h=cards[2].querySelector('h2');const sub=cards[2].querySelector(':scope > .sub');if(h)h.textContent=tr('settings.background_title');if(sub)sub.textContent=tr('settings.background_intro');}
    setFieldText('backgroundMode','settings.mode','settings.mode_hint'); setOptionText('backgroundMode','auto','settings.mode_auto'); setOptionText('backgroundMode','manual','settings.mode_manual');
    setFieldText('weatherSource','settings.weather_source','settings.weather_source_hint'); setFieldText('scenePeriod','settings.period','settings.period_hint'); setOptionText('scenePeriod','auto','settings.period_auto');setOptionText('scenePeriod','day','settings.day');setOptionText('scenePeriod','night','settings.night');
@@ -167,6 +169,7 @@ function onHomeyReady(Homey){
      showRow(`rowBatteryStatus${index}`,batteryCount>=index);
      showRow(`battery${index}DirectionWrap`,batteryCount>=index);
      showRow(`battery${index}LineDirectionWrap`,batteryCount>=index);
+     showRow(`battery${index}LineMotionWrap`,batteryCount>=index);
      showRow(`rowEvPower${index}`,chargerCount>=index);
      showRow(`rowEvStatus${index}`,chargerCount>=index);
    }
@@ -184,6 +187,7 @@ function onHomeyReady(Homey){
      const evStatus=document.createElement('div');evStatus.className='map-row hidden-row';evStatus.id=`rowEvStatus${index}`;evStatus.innerHTML=`<div><div class="map-label">🔌 Autolader ${index} status</div><div class="hint">Optionele laderstatus.</div></div><select id="ev${index}Status"></select>`;gridRow.parentNode.insertBefore(evStatus,gridRow);
      const direction=document.createElement('label');direction.className='threshold hidden-row';direction.id=`battery${index}DirectionWrap`;direction.innerHTML=`<div class="map-label">Batterij ${index} vermogensrichting</div><div class="hint">Apart instelbaar per batterij.</div><select id="battery${index}Direction"><option value="positive_discharge">Positief = ontladen · negatief = laden</option><option value="positive_charge">Positief = laden · negatief = ontladen</option></select>`;batteryOptions.appendChild(direction);
      const lineDirection=document.createElement('label');lineDirection.className='threshold hidden-row';lineDirection.id=`battery${index}LineDirectionWrap`;lineDirection.innerHTML=`<div class="map-label">Batterij ${index} lijnrichting</div><div class="hint">Bepaalt de interpretatie van deze batterij voor de gezamenlijke lijn.</div><select id="battery${index}LineDirection"><option value="follow_power">Zelfde als vermogensrichting</option><option value="positive_discharge">Positief = ontladen · negatief = laden</option><option value="positive_charge">Positief = laden · negatief = ontladen</option></select>`;batteryOptions.appendChild(lineDirection);
+     const lineMotion=document.createElement('label');lineMotion.className='threshold hidden-row';lineMotion.id=`battery${index}LineMotionWrap`;lineMotion.innerHTML=`<div class="map-label">Batterij ${index} animatierichting</div><div class="hint">Bepaalt afzonderlijk de bewegingsrichting van batterij ${index}.</div><select id="battery${index}LineMotion"><option value="invert_flow">Omgekeerde bewegingsrichting (standaard)</option><option value="follow_flow">Automatisch volgens laden/ontladen</option></select>`;batteryOptions.appendChild(lineMotion);
    }
  }
 
@@ -260,8 +264,8 @@ function onHomeyReady(Homey){
      $(`battery${suffix}CapacityKwh`).value=state.energyConfig[`battery${suffix}CapacityKwh`]||'';
      $(`battery${suffix}Direction`).value=state.energyConfig[`battery${suffix}Direction`]||(state.energyConfig[`battery${suffix}Invert`]?'positive_discharge':'positive_discharge');
      $(`battery${suffix}LineDirection`).value=state.energyConfig[`battery${suffix}LineDirection`]||'follow_power';
+     $(`battery${suffix}LineMotion`).value=state.energyConfig[`battery${suffix}LineMotion`]||'invert_flow';
    }
-   $('batteryLineMotion').value=state.energyConfig.batteryLineMotion || 'invert_flow';
    $('backgroundMode').value=state.visualConfig.backgroundMode || 'auto';
    $('scenePeriod').value=state.visualConfig.periodMode || 'auto';
    $('sceneWeather').value=state.visualConfig.weather || 'clear';
@@ -326,7 +330,6 @@ function onHomeyReady(Homey){
    energyConfig.solarCount=Math.max(1,Math.min(10,Number($('solarCount').value||1)));
    energyConfig.batteryCount=Math.max(1,Math.min(10,Number($('batteryCount').value||1)));
    energyConfig.chargerCount=Math.max(1,Math.min(10,Number($('chargerCount').value||1)));
-   energyConfig.batteryLineMotion=$('batteryLineMotion').value||'invert_flow';
    const configuredBatterySoc=[];
    for(let index=1;index<=10;index+=1){
      const suffix=index===1?'':String(index);
@@ -336,9 +339,10 @@ function onHomeyReady(Homey){
      energyConfig[`${batteryPrefix}CapacityKwh`]=Number($(`${batteryPrefix}CapacityKwh`).value||0);
      energyConfig[`${batteryPrefix}Direction`]=$(`${batteryPrefix}Direction`).value||'positive_discharge';
      energyConfig[`${batteryPrefix}LineDirection`]=$(`${batteryPrefix}LineDirection`).value||'follow_power';
+     energyConfig[`${batteryPrefix}LineMotion`]=$(`${batteryPrefix}LineMotion`).value||'invert_flow';
      energyConfig[`${batteryPrefix}Invert`]=energyConfig[`${batteryPrefix}Direction`]==='positive_discharge';
      if(index>energyConfig.solarCount) energyConfig[solarKey]='';
-     if(index>energyConfig.batteryCount){energyConfig[`${batteryPrefix}Soc`]='';energyConfig[`${batteryPrefix}Power`]='';energyConfig[`${batteryPrefix}Status`]='';energyConfig[`${batteryPrefix}CapacityKwh`]=0;}
+     if(index>energyConfig.batteryCount){energyConfig[`${batteryPrefix}Soc`]='';energyConfig[`${batteryPrefix}Power`]='';energyConfig[`${batteryPrefix}Status`]='';energyConfig[`${batteryPrefix}CapacityKwh`]=0;energyConfig[`${batteryPrefix}Direction`]='positive_discharge';energyConfig[`${batteryPrefix}LineDirection`]='follow_power';energyConfig[`${batteryPrefix}LineMotion`]='invert_flow';energyConfig[`${batteryPrefix}Invert`]=true;}
      if(index>energyConfig.chargerCount){energyConfig[`${evPrefix}Power`]='';energyConfig[`${evPrefix}Status`]='';}
      if(index<=energyConfig.batteryCount && energyConfig[`${batteryPrefix}Soc`]) configuredBatterySoc.push(batteryPrefix);
    }

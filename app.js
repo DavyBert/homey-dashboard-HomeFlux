@@ -64,8 +64,7 @@ class DashboardBridgeApp extends Homey.App {
       gridPower: c.gridPower || '',
       gridThresholdW: Number.isFinite(Number(c.gridThresholdW)) ? Math.max(0, Number(c.gridThresholdW)) : 50,
       homePower: c.homePower || '',
-      batteryThresholdKw: Number.isFinite(Number(c.batteryThresholdKw)) ? Number(c.batteryThresholdKw) : 0.2,
-      batteryLineMotion: c.batteryLineMotion || 'invert_flow'
+      batteryThresholdKw: Number.isFinite(Number(c.batteryThresholdKw)) ? Number(c.batteryThresholdKw) : 0.2
     };
 
     let inferredSolarCount = 1;
@@ -91,6 +90,7 @@ class DashboardBridgeApp extends Homey.App {
         || (c[`${batteryPrefix}Invert`] ? 'positive_discharge' : 'positive_discharge');
       normalized[`${batteryPrefix}Invert`] = Boolean(c[`${batteryPrefix}Invert`]);
       normalized[`${batteryPrefix}LineDirection`] = c[`${batteryPrefix}LineDirection`] || 'follow_power';
+      normalized[`${batteryPrefix}LineMotion`] = c[`${batteryPrefix}LineMotion`] || (index === 1 ? (c.batteryLineMotion || 'invert_flow') : 'invert_flow');
       if (normalized[`${batteryPrefix}Soc`] || normalized[`${batteryPrefix}Power`] || normalized[`${batteryPrefix}Status`]) inferredBatteryCount = index;
 
       normalized[`${evPrefix}Power`] = c[`${evPrefix}Power`] || '';
@@ -848,6 +848,31 @@ class DashboardBridgeApp extends Homey.App {
     return count ? total : null;
   }
 
+  _batteryLineMotionReverse() {
+    let reverseWeight = 0;
+    let forwardWeight = 0;
+    const thresholdW = Math.max(0, Number(this.energyConfig.batteryThresholdKw) || 0.2) * 1000;
+
+    for (let index = 1; index <= 10; index += 1) {
+      const suffix = index === 1 ? '' : String(index);
+      const prefix = `battery${suffix}`;
+      const key = this.energyConfig[`${prefix}Power`];
+      if (!key) continue;
+      const powerDirection = this.energyConfig[`${prefix}Direction`] || 'positive_discharge';
+      const lineDirection = this.energyConfig[`${prefix}LineDirection`] || 'follow_power';
+      const lineMotion = this.energyConfig[`${prefix}LineMotion`] || 'invert_flow';
+      let watts = this._powerToWatts(this._sourceData(key));
+      if (watts === null) continue;
+      watts = this._normalizeBatteryWatts(watts, this._resolveBatteryLineDirection(lineDirection, powerDirection));
+      if (Math.abs(watts) <= thresholdW) continue;
+      let reverse = watts > 0;
+      if (lineMotion === 'invert_flow') reverse = !reverse;
+      if (reverse) reverseWeight += Math.abs(watts);
+      else forwardWeight += Math.abs(watts);
+    }
+    return reverseWeight > forwardWeight;
+  }
+
   _combinedBatteryPowerData() {
     const watts = this._batteryPowerWatts();
     return watts === null ? null : this._powerDataFromWatts('derived:batteryPower', watts, 'Batterijvermogen totaal');
@@ -1174,7 +1199,7 @@ class DashboardBridgeApp extends Homey.App {
       batteryStatusSource: batteryStatus.source,
       batteryFlow: batteryStatus.flow || this._batteryFlowState(),
       batteryLineFlow: this._batteryLineFlowState(),
-      batteryLineMotion: this.energyConfig.batteryLineMotion || 'invert_flow',
+      batteryLineMotionReverse: this._batteryLineMotionReverse(),
       battery24hAgo: this._battery24hAgoBest(),
       evPower: this._combinedEvPowerData(),
       evChargerCount: this.energyConfig.chargerCount || 1,

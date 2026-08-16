@@ -48,8 +48,8 @@
     "battery_line_direction": "Batterij __index__ lijnrichting",
     "battery_line_direction1_hint": "Bepaalt welke status/kleur gebruikt wordt voor de batterijlijn.",
     "battery_line_direction_hint": "Bepaalt de interpretatie van deze batterij voor de gezamenlijke lijn.",
-    "battery_motion": "Batterij 1 animatierichting",
-    "battery_motion_hint": "Extra optie om alleen de richting van de bewegende lijn om te keren.",
+    "battery_motion": "Batterij __index__ animatierichting",
+    "battery_motion_hint": "Bepaalt afzonderlijk de bewegingsrichting van batterij __index__.",
     "positive_discharge": "Positief = ontladen · negatief = laden",
     "positive_charge": "Positief = laden · negatief = ontladen",
     "follow_power": "Zelfde als vermogensrichting",
@@ -137,7 +137,8 @@
     "home_power_unit": "Eenheid huisverbruik",
     "home_power_unit_hint": "Kies W of kW voor het huisverbruik.",
     "grid_power_unit": "Eenheid elektriciteitsnet",
-    "grid_power_unit_hint": "Kies W of kW voor afname en teruglevering."
+    "grid_power_unit_hint": "Kies W of kW voor afname en teruglevering.",
+    "battery_motion1_hint": "Extra optie om alleen de richting van de bewegende lijn om te keren."
   },
   "widget": {
     "aria_energy": "Live energie-overzicht",

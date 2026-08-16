@@ -235,3 +235,8 @@ v0.6.52
 
 ## v0.6.58
 - Added per-branch W/kW display settings for solar, battery power, home consumption and grid power.
+
+
+v0.6.59
+- Audited all 10 PV, battery and EV charger slots for feature parity.
+- Added per-battery animation direction for batteries 2 through 10.

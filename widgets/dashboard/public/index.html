@@ -128,9 +128,7 @@ function onHomeyReady(Homey){
    const isCharge=flowMode?flowMode==='charge':/(^|\b)(laden|charging|charge)(\b|$)/.test(statusKey)&&!/(ontladen|discharging|discharge)/.test(statusKey);
    const isDischarge=flowMode?flowMode==='discharge':/(ontladen|discharging|discharge)/.test(statusKey);
    const batteryFlowMode=isCharge?'charge':isDischarge?'discharge':'idle';
-   const lineMotion=e.batteryLineMotion==='follow_flow'?'follow_flow':'invert_flow';
-   let reverseMotion=batteryFlowMode==='charge';
-   if(lineMotion==='invert_flow') reverseMotion=!reverseMotion;
+   const reverseMotion=typeof e.batteryLineMotionReverse==='boolean' ? e.batteryLineMotionReverse : batteryFlowMode!=='charge';
    $('batteryFlowOverlay').setAttribute('class','flow-overlay '+batteryFlowMode+' '+(reverseMotion?'motion-reverse':'motion-normal'));
    bs.textContent=status;bs.className='sub batteryState '+(isCharge?'status-charge':isDischarge?'status-discharge':'status-idle');
    const bp=$('batteryPower');

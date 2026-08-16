@@ -48,8 +48,8 @@
     "battery_line_direction": "Battery __index__ line direction",
     "battery_line_direction1_hint": "Determines which state/color is used for the battery flow line.",
     "battery_line_direction_hint": "Determines how this battery is interpreted for the combined line.",
-    "battery_motion": "Battery 1 animation direction",
-    "battery_motion_hint": "Optionally reverse only the movement direction of the animated line.",
+    "battery_motion": "Battery __index__ animation direction",
+    "battery_motion_hint": "Controls the animation movement direction for battery __index__ separately.",
     "positive_discharge": "Positive = discharging · negative = charging",
     "positive_charge": "Positive = charging · negative = discharging",
     "follow_power": "Same as power direction",
@@ -137,7 +137,8 @@
     "home_power_unit": "Home consumption unit",
     "home_power_unit_hint": "Choose W or kW for home consumption.",
     "grid_power_unit": "Grid power unit",
-    "grid_power_unit_hint": "Choose W or kW for grid import and export."
+    "grid_power_unit_hint": "Choose W or kW for grid import and export.",
+    "battery_motion1_hint": "Optionally reverse only the movement direction of the animated line."
   },
   "widget": {
     "aria_energy": "Live energy overview",

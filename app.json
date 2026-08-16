@@ -1,7 +1,6 @@
 {
-  "_comment": "This file is generated. Please edit .homeycompose/app.json instead.",
   "id": "com.dashboard.homeflux",
-  "version": "0.7.0",
+  "version": "0.6.59",
   "compatibility": ">=12.3.0",
   "sdk": 3,
   "name": {
@@ -67,21 +66,5 @@
     "large": "/assets/images/large.png",
     "xlarge": "/assets/images/xlarge.png"
   },
-  "support": "https://github.com/DavyBert/homey-dashboard-HomeFlux/issues",
-  "widgets": {
-    "dashboard": {
-      "name": {
-        "en": "HomeFlux",
-        "nl": "HomeFlux"
-      },
-      "settings": [],
-      "api": {
-        "getDashboard": {
-          "method": "GET",
-          "path": "/dashboard"
-        }
-      },
-      "id": "dashboard"
-    }
-  }
+  "support": "https://github.com/DavyBert/homey-dashboard-HomeFlux/issues"
 }
