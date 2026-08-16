@@ -151,6 +151,6 @@ v0.6.22 diagnostics: adds low-overhead aggregated runtime logging every 60 secon
 - Replaced the long “24u geleden” label with a compact ◷ 24h indicator.
 
 
-## v0.6.43
-- Autoladerkaart verdwijnt automatisch wanneer het totale laadvermogen lager is dan 50 W of niet beschikbaar is.
-- De kaart verschijnt opnieuw zodra de autolader actief wordt, met een korte overgang voor meer dynamiek.
+## v0.6.44
+- Fixed widget loading issue introduced by the dynamic EV charger card.
+- EV charger card now hides safely below 50 W and reappears automatically while charging.
