@@ -115,3 +115,20 @@ v0.6.26: live updates restored with selective polling of configured HomeFlux sou
 - Clarified that the automatic weather source must be a capability exposed by an installed weather device (for example KMI).
 - Clarified that Homey's built-in weather condition may not appear as a selectable device capability.
 - Removed temporary weather debug logging.
+
+## v0.6.33
+- Added optional second solar source; both PV powers are summed in the dashboard.
+- Added optional second battery with separate SOC, power, polarity and usable capacity.
+- Combined battery SOC is capacity-weighted (for example 10 kWh at 100% + 5 kWh at 0% = 66.7%).
+- Combined battery power is summed after per-battery polarity correction.
+- Added optional second EV charger; charger powers are summed.
+- Added a dynamic battery-flow overlay: green while charging, blue while discharging and hidden while idle.
+- Home-consumption fallback now uses the combined PV and battery values.
+
+## v0.6.34
+- Animated grid flow line: blue for import, green for export, hidden around zero.
+- Added configurable grid flow threshold in watts (default 50 W).
+
+
+v0.6.35
+- Grid flow line rerouted to enter the house from the right with a vertical drop and 90° turn.

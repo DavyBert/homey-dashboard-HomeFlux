@@ -5,11 +5,11 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <script type="text/javascript" src="/homey.js" data-origin="settings"></script>
 <style>
-:root{color-scheme:light dark}*{box-sizing:border-box}body{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;margin:0;padding:18px;max-width:1050px;color:var(--homey-text-color,#111);background:var(--homey-background-color,#fff)}h1{margin:0 0 4px;font-size:28px}h2{margin:0 0 10px;font-size:18px}h3{margin:0 0 6px;font-size:15px}.sub{opacity:.72;line-height:1.45}.card{background:rgba(127,127,127,.08);border:1px solid rgba(127,127,127,.18);border-radius:16px;padding:16px;margin:14px 0}.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}button{cursor:pointer;border:0;border-radius:10px;padding:10px 14px;font-weight:700;background:#1677ff;color:#fff}button.primary{background:#0a63ff}.status{margin-top:10px;font-size:14px;padding:10px 12px;border-radius:10px;background:rgba(127,127,127,.12)}.energy-grid,.visual-grid{display:grid;grid-template-columns:1fr;gap:12px}.map-row{display:grid;grid-template-columns:minmax(180px,260px) 1fr;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid rgba(127,127,127,.14)}.map-label{font-weight:720}.hint{font-size:11px;opacity:.52;margin-top:3px}.map-row select,.threshold input,.visual-grid select{width:100%;box-sizing:border-box;padding:9px 10px;border:1px solid rgba(127,127,127,.45);border-radius:10px;background:var(--homey-background-color,#fff);color:inherit}.battery-options{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.threshold{padding:10px;border-radius:12px;background:rgba(127,127,127,.08)}.toggle{display:flex;gap:9px;align-items:center}.toggle input{width:18px;height:18px}.group{font-size:12px;font-weight:800;opacity:.55;margin:18px 0 7px;text-transform:uppercase}.row{display:grid;grid-template-columns:28px 1fr auto;gap:8px;align-items:center;padding:10px 6px;border-bottom:1px solid rgba(127,127,127,.18)}.title{font-weight:650}.meta{font-size:11px;opacity:.5;margin-top:2px;word-break:break-all}.value{font-variant-numeric:tabular-nums;opacity:.8}.selected{margin-top:14px}.selected-row{display:grid;grid-template-columns:1fr auto;gap:8px;margin-bottom:8px}.selected-row input{padding:9px;border-radius:9px;border:1px solid rgba(127,127,127,.45);background:var(--homey-background-color,#fff);color:inherit}.remove{background:rgba(127,127,127,.18);color:inherit}#search{box-sizing:border-box;flex:1;min-width:220px;padding:10px 12px;border-radius:10px;border:1px solid rgba(127,127,127,.45);font-size:15px;background:var(--homey-background-color,#fff);color:inherit}.ok{font-weight:700}.savebar{position:sticky;bottom:0;padding:12px 0 0;background:linear-gradient(transparent,var(--homey-background-color,#fff) 30%);display:flex;justify-content:flex-end}.preview-note{font-size:12px;opacity:.65;margin-top:6px}@media(max-width:650px){.map-row{grid-template-columns:1fr}.battery-options{grid-template-columns:1fr}}
+:root{color-scheme:light dark}*{box-sizing:border-box}body{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;margin:0;padding:18px;max-width:1050px;color:var(--homey-text-color,#111);background:var(--homey-background-color,#fff)}h1{margin:0 0 4px;font-size:28px}h2{margin:0 0 10px;font-size:18px}h3{margin:0 0 6px;font-size:15px}.sub{opacity:.72;line-height:1.45}.card{background:rgba(127,127,127,.08);border:1px solid rgba(127,127,127,.18);border-radius:16px;padding:16px;margin:14px 0}.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}button{cursor:pointer;border:0;border-radius:10px;padding:10px 14px;font-weight:700;background:#1677ff;color:#fff}button.primary{background:#0a63ff}.status{margin-top:10px;font-size:14px;padding:10px 12px;border-radius:10px;background:rgba(127,127,127,.12)}.energy-grid,.visual-grid{display:grid;grid-template-columns:1fr;gap:12px}.map-row{display:grid;grid-template-columns:minmax(180px,260px) 1fr;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid rgba(127,127,127,.14)}.map-label{font-weight:720}.hint{font-size:11px;opacity:.52;margin-top:3px}.map-row select,.map-row input[type=number],.threshold input,.visual-grid select{width:100%;box-sizing:border-box;padding:9px 10px;border:1px solid rgba(127,127,127,.45);border-radius:10px;background:var(--homey-background-color,#fff);color:inherit}.battery-options{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.threshold{padding:10px;border-radius:12px;background:rgba(127,127,127,.08)}.toggle{display:flex;gap:9px;align-items:center}.toggle input{width:18px;height:18px}.group{font-size:12px;font-weight:800;opacity:.55;margin:18px 0 7px;text-transform:uppercase}.row{display:grid;grid-template-columns:28px 1fr auto;gap:8px;align-items:center;padding:10px 6px;border-bottom:1px solid rgba(127,127,127,.18)}.title{font-weight:650}.meta{font-size:11px;opacity:.5;margin-top:2px;word-break:break-all}.value{font-variant-numeric:tabular-nums;opacity:.8}.selected{margin-top:14px}.selected-row{display:grid;grid-template-columns:1fr auto;gap:8px;margin-bottom:8px}.selected-row input{padding:9px;border-radius:9px;border:1px solid rgba(127,127,127,.45);background:var(--homey-background-color,#fff);color:inherit}.remove{background:rgba(127,127,127,.18);color:inherit}#search{box-sizing:border-box;flex:1;min-width:220px;padding:10px 12px;border-radius:10px;border:1px solid rgba(127,127,127,.45);font-size:15px;background:var(--homey-background-color,#fff);color:inherit}.ok{font-weight:700}.savebar{position:sticky;bottom:0;padding:12px 0 0;background:linear-gradient(transparent,var(--homey-background-color,#fff) 30%);display:flex;justify-content:flex-end}.preview-note{font-size:12px;opacity:.65;margin-top:6px}@media(max-width:650px){.map-row{grid-template-columns:1fr}.battery-options{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
-<h1>Dashboard Bridge</h1>
+<h1>HomeFlux</h1>
 <div class="sub">Koppel eerst de vaste onderdelen van het energie-overzicht. Voeg daarna vrije items toe voor onder de illustratie.</div>
 
 <div class="card">
@@ -23,18 +23,27 @@
   <h2>Energie-overzicht</h2>
   <div class="sub">Selecteer voor elk onderdeel de Homey capability of Logic variabele die de live waarde levert.</div>
   <div class="energy-grid">
-    <div class="map-row"><div><div class="map-label">☀️ Zonnepanelen</div><div class="hint">Actuele productie</div></div><select id="solar"></select></div>
-    <div class="map-row"><div><div class="map-label">🔋 Batterij SOC</div><div class="hint">Laadpercentage</div></div><select id="batterySoc"></select></div>
-    <div class="map-row"><div><div class="map-label">⚡ Batterij vermogen</div><div class="hint">Voor laden / ontladen en vermogen</div></div><select id="batteryPower"></select></div>
-    <div class="map-row"><div><div class="map-label">↔️ Batterij status</div><div class="hint">Optioneel: expliciete status. Anders afgeleid uit vermogen.</div></div><select id="batteryStatus"></select></div>
-    <div class="map-row"><div><div class="map-label">🚗 Autolader vermogen</div><div class="hint">Actueel laadvermogen</div></div><select id="evPower"></select></div>
-    <div class="map-row"><div><div class="map-label">🔌 Autolader status</div><div class="hint">Optioneel: laden / verbonden / uit</div></div><select id="evStatus"></select></div>
+    <div class="map-row"><div><div class="map-label">☀️ Zonnepanelen 1</div><div class="hint">Actuele productie van de eerste omvormer/installatie</div></div><select id="solar"></select></div>
+    <div class="map-row"><div><div class="map-label">☀️ Zonnepanelen 2</div><div class="hint">Optioneel. Wordt opgeteld bij zonnepanelen 1.</div></div><select id="solar2"></select></div>
+    <div class="map-row"><div><div class="map-label">🔋 Batterij 1 SOC</div><div class="hint">Laadpercentage van batterij 1</div></div><select id="batterySoc"></select></div>
+    <div class="map-row"><div><div class="map-label">🔋 Batterij 1 capaciteit</div><div class="hint">Bruikbare capaciteit in kWh. Nodig voor een gewogen totaal-SOC wanneer twee batterijen gebruikt worden.</div></div><input id="batteryCapacityKwh" type="number" min="0" step="0.1" placeholder="bijv. 10"></div>
+    <div class="map-row"><div><div class="map-label">⚡ Batterij 1 vermogen</div><div class="hint">Voor laden / ontladen en totaalvermogen</div></div><select id="batteryPower"></select></div>
+    <div class="map-row"><div><div class="map-label">↔️ Batterij 1 status</div><div class="hint">Optioneel: expliciete status. Bij twee batterijen wordt de gezamenlijke status uit het totale vermogen afgeleid.</div></div><select id="batteryStatus"></select></div>
+    <div class="map-row"><div><div class="map-label">🔋 Batterij 2 SOC</div><div class="hint">Optioneel tweede batterijsysteem</div></div><select id="battery2Soc"></select></div>
+    <div class="map-row"><div><div class="map-label">🔋 Batterij 2 capaciteit</div><div class="hint">Bruikbare capaciteit in kWh. Voorbeeld: 10 kWh vol + 5 kWh leeg = totaal-SOC 66,7%.</div></div><input id="battery2CapacityKwh" type="number" min="0" step="0.1" placeholder="bijv. 5"></div>
+    <div class="map-row"><div><div class="map-label">⚡ Batterij 2 vermogen</div><div class="hint">Optioneel. Wordt opgeteld bij batterij 1 na polariteitscorrectie.</div></div><select id="battery2Power"></select></div>
+    <div class="map-row"><div><div class="map-label">↔️ Batterij 2 status</div><div class="hint">Optioneel. Het totaal wordt voor de widget uit beide vermogens afgeleid.</div></div><select id="battery2Status"></select></div>
+    <div class="map-row"><div><div class="map-label">🚗 Autolader 1 vermogen</div><div class="hint">Actueel laadvermogen</div></div><select id="evPower"></select></div>
+    <div class="map-row"><div><div class="map-label">🔌 Autolader 1 status</div><div class="hint">Optioneel: laden / verbonden / uit</div></div><select id="evStatus"></select></div>
+    <div class="map-row"><div><div class="map-label">🚗 Autolader 2 vermogen</div><div class="hint">Optioneel. Wordt opgeteld bij autolader 1.</div></div><select id="ev2Power"></select></div>
+    <div class="map-row"><div><div class="map-label">🔌 Autolader 2 status</div><div class="hint">Optioneel tweede laderstatus</div></div><select id="ev2Status"></select></div>
     <div class="map-row"><div><div class="map-label">⚡ Elektriciteitsnet</div><div class="hint">Import / export vermogen</div></div><select id="gridPower"></select></div>
     <div class="map-row"><div><div class="map-label">🏠 Huisverbruik</div><div class="hint">Optioneel. Zonder koppeling berekent HomeFlux dit uit zon + net − batterij.</div></div><select id="homePower"></select></div>
   </div>
   <div class="battery-options">
-    <label class="threshold"><div class="map-label">Batterij drempel</div><div class="hint">Stand-by rond 0 kW</div><input id="batteryThresholdKw" type="number" min="0" step="0.05" value="0.2"></label>
-    <label class="threshold toggle"><input id="batteryInvert" type="checkbox"><div><div class="map-label">Polariteit omkeren</div><div class="hint">Gebruik dit als positief vermogen bij jouw systeem ontladen betekent.</div></div></label>
+    <label class="threshold"><div class="map-label">Batterij drempel</div><div class="hint">Stand-by rond 0 kW voor het gezamenlijke batterijvermogen</div><input id="batteryThresholdKw" type="number" min="0" step="0.05" value="0.2"></label>
+    <label class="threshold toggle"><input id="batteryInvert" type="checkbox"><div><div class="map-label">Polariteit batterij 1 omkeren</div><div class="hint">Gebruik dit als positief vermogen bij batterij 1 ontladen betekent.</div></div></label>
+    <label class="threshold toggle"><input id="battery2Invert" type="checkbox"><div><div class="map-label">Polariteit batterij 2 omkeren</div><div class="hint">Gebruik dit als positief vermogen bij batterij 2 ontladen betekent.</div></div></label>
   </div>
 </div>
 
@@ -63,7 +72,7 @@
 
 <script>
 function onHomeyReady(Homey){
- const energyFields=['solar','batterySoc','batteryPower','batteryStatus','evPower','evStatus','gridPower','homePower'];
+ const energyFields=['solar','solar2','batterySoc','batteryPower','batteryStatus','battery2Soc','battery2Power','battery2Status','evPower','evStatus','ev2Power','ev2Status','gridPower','homePower'];
  const state={sources:[],selected:[],energyConfig:{},visualConfig:{}}, $=id=>document.getElementById(id), list=$('list'), selected=$('selected'), search=$('search'), status=$('status');
  const api=(method,path,body)=>new Promise((resolve,reject)=>Homey.api(method,path,body,(err,result)=>err?reject(err):resolve(result)));
  const msg=e=>(e&&e.message)||String(e);
@@ -81,7 +90,10 @@ function onHomeyReady(Homey){
      select.value=current;
    }
    $('batteryThresholdKw').value=state.energyConfig.batteryThresholdKw ?? 0.2;
+   $('batteryCapacityKwh').value=state.energyConfig.batteryCapacityKwh || '';
+   $('battery2CapacityKwh').value=state.energyConfig.battery2CapacityKwh || '';
    $('batteryInvert').checked=Boolean(state.energyConfig.batteryInvert);
+   $('battery2Invert').checked=Boolean(state.energyConfig.battery2Invert);
    $('backgroundMode').value=state.visualConfig.backgroundMode || 'auto';
    $('scenePeriod').value=state.visualConfig.periodMode || 'auto';
    $('sceneWeather').value=state.visualConfig.weather || 'clear';
@@ -125,7 +137,12 @@ function onHomeyReady(Homey){
  $('testconn').onclick=testConnection;$('scan').onclick=scan;search.oninput=renderSources;$('backgroundMode').onchange=updateBackgroundMode;
  $('save').onclick=async()=>{
    const energyConfig={}; for(const field of energyFields) energyConfig[field]=$(field).value||'';
-   energyConfig.batteryThresholdKw=Number($('batteryThresholdKw').value||0.2);energyConfig.batteryInvert=$('batteryInvert').checked;
+   energyConfig.batteryThresholdKw=Number($('batteryThresholdKw').value||0.2);
+   energyConfig.batteryCapacityKwh=Number($('batteryCapacityKwh').value||0);
+   energyConfig.battery2CapacityKwh=Number($('battery2CapacityKwh').value||0);
+   energyConfig.batteryInvert=$('batteryInvert').checked;energyConfig.battery2Invert=$('battery2Invert').checked;
+   const hasBattery2=Boolean(energyConfig.battery2Soc||energyConfig.battery2Power||energyConfig.battery2Status);
+   if(hasBattery2&&(!(energyConfig.batteryCapacityKwh>0)||!(energyConfig.battery2CapacityKwh>0))){Homey.alert('Vul voor beide batterijen de bruikbare capaciteit in kWh in. Dit is nodig om het totale SOC correct gewogen te berekenen.');return;}
    const visualConfig={backgroundMode:$('backgroundMode').value||'auto',weatherSource:$('weatherSource').value||'',periodMode:$('scenePeriod').value||'auto',weather:$('sceneWeather').value||'clear',refreshSeconds:Number($('refreshSeconds').value||30)};
    status.textContent='Dashboard opslaan…';
    try{await api('PUT','/config',{energyConfig,visualConfig,selection:state.selected});state.energyConfig=energyConfig;state.visualConfig=visualConfig;status.textContent='Dashboard opgeslagen. Live updates zijn actief.';}catch(e){status.textContent='Opslaan mislukt: '+msg(e);Homey.alert(status.textContent);}

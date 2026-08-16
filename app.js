@@ -3,8 +3,11 @@
 const Homey = require('homey');
 
 const ENERGY_FIELDS = [
-  'solar', 'batterySoc', 'batteryPower', 'batteryStatus',
-  'evPower', 'evStatus', 'gridPower', 'homePower'
+  'solar', 'solar2',
+  'batterySoc', 'batteryPower', 'batteryStatus',
+  'battery2Soc', 'battery2Power', 'battery2Status',
+  'evPower', 'evStatus', 'ev2Power', 'ev2Status',
+  'gridPower', 'homePower'
 ];
 
 const HISTORY_SAMPLE_MS = 10 * 60 * 1000;
@@ -43,15 +46,25 @@ class DashboardBridgeApp extends Homey.App {
     const c = config || {};
     return {
       solar: c.solar || '',
+      solar2: c.solar2 || '',
       batterySoc: c.batterySoc || '',
       batteryPower: c.batteryPower || '',
       batteryStatus: c.batteryStatus || '',
+      batteryCapacityKwh: Number.isFinite(Number(c.batteryCapacityKwh)) ? Math.max(0, Number(c.batteryCapacityKwh)) : 0,
+      batteryInvert: Boolean(c.batteryInvert),
+      battery2Soc: c.battery2Soc || '',
+      battery2Power: c.battery2Power || '',
+      battery2Status: c.battery2Status || '',
+      battery2CapacityKwh: Number.isFinite(Number(c.battery2CapacityKwh)) ? Math.max(0, Number(c.battery2CapacityKwh)) : 0,
+      battery2Invert: Boolean(c.battery2Invert),
       evPower: c.evPower || '',
       evStatus: c.evStatus || '',
+      ev2Power: c.ev2Power || '',
+      ev2Status: c.ev2Status || '',
       gridPower: c.gridPower || '',
+      gridThresholdW: Number.isFinite(Number(c.gridThresholdW)) ? Math.max(0, Number(c.gridThresholdW)) : 50,
       homePower: c.homePower || '',
-      batteryThresholdKw: Number.isFinite(Number(c.batteryThresholdKw)) ? Number(c.batteryThresholdKw) : 0.2,
-      batteryInvert: Boolean(c.batteryInvert)
+      batteryThresholdKw: Number.isFinite(Number(c.batteryThresholdKw)) ? Number(c.batteryThresholdKw) : 0.2
     };
   }
 
@@ -372,7 +385,7 @@ class DashboardBridgeApp extends Homey.App {
   }
 
   async _recordBatteryHistory(now = Date.now()) {
-    const soc = this._sourceData(this.energyConfig.batterySoc);
+    const soc = this._combinedBatterySocData();
     if (!soc || !soc.online || typeof soc.rawValue !== 'number') return;
 
     const last = this.batteryHistory[this.batteryHistory.length - 1];
@@ -427,36 +440,24 @@ class DashboardBridgeApp extends Homey.App {
     return out;
   }
 
-  async _refreshBattery24hFromInsights(force = false) {
-    if (!force && Date.now() - this._lastInsightsRefreshAt < INSIGHTS_REFRESH_MS) return this._batteryInsights24h;
-    this._lastInsightsRefreshAt = Date.now();
-
-    const parsed = this._parseKey(this.energyConfig.batterySoc);
-    if (parsed.type !== 'device' || !parsed.deviceId || !parsed.capabilityId) {
-      this._batteryInsights24h = null;
-      return null;
-    }
+  async _fetchSoc24hInsight(key) {
+    const parsed = this._parseKey(key);
+    if (parsed.type !== 'device' || !parsed.deviceId || !parsed.capabilityId) return null;
 
     const uri = `homey:device:${parsed.deviceId}`;
-    // Homey Pro generations have used both the fully-qualified log id and the
-    // plain capability id. Try the current fully-qualified form first.
     const ids = [`${uri}:${parsed.capabilityId}`, parsed.capabilityId];
     let payload = null;
     for (const id of ids) {
       try {
         payload = await this._apiGet(`/api/manager/insights/log/${encodeURIComponent(uri)}/${encodeURIComponent(id)}/entry?resolution=last24Hours`);
         if (payload) break;
-      } catch (err) {
+      } catch (_) {
         // Try the legacy id form before falling back to locally sampled history.
       }
     }
 
     const entries = this._normalizeInsightEntries(payload);
-    if (!entries.length) {
-      this._batteryInsights24h = null;
-      return null;
-    }
-
+    if (!entries.length) return null;
     const target = Date.now() - (24 * 60 * 60 * 1000);
     let best = null;
     let bestDiff = Infinity;
@@ -464,20 +465,50 @@ class DashboardBridgeApp extends Homey.App {
       const diff = Math.abs(entry.ts - target);
       if (diff < bestDiff) { bestDiff = diff; best = entry; }
     }
+    if (!best || bestDiff > 2 * 60 * 60 * 1000) return null;
+    return best;
+  }
 
-    // Insights may aggregate points. Two hours is deliberately tolerant while
-    // still preventing a misleading value from a much newer part of the graph.
-    if (!best || bestDiff > 2 * 60 * 60 * 1000) {
+  async _refreshBattery24hFromInsights(force = false) {
+    if (!force && Date.now() - this._lastInsightsRefreshAt < INSIGHTS_REFRESH_MS) return this._batteryInsights24h;
+    this._lastInsightsRefreshAt = Date.now();
+
+    const primaryKey = this.energyConfig.batterySoc;
+    if (!primaryKey) {
       this._batteryInsights24h = null;
       return null;
     }
 
-    const current = this._sourceData(this.energyConfig.batterySoc);
+    const secondKey = this.energyConfig.battery2Soc;
+    const [first, second] = await Promise.all([
+      this._fetchSoc24hInsight(primaryKey),
+      secondKey ? this._fetchSoc24hInsight(secondKey) : Promise.resolve(null)
+    ]);
+
+    if (!first || (secondKey && !second)) {
+      this._batteryInsights24h = null;
+      return null;
+    }
+
+    let value = first.value;
+    let ts = first.ts;
+    if (secondKey && second) {
+      const c1 = Number(this.energyConfig.batteryCapacityKwh) || 0;
+      const c2 = Number(this.energyConfig.battery2CapacityKwh) || 0;
+      if (c1 > 0 && c2 > 0) {
+        value = ((first.value * c1) + (second.value * c2)) / (c1 + c2);
+        ts = Math.min(first.ts, second.ts);
+      } else {
+        this._batteryInsights24h = null;
+        return null;
+      }
+    }
+
     this._batteryInsights24h = {
-      ts: best.ts,
-      value: best.value,
-      unit: (current && current.unit) || '%',
-      valueFormatted: this._formatValue(best.value),
+      ts,
+      value,
+      unit: '%',
+      valueFormatted: this._formatValue(value),
       source: 'insights'
     };
     return this._batteryInsights24h;
@@ -585,19 +616,133 @@ class DashboardBridgeApp extends Homey.App {
     return value;
   }
 
-  _derivedHomePower() {
-    const solar = this._sourceData(this.energyConfig.solar);
+  _powerDataFromWatts(key, watts, label) {
+    if (!Number.isFinite(watts)) return null;
+    const kw = watts / 1000;
+    return {
+      key,
+      value: this._formatValue(Math.round(kw * 100) / 100),
+      rawValue: kw,
+      unit: 'kW',
+      online: true,
+      label,
+      deviceName: 'HomeFlux',
+      sourceName: 'Samengesteld'
+    };
+  }
+
+  _sumPowerSources(keys, label) {
+    let total = 0;
+    let count = 0;
+    for (const key of keys.filter(Boolean)) {
+      const watts = this._powerToWatts(this._sourceData(key));
+      if (watts === null) continue;
+      total += watts;
+      count += 1;
+    }
+    return count ? this._powerDataFromWatts(`derived:${label}`, total, label) : null;
+  }
+
+  _combinedSolarData() {
+    return this._sumPowerSources([this.energyConfig.solar, this.energyConfig.solar2], 'Zonnepanelen totaal');
+  }
+
+  _batteryPowerWatts() {
+    const batteries = [
+      { key: this.energyConfig.batteryPower, invert: this.energyConfig.batteryInvert },
+      { key: this.energyConfig.battery2Power, invert: this.energyConfig.battery2Invert }
+    ];
+    let total = 0;
+    let count = 0;
+    for (const battery of batteries) {
+      if (!battery.key) continue;
+      let watts = this._powerToWatts(this._sourceData(battery.key));
+      if (watts === null) continue;
+      if (battery.invert) watts *= -1;
+      total += watts;
+      count += 1;
+    }
+    return count ? total : null;
+  }
+
+  _combinedBatteryPowerData() {
+    const watts = this._batteryPowerWatts();
+    return watts === null ? null : this._powerDataFromWatts('derived:batteryPower', watts, 'Batterijvermogen totaal');
+  }
+
+  _combinedBatterySocData() {
+    const entries = [
+      { key: this.energyConfig.batterySoc, capacity: Number(this.energyConfig.batteryCapacityKwh) || 0 },
+      { key: this.energyConfig.battery2Soc, capacity: Number(this.energyConfig.battery2CapacityKwh) || 0 }
+    ].filter(item => item.key);
+    if (!entries.length) return null;
+
+    const available = [];
+    for (const entry of entries) {
+      const data = this._sourceData(entry.key);
+      if (!data || !data.online || typeof data.rawValue !== 'number' || !Number.isFinite(data.rawValue)) continue;
+      available.push({ data, capacity: entry.capacity });
+    }
+    if (!available.length) return null;
+
+    let value;
+    if (available.length === 1) {
+      value = Number(available[0].data.rawValue);
+    } else {
+      const validCapacities = available.every(item => item.capacity > 0);
+      if (validCapacities) {
+        const totalCapacity = available.reduce((sum, item) => sum + item.capacity, 0);
+        value = available.reduce((sum, item) => sum + (Number(item.data.rawValue) * item.capacity), 0) / totalCapacity;
+      } else {
+        value = available.reduce((sum, item) => sum + Number(item.data.rawValue), 0) / available.length;
+      }
+    }
+
+    return {
+      key: 'derived:batterySoc',
+      value: this._formatValue(Math.round(value * 10) / 10),
+      rawValue: value,
+      unit: '%',
+      online: true,
+      label: available.length > 1 ? 'Gewogen batterij SOC' : 'Batterij SOC',
+      deviceName: 'HomeFlux',
+      sourceName: available.length > 1 ? 'Gewogen op capaciteit' : available[0].data.sourceName
+    };
+  }
+
+  _combinedEvPowerData() {
+    return this._sumPowerSources([this.energyConfig.evPower, this.energyConfig.ev2Power], 'Autoladers totaal');
+  }
+
+  _batteryFlowState() {
+    const watts = this._batteryPowerWatts();
+    if (watts === null) return 'idle';
+    const thresholdW = Math.max(0, Number(this.energyConfig.batteryThresholdKw) || 0.2) * 1000;
+    if (watts > thresholdW) return 'charge';
+    if (watts < -thresholdW) return 'discharge';
+    return 'idle';
+  }
+
+  _gridFlowState() {
     const grid = this._sourceData(this.energyConfig.gridPower);
-    const battery = this._sourceData(this.energyConfig.batteryPower);
+    const watts = this._powerToWatts(grid);
+    if (watts === null) return 'idle';
+    const thresholdW = Math.max(0, Number(this.energyConfig.gridThresholdW) || 50);
+    if (watts > thresholdW) return 'import';
+    if (watts < -thresholdW) return 'export';
+    return 'idle';
+  }
+
+  _derivedHomePower() {
+    const solar = this._combinedSolarData();
+    const grid = this._sourceData(this.energyConfig.gridPower);
 
     const solarW = this._powerToWatts(solar);
     const gridW = this._powerToWatts(grid);
     if (solarW === null || gridW === null) return null;
 
-    let batteryW = this._powerToWatts(battery);
+    let batteryW = this._batteryPowerWatts();
     if (batteryW === null) batteryW = 0;
-    // Internally a positive battery value means charging; batteryInvert normalizes systems that report the opposite.
-    if (this.energyConfig.batteryInvert) batteryW *= -1;
 
     // Energy balance used by HomeFlux when no direct house-consumption meter is available:
     // house = solar + grid - batteryCharge.
@@ -625,24 +770,22 @@ class DashboardBridgeApp extends Homey.App {
   }
 
   _batteryStatus() {
-    const explicit = this._sourceData(this.energyConfig.batteryStatus);
-    if (explicit && explicit.online && explicit.rawValue !== null && explicit.rawValue !== '') {
-      let status = String(explicit.rawValue).trim();
-      if (typeof explicit.rawValue === 'boolean') status = explicit.rawValue ? 'Laden' : 'Stand-by';
-      return { text: status, source: 'explicit' };
+    const hasSecondBattery = Boolean(this.energyConfig.battery2Power || this.energyConfig.battery2Soc || this.energyConfig.battery2Status);
+    if (!hasSecondBattery) {
+      const explicit = this._sourceData(this.energyConfig.batteryStatus);
+      if (explicit && explicit.online && explicit.rawValue !== null && explicit.rawValue !== '') {
+        let status = String(explicit.rawValue).trim();
+        if (typeof explicit.rawValue === 'boolean') status = explicit.rawValue ? 'Laden' : 'Stand-by';
+        return { text: status, source: 'explicit', flow: this._batteryFlowState() };
+      }
     }
 
-    const power = this._sourceData(this.energyConfig.batteryPower);
-    if (!power || !power.online || typeof power.rawValue !== 'number') return { text: '—', source: 'unknown' };
-
-    let value = Number(power.rawValue);
-    const unit = String(power.unit || '').toLowerCase();
-    if (unit === 'w' || unit.includes('watt')) value /= 1000;
-    if (this.energyConfig.batteryInvert) value *= -1;
-    const threshold = Math.max(0, Number(this.energyConfig.batteryThresholdKw) || 0.2);
-    if (value > threshold) return { text: 'Laden', source: 'derived' };
-    if (value < -threshold) return { text: 'Ontladen', source: 'derived' };
-    return { text: 'Stand-by', source: 'derived' };
+    const flow = this._batteryFlowState();
+    if (flow === 'charge') return { text: 'Laden', source: 'derived', flow };
+    if (flow === 'discharge') return { text: 'Ontladen', source: 'derived', flow };
+    const power = this._combinedBatteryPowerData();
+    if (!power) return { text: '—', source: 'unknown', flow: 'idle' };
+    return { text: 'Stand-by', source: 'derived', flow: 'idle' };
   }
 
   _tile(saved, index) {
@@ -824,15 +967,17 @@ class DashboardBridgeApp extends Homey.App {
   getDashboard() {
     const batteryStatus = this._batteryStatus();
     const energy = {
-      solar: this._sourceData(this.energyConfig.solar),
-      batterySoc: this._sourceData(this.energyConfig.batterySoc),
-      batteryPower: this._sourceData(this.energyConfig.batteryPower),
+      solar: this._combinedSolarData(),
+      batterySoc: this._combinedBatterySocData(),
+      batteryPower: this._combinedBatteryPowerData(),
       batteryStatus: batteryStatus.text,
       batteryStatusSource: batteryStatus.source,
+      batteryFlow: batteryStatus.flow || this._batteryFlowState(),
       battery24hAgo: this._battery24hAgoBest(),
-      evPower: this._sourceData(this.energyConfig.evPower),
-      evStatus: this._sourceData(this.energyConfig.evStatus),
+      evPower: this._combinedEvPowerData(),
+      evStatus: this.energyConfig.ev2Power ? { value: '2 laders', rawValue: '2 laders', unit: '', online: true } : this._sourceData(this.energyConfig.evStatus),
       gridPower: this._sourceData(this.energyConfig.gridPower),
+      gridFlow: this._gridFlowState(),
       homePower: this._homePowerData()
     };
     const tiles = this.selection.map((saved, index) => this._tile(saved, index));
