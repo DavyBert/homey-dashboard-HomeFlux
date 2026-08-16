@@ -24,9 +24,9 @@
   <div class="sub">Selecteer voor elk onderdeel de Homey capability of Logic variabele die de live waarde levert.</div>
   <div class="energy-grid">
     <div class="install-grid">
-      <label class="threshold"><div class="map-label">Aantal PV-installaties</div><div class="hint">Toon alleen extra velden als je meer dan één bron hebt.</div><select id="solarCount"><option value="1">1</option><option value="2">2</option></select></label>
-      <label class="threshold"><div class="map-label">Aantal batterijen</div><div class="hint">Bepaal hoeveel batterijsystemen je wilt koppelen.</div><select id="batteryCount"><option value="1">1</option><option value="2">2</option></select></label>
-      <label class="threshold"><div class="map-label">Aantal autoladers</div><div class="hint">Toon extra laadvelden alleen indien nodig.</div><select id="chargerCount"><option value="1">1</option><option value="2">2</option></select></label>
+      <label class="threshold"><div class="map-label">Aantal PV-installaties</div><div class="hint">Toon alleen extra velden als je meer dan één bron hebt.</div><select id="solarCount"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option></select></label>
+      <label class="threshold"><div class="map-label">Aantal batterijen</div><div class="hint">Bepaal hoeveel batterijsystemen je wilt koppelen.</div><select id="batteryCount"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option></select></label>
+      <label class="threshold"><div class="map-label">Aantal autoladers</div><div class="hint">Toon extra laadvelden alleen indien nodig.</div><select id="chargerCount"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option></select></label>
     </div>
     <div class="map-row" id="rowSolar1"><div><div class="map-label">☀️ Zonnepanelen 1</div><div class="hint">Actuele productie van de eerste omvormer/installatie</div></div><select id="solar"></select></div>
     <div class="map-row hidden-row" id="rowSolar2"><div><div class="map-label">☀️ Zonnepanelen 2</div><div class="hint">Optioneel. Wordt opgeteld bij zonnepanelen 1.</div></div><select id="solar2"></select></div>
@@ -42,11 +42,11 @@
     <div class="map-row" id="rowEvStatus1"><div><div class="map-label">🔌 Autolader 1 status</div><div class="hint">Optioneel: laden / verbonden / uit</div></div><select id="evStatus"></select></div>
     <div class="map-row hidden-row" id="rowEvPower2"><div><div class="map-label">🚗 Autolader 2 vermogen</div><div class="hint">Optioneel. Wordt opgeteld bij autolader 1.</div></div><select id="ev2Power"></select></div>
     <div class="map-row hidden-row" id="rowEvStatus2"><div><div class="map-label">🔌 Autolader 2 status</div><div class="hint">Optioneel tweede laderstatus</div></div><select id="ev2Status"></select></div>
-    <div class="map-row"><div><div class="map-label">⚡ Elektriciteitsnet</div><div class="hint">Import / export vermogen</div></div><select id="gridPower"></select></div>
-    <div class="map-row"><div><div class="map-label">🏠 Huisverbruik</div><div class="hint">Optioneel. Zonder koppeling berekent HomeFlux dit uit zon + net − batterij.</div></div><select id="homePower"></select></div>
+    <div class="map-row" id="rowGridPower"><div><div class="map-label">⚡ Elektriciteitsnet</div><div class="hint">Import / export vermogen</div></div><select id="gridPower"></select></div>
+    <div class="map-row" id="rowHomePower"><div><div class="map-label">🏠 Huisverbruik</div><div class="hint">Optioneel. Zonder koppeling berekent HomeFlux dit uit zon + net − batterij.</div></div><select id="homePower"></select></div>
   </div>
   </div>
-  <div class="battery-options">
+  <div class="battery-options" id="batteryOptions">
     <label class="threshold"><div class="map-label">Batterij drempel</div><div class="hint">Stand-by rond 0 kW voor het gezamenlijke batterijvermogen</div><input id="batteryThresholdKw" type="number" min="0" step="0.05" value="0.2"></label>
     <label class="threshold"><div class="map-label">Netstroom drempel</div><div class="hint">Onder deze grens blijft de netstroomlijn verborgen. Voorbeeld: 50 W = tussen -50 W en +50 W geen lijn.</div><input id="gridThresholdW" type="number" min="0" step="10" value="50"></label>
     <label class="threshold"><div class="map-label">Batterij 1 vermogensrichting</div><div class="hint">Standaard nu: positief = ontladen · negatief = laden.</div><select id="batteryDirection"><option value="positive_discharge">Positief = ontladen · negatief = laden</option><option value="positive_charge">Positief = laden · negatief = ontladen</option></select></label>
@@ -82,7 +82,12 @@
 
 <script>
 function onHomeyReady(Homey){
- const energyFields=['solar','solar2','batterySoc','batteryPower','batteryStatus','battery2Soc','battery2Power','battery2Status','evPower','evStatus','ev2Power','ev2Status','gridPower','homePower'];
+ const energyFields=[
+   ...Array.from({length:10},(_,i)=>i===0?'solar':`solar${i+1}`),
+   ...Array.from({length:10},(_,i)=>{const s=i===0?'':String(i+1);return [`battery${s}Soc`,`battery${s}Power`,`battery${s}Status`]}).flat(),
+   ...Array.from({length:10},(_,i)=>{const s=i===0?'':String(i+1);return [`ev${s}Power`,`ev${s}Status`]}).flat(),
+   'gridPower','homePower'
+ ];
  const state={sources:[],selected:[],energyConfig:{},visualConfig:{}}, $=id=>document.getElementById(id), list=$('list'), selected=$('selected'), search=$('search'), status=$('status');
  const pickerFields=[...energyFields,'weatherSource'];
  const pickerMap={};
@@ -93,7 +98,35 @@ function onHomeyReady(Homey){
  function weatherScore(s){const t=`${s.name||''} ${s.label||''} ${s.key||''}`.toLowerCase();let score=0;if(/weather|weer|condition/.test(t))score+=100;if(/rain|regen|precip|neerslag/.test(t))score+=80;if(/cloud|bewolk|overcast/.test(t))score+=50;if(/status|state/.test(t))score+=20;return score;}
  function updateBackgroundMode(){const auto=$('backgroundMode').value==='auto';$('autoWeatherRow').style.display=auto?'grid':'none';$('manualPeriodRow').style.display=auto?'none':'grid';$('manualWeatherRow').style.display=auto?'none':'grid';}
  function showRow(id,show){const el=$(id);if(el)el.classList.toggle('hidden-row',!show);}
- function updateInstallCountsVisibility(){const solarCount=Number($('solarCount').value||1),batteryCount=Number($('batteryCount').value||1),chargerCount=Number($('chargerCount').value||1);showRow('rowSolar2',solarCount>1);showRow('rowBatterySoc2',batteryCount>1);showRow('rowBatteryCapacity2',batteryCount>1);showRow('rowBatteryPower2',batteryCount>1);showRow('rowBatteryStatus2',batteryCount>1);showRow('battery2DirectionWrap',batteryCount>1);showRow('battery2LineDirectionWrap',batteryCount>1);showRow('rowEvPower2',chargerCount>1);showRow('rowEvStatus2',chargerCount>1);}
+ function updateInstallCountsVisibility(){
+   const solarCount=Number($('solarCount').value||1),batteryCount=Number($('batteryCount').value||1),chargerCount=Number($('chargerCount').value||1);
+   for(let index=2;index<=10;index+=1){
+     showRow(`rowSolar${index}`,solarCount>=index);
+     showRow(`rowBatterySoc${index}`,batteryCount>=index);
+     showRow(`rowBatteryCapacity${index}`,batteryCount>=index);
+     showRow(`rowBatteryPower${index}`,batteryCount>=index);
+     showRow(`rowBatteryStatus${index}`,batteryCount>=index);
+     showRow(`battery${index}DirectionWrap`,batteryCount>=index);
+     showRow(`battery${index}LineDirectionWrap`,batteryCount>=index);
+     showRow(`rowEvPower${index}`,chargerCount>=index);
+     showRow(`rowEvStatus${index}`,chargerCount>=index);
+   }
+ }
+ function createAdditionalFields(){
+   const gridRow=$('rowGridPower');
+   const batteryOptions=$('batteryOptions');
+   for(let index=3;index<=10;index+=1){
+     const solar=document.createElement('div');solar.className='map-row hidden-row';solar.id=`rowSolar${index}`;solar.innerHTML=`<div><div class="map-label">☀️ Zonnepanelen ${index}</div><div class="hint">Optioneel. Wordt opgeteld bij de andere PV-installaties.</div></div><select id="solar${index}"></select>`;gridRow.parentNode.insertBefore(solar,gridRow);
+     const soc=document.createElement('div');soc.className='map-row hidden-row';soc.id=`rowBatterySoc${index}`;soc.innerHTML=`<div><div class="map-label">🔋 Batterij ${index} SOC</div><div class="hint">Laadpercentage van batterij ${index}</div></div><select id="battery${index}Soc"></select>`;gridRow.parentNode.insertBefore(soc,gridRow);
+     const cap=document.createElement('div');cap.className='map-row hidden-row';cap.id=`rowBatteryCapacity${index}`;cap.innerHTML=`<div><div class="map-label">🔋 Batterij ${index} capaciteit</div><div class="hint">Bruikbare capaciteit in kWh voor gewogen totaal-SOC.</div></div><input id="battery${index}CapacityKwh" type="number" min="0" step="0.1" placeholder="bijv. 10">`;gridRow.parentNode.insertBefore(cap,gridRow);
+     const power=document.createElement('div');power.className='map-row hidden-row';power.id=`rowBatteryPower${index}`;power.innerHTML=`<div><div class="map-label">⚡ Batterij ${index} vermogen</div><div class="hint">Wordt opgeteld bij het gezamenlijke batterijvermogen.</div></div><select id="battery${index}Power"></select>`;gridRow.parentNode.insertBefore(power,gridRow);
+     const statusRow=document.createElement('div');statusRow.className='map-row hidden-row';statusRow.id=`rowBatteryStatus${index}`;statusRow.innerHTML=`<div><div class="map-label">↔️ Batterij ${index} status</div><div class="hint">Optionele statusbron.</div></div><select id="battery${index}Status"></select>`;gridRow.parentNode.insertBefore(statusRow,gridRow);
+     const evPower=document.createElement('div');evPower.className='map-row hidden-row';evPower.id=`rowEvPower${index}`;evPower.innerHTML=`<div><div class="map-label">🚗 Autolader ${index} vermogen</div><div class="hint">Wordt opgeteld bij het gezamenlijke laadvermogen.</div></div><select id="ev${index}Power"></select>`;gridRow.parentNode.insertBefore(evPower,gridRow);
+     const evStatus=document.createElement('div');evStatus.className='map-row hidden-row';evStatus.id=`rowEvStatus${index}`;evStatus.innerHTML=`<div><div class="map-label">🔌 Autolader ${index} status</div><div class="hint">Optionele laderstatus.</div></div><select id="ev${index}Status"></select>`;gridRow.parentNode.insertBefore(evStatus,gridRow);
+     const direction=document.createElement('label');direction.className='threshold hidden-row';direction.id=`battery${index}DirectionWrap`;direction.innerHTML=`<div class="map-label">Batterij ${index} vermogensrichting</div><div class="hint">Apart instelbaar per batterij.</div><select id="battery${index}Direction"><option value="positive_discharge">Positief = ontladen · negatief = laden</option><option value="positive_charge">Positief = laden · negatief = ontladen</option></select>`;batteryOptions.appendChild(direction);
+     const lineDirection=document.createElement('label');lineDirection.className='threshold hidden-row';lineDirection.id=`battery${index}LineDirectionWrap`;lineDirection.innerHTML=`<div class="map-label">Batterij ${index} lijnrichting</div><div class="hint">Bepaalt de interpretatie van deze batterij voor de gezamenlijke lijn.</div><select id="battery${index}LineDirection"><option value="follow_power">Zelfde als vermogensrichting</option><option value="positive_discharge">Positief = ontladen · negatief = laden</option><option value="positive_charge">Positief = laden · negatief = ontladen</option></select>`;batteryOptions.appendChild(lineDirection);
+   }
+ }
 
  function pickerOptions(field){
    if(field==='weatherSource'){
@@ -160,16 +193,16 @@ function onHomeyReady(Homey){
    updatePickerSelected('weatherSource');
    $('batteryThresholdKw').value=state.energyConfig.batteryThresholdKw ?? 0.2;
    $('gridThresholdW').value=state.energyConfig.gridThresholdW ?? 50;
-   $('solarCount').value=String(state.energyConfig.solarCount || (state.energyConfig.solar2 ? 2 : 1));
-   $('batteryCount').value=String(state.energyConfig.batteryCount || ((state.energyConfig.battery2Soc || state.energyConfig.battery2Power || state.energyConfig.battery2Status) ? 2 : 1));
-   $('chargerCount').value=String(state.energyConfig.chargerCount || ((state.energyConfig.ev2Power || state.energyConfig.ev2Status) ? 2 : 1));
-   $('batteryCapacityKwh').value=state.energyConfig.batteryCapacityKwh || '';
-   $('battery2CapacityKwh').value=state.energyConfig.battery2CapacityKwh || '';
-   $('batteryDirection').value=state.energyConfig.batteryDirection || (state.energyConfig.batteryInvert ? 'positive_discharge' : 'positive_discharge');
-   $('batteryLineDirection').value=state.energyConfig.batteryLineDirection || 'follow_power';
+   $('solarCount').value=String(Math.max(1,Math.min(10,Number(state.energyConfig.solarCount)||1)));
+   $('batteryCount').value=String(Math.max(1,Math.min(10,Number(state.energyConfig.batteryCount)||1)));
+   $('chargerCount').value=String(Math.max(1,Math.min(10,Number(state.energyConfig.chargerCount)||1)));
+   for(let index=1;index<=10;index+=1){
+     const suffix=index===1?'':String(index);
+     $(`battery${suffix}CapacityKwh`).value=state.energyConfig[`battery${suffix}CapacityKwh`]||'';
+     $(`battery${suffix}Direction`).value=state.energyConfig[`battery${suffix}Direction`]||(state.energyConfig[`battery${suffix}Invert`]?'positive_discharge':'positive_discharge');
+     $(`battery${suffix}LineDirection`).value=state.energyConfig[`battery${suffix}LineDirection`]||'follow_power';
+   }
    $('batteryLineMotion').value=state.energyConfig.batteryLineMotion || 'invert_flow';
-   $('battery2Direction').value=state.energyConfig.battery2Direction || (state.energyConfig.battery2Invert ? 'positive_discharge' : 'positive_discharge');
-   $('battery2LineDirection').value=state.energyConfig.battery2LineDirection || 'follow_power';
    $('backgroundMode').value=state.visualConfig.backgroundMode || 'auto';
    $('scenePeriod').value=state.visualConfig.periodMode || 'auto';
    $('sceneWeather').value=state.visualConfig.weather || 'clear';
@@ -214,29 +247,33 @@ function onHomeyReady(Homey){
  async function testConnection(){try{status.textContent='Homey toegang testen…';const r=await api('POST','/test',{});status.textContent=`Homey toegang OK · ${r.devices} devices · ${r.variables} Logic variabelen`;Homey.alert(status.textContent);}catch(e){status.textContent='Homey toegang mislukt: '+msg(e);Homey.alert(status.textContent);}}
  async function scan(){status.textContent='Homey scannen…';try{state.sources=await api('GET','/sources');fillEnergySelects();renderSources();}catch(e){status.textContent='Scan mislukt: '+msg(e);Homey.alert(status.textContent);}}
 
+ createAdditionalFields();
  setupPickers();
  $('testconn').onclick=testConnection;$('scan').onclick=scan;search.oninput=renderSources;$('backgroundMode').onchange=updateBackgroundMode;$('solarCount').onchange=updateInstallCountsVisibility;$('batteryCount').onchange=updateInstallCountsVisibility;$('chargerCount').onchange=updateInstallCountsVisibility;
  $('save').onclick=async()=>{
    const energyConfig={}; for(const field of energyFields) energyConfig[field]=$(field).value||'';
    energyConfig.batteryThresholdKw=Number($('batteryThresholdKw').value||0.2);
    energyConfig.gridThresholdW=Math.max(0,Number($('gridThresholdW').value||50));
-   energyConfig.solarCount=Number($('solarCount').value||1);
-   energyConfig.batteryCount=Number($('batteryCount').value||1);
-   energyConfig.chargerCount=Number($('chargerCount').value||1);
-   energyConfig.batteryCapacityKwh=Number($('batteryCapacityKwh').value||0);
-   energyConfig.battery2CapacityKwh=Number($('battery2CapacityKwh').value||0);
-   energyConfig.batteryDirection=$('batteryDirection').value||'positive_discharge';
-   energyConfig.batteryLineDirection=$('batteryLineDirection').value||'follow_power';
+   energyConfig.solarCount=Math.max(1,Math.min(10,Number($('solarCount').value||1)));
+   energyConfig.batteryCount=Math.max(1,Math.min(10,Number($('batteryCount').value||1)));
+   energyConfig.chargerCount=Math.max(1,Math.min(10,Number($('chargerCount').value||1)));
    energyConfig.batteryLineMotion=$('batteryLineMotion').value||'invert_flow';
-   energyConfig.battery2Direction=$('battery2Direction').value||'positive_discharge';
-   energyConfig.battery2LineDirection=$('battery2LineDirection').value||'follow_power';
-   energyConfig.batteryInvert=energyConfig.batteryDirection==='positive_discharge';
-   energyConfig.battery2Invert=energyConfig.battery2Direction==='positive_discharge';
-   if(energyConfig.solarCount<2) energyConfig.solar2='';
-   if(energyConfig.batteryCount<2){energyConfig.battery2Soc='';energyConfig.battery2Power='';energyConfig.battery2Status='';energyConfig.battery2CapacityKwh=0;energyConfig.battery2Direction='positive_discharge';energyConfig.battery2LineDirection='follow_power';energyConfig.battery2Invert=true;}
-   if(energyConfig.chargerCount<2){energyConfig.ev2Power='';energyConfig.ev2Status='';}
-   const hasBattery2=energyConfig.batteryCount>1 && Boolean(energyConfig.battery2Soc||energyConfig.battery2Power||energyConfig.battery2Status);
-   if(hasBattery2&&(!(energyConfig.batteryCapacityKwh>0)||!(energyConfig.battery2CapacityKwh>0))){Homey.alert('Vul voor beide batterijen de bruikbare capaciteit in kWh in. Dit is nodig om het totale SOC correct gewogen te berekenen.');return;}
+   const configuredBatterySoc=[];
+   for(let index=1;index<=10;index+=1){
+     const suffix=index===1?'':String(index);
+     const solarKey=index===1?'solar':`solar${index}`;
+     const batteryPrefix=`battery${suffix}`;
+     const evPrefix=`ev${suffix}`;
+     energyConfig[`${batteryPrefix}CapacityKwh`]=Number($(`${batteryPrefix}CapacityKwh`).value||0);
+     energyConfig[`${batteryPrefix}Direction`]=$(`${batteryPrefix}Direction`).value||'positive_discharge';
+     energyConfig[`${batteryPrefix}LineDirection`]=$(`${batteryPrefix}LineDirection`).value||'follow_power';
+     energyConfig[`${batteryPrefix}Invert`]=energyConfig[`${batteryPrefix}Direction`]==='positive_discharge';
+     if(index>energyConfig.solarCount) energyConfig[solarKey]='';
+     if(index>energyConfig.batteryCount){energyConfig[`${batteryPrefix}Soc`]='';energyConfig[`${batteryPrefix}Power`]='';energyConfig[`${batteryPrefix}Status`]='';energyConfig[`${batteryPrefix}CapacityKwh`]=0;}
+     if(index>energyConfig.chargerCount){energyConfig[`${evPrefix}Power`]='';energyConfig[`${evPrefix}Status`]='';}
+     if(index<=energyConfig.batteryCount && energyConfig[`${batteryPrefix}Soc`]) configuredBatterySoc.push(batteryPrefix);
+   }
+   if(configuredBatterySoc.length>1 && configuredBatterySoc.some(prefix=>!(energyConfig[`${prefix}CapacityKwh`]>0))){Homey.alert('Vul voor alle gekoppelde batterijen de bruikbare capaciteit in kWh in. Dit is nodig om het totale SOC correct gewogen te berekenen.');return;}
    const visualConfig={backgroundMode:$('backgroundMode').value||'auto',weatherSource:$('weatherSource').value||'',periodMode:$('scenePeriod').value||'auto',weather:$('sceneWeather').value||'clear',refreshSeconds:Number($('refreshSeconds').value||30)};
    status.textContent='Dashboard opslaan…';
    try{await api('PUT','/config',{energyConfig,visualConfig,selection:state.selected});state.energyConfig=energyConfig;state.visualConfig=visualConfig;status.textContent='Dashboard opgeslagen. Live updates zijn actief.';}catch(e){status.textContent='Opslaan mislukt: '+msg(e);Homey.alert(status.textContent);}

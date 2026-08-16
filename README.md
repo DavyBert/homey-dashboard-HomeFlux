@@ -154,3 +154,9 @@ v0.6.22 diagnostics: adds low-overhead aggregated runtime logging every 60 secon
 ## v0.6.44
 - Fixed widget loading issue introduced by the dynamic EV charger card.
 - EV charger card now hides safely below 50 W and reappears automatically while charging.
+
+
+## v0.6.45
+- Increased the configurable maximum to 10 PV installations, 10 batteries, and 10 EV chargers.
+- Additional configuration fields remain hidden until the selected device count requires them.
+- Combined PV, battery, EV power, weighted battery SOC, battery flow, and 24-hour SOC history now support up to 10 configured sources.

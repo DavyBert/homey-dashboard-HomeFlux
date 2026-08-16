@@ -3,10 +3,15 @@
 const Homey = require('homey');
 
 const ENERGY_FIELDS = [
-  'solar', 'solar2',
-  'batterySoc', 'batteryPower', 'batteryStatus',
-  'battery2Soc', 'battery2Power', 'battery2Status',
-  'evPower', 'evStatus', 'ev2Power', 'ev2Status',
+  ...Array.from({ length: 10 }, (_, index) => index === 0 ? 'solar' : `solar${index + 1}`),
+  ...Array.from({ length: 10 }, (_, index) => {
+    const suffix = index === 0 ? '' : String(index + 1);
+    return [`battery${suffix}Soc`, `battery${suffix}Power`, `battery${suffix}Status`];
+  }).flat(),
+  ...Array.from({ length: 10 }, (_, index) => {
+    const suffix = index === 0 ? '' : String(index + 1);
+    return [`ev${suffix}Power`, `ev${suffix}Status`];
+  }).flat(),
   'gridPower', 'homePower'
 ];
 
@@ -44,36 +49,49 @@ class DashboardBridgeApp extends Homey.App {
 
   _normalizeEnergyConfig(config) {
     const c = config || {};
-    return {
-      solar: c.solar || '',
-      solar2: c.solar2 || '',
-      batterySoc: c.batterySoc || '',
-      batteryPower: c.batteryPower || '',
-      batteryStatus: c.batteryStatus || '',
-      batteryCapacityKwh: Number.isFinite(Number(c.batteryCapacityKwh)) ? Math.max(0, Number(c.batteryCapacityKwh)) : 0,
-      batteryDirection: c.batteryDirection || (c.batteryInvert ? 'positive_discharge' : 'positive_discharge'),
-      batteryInvert: Boolean(c.batteryInvert),
-      batteryLineDirection: c.batteryLineDirection || 'follow_power',
-      batteryLineMotion: c.batteryLineMotion || 'invert_flow',
-      solarCount: Math.max(1, Math.min(2, Number(c.solarCount || (c.solar2 ? 2 : 1)) || 1)),
-      batteryCount: Math.max(1, Math.min(2, Number(c.batteryCount || ((c.battery2Soc || c.battery2Power || c.battery2Status) ? 2 : 1)) || 1)),
-      chargerCount: Math.max(1, Math.min(2, Number(c.chargerCount || ((c.ev2Power || c.ev2Status) ? 2 : 1)) || 1)),
-      battery2Soc: c.battery2Soc || '',
-      battery2Power: c.battery2Power || '',
-      battery2Status: c.battery2Status || '',
-      battery2CapacityKwh: Number.isFinite(Number(c.battery2CapacityKwh)) ? Math.max(0, Number(c.battery2CapacityKwh)) : 0,
-      battery2Direction: c.battery2Direction || (c.battery2Invert ? 'positive_discharge' : 'positive_discharge'),
-      battery2Invert: Boolean(c.battery2Invert),
-      battery2LineDirection: c.battery2LineDirection || 'follow_power',
-      evPower: c.evPower || '',
-      evStatus: c.evStatus || '',
-      ev2Power: c.ev2Power || '',
-      ev2Status: c.ev2Status || '',
+    const normalized = {
       gridPower: c.gridPower || '',
       gridThresholdW: Number.isFinite(Number(c.gridThresholdW)) ? Math.max(0, Number(c.gridThresholdW)) : 50,
       homePower: c.homePower || '',
-      batteryThresholdKw: Number.isFinite(Number(c.batteryThresholdKw)) ? Number(c.batteryThresholdKw) : 0.2
+      batteryThresholdKw: Number.isFinite(Number(c.batteryThresholdKw)) ? Number(c.batteryThresholdKw) : 0.2,
+      batteryLineMotion: c.batteryLineMotion || 'invert_flow'
     };
+
+    let inferredSolarCount = 1;
+    let inferredBatteryCount = 1;
+    let inferredChargerCount = 1;
+
+    for (let index = 1; index <= 10; index += 1) {
+      const suffix = index === 1 ? '' : String(index);
+      const solarKey = index === 1 ? 'solar' : `solar${index}`;
+      const batteryPrefix = `battery${suffix}`;
+      const evPrefix = `ev${suffix}`;
+
+      normalized[solarKey] = c[solarKey] || '';
+      if (normalized[solarKey]) inferredSolarCount = index;
+
+      normalized[`${batteryPrefix}Soc`] = c[`${batteryPrefix}Soc`] || '';
+      normalized[`${batteryPrefix}Power`] = c[`${batteryPrefix}Power`] || '';
+      normalized[`${batteryPrefix}Status`] = c[`${batteryPrefix}Status`] || '';
+      normalized[`${batteryPrefix}CapacityKwh`] = Number.isFinite(Number(c[`${batteryPrefix}CapacityKwh`]))
+        ? Math.max(0, Number(c[`${batteryPrefix}CapacityKwh`]))
+        : 0;
+      normalized[`${batteryPrefix}Direction`] = c[`${batteryPrefix}Direction`]
+        || (c[`${batteryPrefix}Invert`] ? 'positive_discharge' : 'positive_discharge');
+      normalized[`${batteryPrefix}Invert`] = Boolean(c[`${batteryPrefix}Invert`]);
+      normalized[`${batteryPrefix}LineDirection`] = c[`${batteryPrefix}LineDirection`] || 'follow_power';
+      if (normalized[`${batteryPrefix}Soc`] || normalized[`${batteryPrefix}Power`] || normalized[`${batteryPrefix}Status`]) inferredBatteryCount = index;
+
+      normalized[`${evPrefix}Power`] = c[`${evPrefix}Power`] || '';
+      normalized[`${evPrefix}Status`] = c[`${evPrefix}Status`] || '';
+      if (normalized[`${evPrefix}Power`] || normalized[`${evPrefix}Status`]) inferredChargerCount = index;
+    }
+
+    normalized.solarCount = Math.max(1, Math.min(10, Number(c.solarCount || inferredSolarCount) || 1));
+    normalized.batteryCount = Math.max(1, Math.min(10, Number(c.batteryCount || inferredBatteryCount) || 1));
+    normalized.chargerCount = Math.max(1, Math.min(10, Number(c.chargerCount || inferredChargerCount) || 1));
+
+    return normalized;
   }
 
   _normalizeVisualConfig(config) {
@@ -481,35 +499,40 @@ class DashboardBridgeApp extends Homey.App {
     if (!force && Date.now() - this._lastInsightsRefreshAt < INSIGHTS_REFRESH_MS) return this._batteryInsights24h;
     this._lastInsightsRefreshAt = Date.now();
 
-    const primaryKey = this.energyConfig.batterySoc;
-    if (!primaryKey) {
+    const batteries = [];
+    for (let index = 1; index <= 10; index += 1) {
+      const suffix = index === 1 ? '' : String(index);
+      const key = this.energyConfig[`battery${suffix}Soc`];
+      if (!key) continue;
+      batteries.push({
+        key,
+        capacity: Number(this.energyConfig[`battery${suffix}CapacityKwh`]) || 0
+      });
+    }
+
+    if (!batteries.length) {
       this._batteryInsights24h = null;
       return null;
     }
 
-    const secondKey = this.energyConfig.battery2Soc;
-    const [first, second] = await Promise.all([
-      this._fetchSoc24hInsight(primaryKey),
-      secondKey ? this._fetchSoc24hInsight(secondKey) : Promise.resolve(null)
-    ]);
-
-    if (!first || (secondKey && !second)) {
+    const insights = await Promise.all(batteries.map(item => this._fetchSoc24hInsight(item.key)));
+    if (insights.some(item => !item)) {
       this._batteryInsights24h = null;
       return null;
     }
 
-    let value = first.value;
-    let ts = first.ts;
-    if (secondKey && second) {
-      const c1 = Number(this.energyConfig.batteryCapacityKwh) || 0;
-      const c2 = Number(this.energyConfig.battery2CapacityKwh) || 0;
-      if (c1 > 0 && c2 > 0) {
-        value = ((first.value * c1) + (second.value * c2)) / (c1 + c2);
-        ts = Math.min(first.ts, second.ts);
-      } else {
+    let value;
+    let ts = Math.min(...insights.map(item => item.ts));
+    if (insights.length === 1) {
+      value = insights[0].value;
+    } else {
+      const validCapacities = batteries.every(item => item.capacity > 0);
+      if (!validCapacities) {
         this._batteryInsights24h = null;
         return null;
       }
+      const totalCapacity = batteries.reduce((sum, item) => sum + item.capacity, 0);
+      value = insights.reduce((sum, item, index) => sum + (item.value * batteries[index].capacity), 0) / totalCapacity;
     }
 
     this._batteryInsights24h = {
@@ -661,54 +684,44 @@ class DashboardBridgeApp extends Homey.App {
   }
 
   _combinedSolarData() {
-    return this._sumPowerSources([this.energyConfig.solar, this.energyConfig.solar2], 'Zonnepanelen totaal');
+    const keys = Array.from({ length: 10 }, (_, index) => index === 0 ? this.energyConfig.solar : this.energyConfig[`solar${index + 1}`]);
+    return this._sumPowerSources(keys, 'Zonnepanelen totaal');
   }
 
   _batteryPowerWatts() {
-    const batteries = [
-      { key: this.energyConfig.batteryPower, direction: this.energyConfig.batteryDirection || (this.energyConfig.batteryInvert ? 'positive_discharge' : 'positive_discharge') },
-      { key: this.energyConfig.battery2Power, direction: this.energyConfig.battery2Direction || (this.energyConfig.battery2Invert ? 'positive_discharge' : 'positive_discharge') }
-    ];
-
     let total = 0;
     let count = 0;
-    for (const battery of batteries) {
-      if (!battery.key) continue;
-      let watts = this._powerToWatts(this._sourceData(battery.key));
+    for (let index = 1; index <= 10; index += 1) {
+      const suffix = index === 1 ? '' : String(index);
+      const key = this.energyConfig[`battery${suffix}Power`];
+      if (!key) continue;
+      const direction = this.energyConfig[`battery${suffix}Direction`]
+        || (this.energyConfig[`battery${suffix}Invert`] ? 'positive_discharge' : 'positive_discharge');
+      let watts = this._powerToWatts(this._sourceData(key));
       if (watts === null) continue;
-      watts = this._normalizeBatteryWatts(watts, battery.direction);
+      watts = this._normalizeBatteryWatts(watts, direction);
       total += watts;
       count += 1;
     }
-
     return count ? total : null;
   }
 
   _batteryLineWatts() {
-    const batteries = [
-      {
-        key: this.energyConfig.batteryPower,
-        powerDirection: this.energyConfig.batteryDirection || (this.energyConfig.batteryInvert ? 'positive_discharge' : 'positive_discharge'),
-        lineDirection: this.energyConfig.batteryLineDirection || 'follow_power'
-      },
-      {
-        key: this.energyConfig.battery2Power,
-        powerDirection: this.energyConfig.battery2Direction || (this.energyConfig.battery2Invert ? 'positive_discharge' : 'positive_discharge'),
-        lineDirection: this.energyConfig.battery2LineDirection || 'follow_power'
-      }
-    ];
-
     let total = 0;
     let count = 0;
-    for (const battery of batteries) {
-      if (!battery.key) continue;
-      let watts = this._powerToWatts(this._sourceData(battery.key));
+    for (let index = 1; index <= 10; index += 1) {
+      const suffix = index === 1 ? '' : String(index);
+      const key = this.energyConfig[`battery${suffix}Power`];
+      if (!key) continue;
+      const powerDirection = this.energyConfig[`battery${suffix}Direction`]
+        || (this.energyConfig[`battery${suffix}Invert`] ? 'positive_discharge' : 'positive_discharge');
+      const lineDirection = this.energyConfig[`battery${suffix}LineDirection`] || 'follow_power';
+      let watts = this._powerToWatts(this._sourceData(key));
       if (watts === null) continue;
-      watts = this._normalizeBatteryWatts(watts, this._resolveBatteryLineDirection(battery.lineDirection, battery.powerDirection));
+      watts = this._normalizeBatteryWatts(watts, this._resolveBatteryLineDirection(lineDirection, powerDirection));
       total += watts;
       count += 1;
     }
-
     return count ? total : null;
   }
 
@@ -718,10 +731,13 @@ class DashboardBridgeApp extends Homey.App {
   }
 
   _combinedBatterySocData() {
-    const entries = [
-      { key: this.energyConfig.batterySoc, capacity: Number(this.energyConfig.batteryCapacityKwh) || 0 },
-      { key: this.energyConfig.battery2Soc, capacity: Number(this.energyConfig.battery2CapacityKwh) || 0 }
-    ].filter(item => item.key);
+    const entries = [];
+    for (let index = 1; index <= 10; index += 1) {
+      const suffix = index === 1 ? '' : String(index);
+      const key = this.energyConfig[`battery${suffix}Soc`];
+      if (!key) continue;
+      entries.push({ key, capacity: Number(this.energyConfig[`battery${suffix}CapacityKwh`]) || 0 });
+    }
     if (!entries.length) return null;
 
     const available = [];
@@ -758,7 +774,11 @@ class DashboardBridgeApp extends Homey.App {
   }
 
   _combinedEvPowerData() {
-    return this._sumPowerSources([this.energyConfig.evPower, this.energyConfig.ev2Power], 'Autoladers totaal');
+    const keys = Array.from({ length: 10 }, (_, index) => {
+      const suffix = index === 0 ? '' : String(index + 1);
+      return this.energyConfig[`ev${suffix}Power`];
+    });
+    return this._sumPowerSources(keys, 'Autoladers totaal');
   }
 
   _batteryFlowState() {
@@ -830,7 +850,7 @@ class DashboardBridgeApp extends Homey.App {
     if (flow === 'charge') return { text: 'Laden', source: 'derived', flow };
     if (flow === 'discharge') return { text: 'Ontladen', source: 'derived', flow };
 
-    const hasSecondBattery = Boolean(this.energyConfig.battery2Power || this.energyConfig.battery2Soc || this.energyConfig.battery2Status);
+    const hasSecondBattery = Array.from({ length: 9 }, (_, index) => index + 2).some(index => this.energyConfig[`battery${index}Power`] || this.energyConfig[`battery${index}Soc`] || this.energyConfig[`battery${index}Status`]);
     if (!hasSecondBattery) {
       const explicit = this._sourceData(this.energyConfig.batteryStatus);
       if (explicit && explicit.online && explicit.rawValue !== null && explicit.rawValue !== '') {
@@ -1034,7 +1054,7 @@ class DashboardBridgeApp extends Homey.App {
       batteryLineMotion: this.energyConfig.batteryLineMotion || 'invert_flow',
       battery24hAgo: this._battery24hAgoBest(),
       evPower: this._combinedEvPowerData(),
-      evStatus: this.energyConfig.ev2Power ? { value: '2 laders', rawValue: '2 laders', unit: '', online: true } : this._sourceData(this.energyConfig.evStatus),
+      evStatus: this.energyConfig.chargerCount > 1 ? { value: `${this.energyConfig.chargerCount} laders`, rawValue: `${this.energyConfig.chargerCount} laders`, unit: '', online: true } : this._sourceData(this.energyConfig.evStatus),
       gridPower: this._sourceData(this.energyConfig.gridPower),
       gridFlow: this._gridFlowState(),
       homePower: this._homePowerData()

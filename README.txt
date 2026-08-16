@@ -160,3 +160,9 @@ v0.6.42
 v0.6.44
 - Fixed widget loading issue introduced by the dynamic EV charger card.
 - EV charger card now hides safely below 50 W and reappears automatically while charging.
+
+
+v0.6.45
+- Increased the configurable maximum to 10 PV installations, 10 batteries, and 10 EV chargers.
+- Additional configuration fields remain hidden until required.
+- Aggregation and battery history support up to 10 configured sources.
