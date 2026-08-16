@@ -31,5 +31,8 @@
   },
   "0.6.54": {
     "en": "Added support page"
+  },
+  "0.6.57": {
+    "en": "Further memory and cpu optimisation."
   }
 }
