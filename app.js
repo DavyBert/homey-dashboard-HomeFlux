@@ -1054,7 +1054,8 @@ class DashboardBridgeApp extends Homey.App {
       batteryLineMotion: this.energyConfig.batteryLineMotion || 'invert_flow',
       battery24hAgo: this._battery24hAgoBest(),
       evPower: this._combinedEvPowerData(),
-      evStatus: this.energyConfig.chargerCount > 1 ? { value: `${this.energyConfig.chargerCount} laders`, rawValue: `${this.energyConfig.chargerCount} laders`, unit: '', online: true } : this._sourceData(this.energyConfig.evStatus),
+      evChargerCount: this.energyConfig.chargerCount || 1,
+      evStatus: this.energyConfig.chargerCount > 1 ? { value: String(this.energyConfig.chargerCount), rawValue: this.energyConfig.chargerCount, unit: '', online: true, synthetic: true } : this._sourceData(this.energyConfig.evStatus),
       gridPower: this._sourceData(this.energyConfig.gridPower),
       gridFlow: this._gridFlowState(),
       homePower: this._homePowerData()

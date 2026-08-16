@@ -30,6 +30,11 @@
 <script>
 function onHomeyReady(Homey){
  const $=id=>document.getElementById(id), frame=$('frame'), energyEl=$('energy'), extra=$('extra');
+ const tr=(key,tokens)=>Homey.__(key,tokens);
+ energyEl.setAttribute('aria-label',tr('widget.aria_energy')); extra.setAttribute('aria-label',tr('widget.aria_extra'));
+ document.querySelector('.solar .kicker').textContent=tr('widget.solar'); document.querySelector('.solar .sub').textContent=tr('widget.production');
+ document.querySelector('.grid .kicker').textContent=tr('widget.grid'); document.querySelector('.battery .kicker').textContent=tr('widget.battery');
+ document.querySelector('.home .kicker').textContent=tr('widget.home'); document.querySelector('.ev .kicker').textContent=tr('widget.ev');
  const BACKGROUNDS={
    'day-clear':'./scene-day-clear.jpg',
    'day-cloudy':'./scene-day-cloudy.jpg',
@@ -61,7 +66,7 @@ function onHomeyReady(Homey){
  }
  function scheduleHeightSync(force=false){[0,60,180,420,900].forEach((delay,i)=>setTimeout(()=>syncHeight(force&&i===0),delay));}
  function setEnergy(prefix,data){$(prefix+'Value').textContent=data&&data.online?(data.value??'—'):'—';$(prefix+'Unit').textContent=data&&data.online?(data.unit||''):'';}
- function capabilitySubtitle(tile){if(tile.sourceName&&tile.sourceName!==tile.label)return tile.sourceName;if(tile.sourceLabel&&tile.sourceLabel.includes('—')){const p=tile.sourceLabel.split('—').slice(1).join('—').trim();if(p&&p!==tile.label)return p;}return tile.kind==='boolean'?'Status':'Waarde';}
+ function capabilitySubtitle(tile){if(tile.sourceName&&tile.sourceName!==tile.label)return tile.sourceName;if(tile.sourceLabel&&tile.sourceLabel.includes('—')){const p=tile.sourceLabel.split('—').slice(1).join('—').trim();if(p&&p!==tile.label)return p;}return tile.kind==='boolean'?tr('widget.status'):tr('widget.value');}
  function applyScene(scene){const key=scene&&scene.key?scene.key:'day-clear';if(key===currentScene)return;currentScene=key;const url=BACKGROUNDS[key]||BACKGROUNDS['day-clear'];energyEl.style.backgroundImage=`url('${url}')`;const img=new Image();img.onload=()=>scheduleHeightSync(true);img.src=url;}
  function ensurePoll(seconds){
    const next=Math.min(300,Math.max(1,Number(seconds)||30));
@@ -74,8 +79,12 @@ function onHomeyReady(Homey){
    applyScene(d.scene||{});
    ensurePoll(d.visualConfig&&d.visualConfig.refreshSeconds);
    const e=d.energy||{};setEnergy('solar',e.solar);setEnergy('grid',e.gridPower);setEnergy('batterySoc',e.batterySoc);setEnergy('home',e.homePower);setEnergy('ev',e.evPower);
-   $('homeStatus').textContent=e.homePower&&e.homePower.derived?'Berekend':'Verbruik';
-   const bs=$('batteryStatus'), status=e.batteryStatus||'—', statusKey=String(status).trim().toLowerCase();
+   $('homeStatus').textContent=e.homePower&&e.homePower.derived?tr('widget.calculated'):tr('widget.consumption');
+   const bs=$('batteryStatus');
+   let status=e.batteryStatus||'—';
+   if(e.batteryStatusSource==='derived'){if(e.batteryFlow==='charge')status=tr('widget.charging');else if(e.batteryFlow==='discharge')status=tr('widget.discharging');else status=tr('widget.standby');}
+   else {const rawStatus=String(status).trim().toLowerCase();if(/^(laden|charging|charge)$/.test(rawStatus))status=tr('widget.charging');else if(/^(ontladen|discharging|discharge)$/.test(rawStatus))status=tr('widget.discharging');else if(/^(stand-by|standby|idle)$/.test(rawStatus))status=tr('widget.standby');}
+   const statusKey=String(status).trim().toLowerCase();
    const flowSource=e.batteryLineFlow || e.batteryFlow;
   const flowMode=['charge','discharge','idle'].includes(flowSource)?flowSource:'';
    const isCharge=flowMode?flowMode==='charge':/(^|\b)(laden|charging|charge)(\b|$)/.test(statusKey)&&!/(ontladen|discharging|discharge)/.test(statusKey);
@@ -103,9 +112,9 @@ function onHomeyReady(Homey){
    const gridFlow=['import','export','idle'].includes(e.gridFlow)?e.gridFlow:'idle';
    const gridMode=gridFlow==='import'?'grid-import':gridFlow==='export'?'grid-export':'';
    $('gridFlowOverlay').setAttribute('class','flow-overlay '+(gridFlow==='import'?'grid-import':gridFlow==='export'?'grid-export':'grid-idle'));
-   gridStatus.textContent=gp===null?'Net':gridFlow==='export'?'Terugleveren':gridFlow==='import'?'Afnemen':'Net';
+   gridStatus.textContent=gp===null?tr('widget.grid_short'):gridFlow==='export'?tr('widget.exporting'):gridFlow==='import'?tr('widget.importing'):tr('widget.grid_short');
    gridStatus.className='sub '+gridMode;gridValue.className='value '+gridMode;
-   $('evStatus').textContent=e.evStatus&&e.evStatus.online?String(e.evStatus.value):'Lader';
+   $('evStatus').textContent=e.evChargerCount>1?tr('widget.chargers',{count:e.evChargerCount}):(e.evStatus&&e.evStatus.online?String(e.evStatus.value):tr('widget.charger'));
    const evCard=document.querySelector('.callout.ev');
    if(evCard){
      const evPower=e.evPower;
@@ -115,7 +124,7 @@ function onHomeyReady(Homey){
    extra.innerHTML='';const tiles=Array.isArray(d.tiles)?d.tiles:[];
    if(!tiles.length){extra.classList.add('hidden');scheduleHeightSync(true);return;}
    extra.classList.remove('hidden');
-   for(const t of tiles){const el=document.createElement('article');const isBool=t.kind==='boolean',isOn=isBool&&Boolean(t.rawValue);el.className=`tile${isBool?' boolean':''}${isOn?' boolean-on':''}${t.online?'':' offline'}`;el.innerHTML='<div class="tile-head"><div class="names"><div class="label"></div><div class="subtitle"></div></div><div class="dot"></div></div><div class="reading2"><div class="value2"></div><div class="unit2"></div></div>';el.querySelector('.label').textContent=t.label||t.deviceName||'Item';el.querySelector('.subtitle').textContent=capabilitySubtitle(t);el.querySelector('.dot').className='dot'+(t.online?' online':'');el.querySelector('.value2').textContent=t.value??'—';el.querySelector('.unit2').textContent=!isBool&&t.unit?t.unit:'';extra.appendChild(el);}
+   for(const t of tiles){const el=document.createElement('article');const isBool=t.kind==='boolean',isOn=isBool&&Boolean(t.rawValue);el.className=`tile${isBool?' boolean':''}${isOn?' boolean-on':''}${t.online?'':' offline'}`;el.innerHTML='<div class="tile-head"><div class="names"><div class="label"></div><div class="subtitle"></div></div><div class="dot"></div></div><div class="reading2"><div class="value2"></div><div class="unit2"></div></div>';el.querySelector('.label').textContent=t.label||t.deviceName||tr('widget.item');el.querySelector('.subtitle').textContent=capabilitySubtitle(t);el.querySelector('.dot').className='dot'+(t.online?' online':'');el.querySelector('.value2').textContent=t.value??'—';el.querySelector('.unit2').textContent=!isBool&&t.unit?t.unit:'';extra.appendChild(el);}
    scheduleHeightSync(true);
  }
  async function refresh(){try{render(await Homey.api('GET','/dashboard'));}catch(err){console.error(err);extra.classList.add('hidden');scheduleHeightSync(true);}}

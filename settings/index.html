@@ -93,6 +93,45 @@ function onHomeyReady(Homey){
  const pickerMap={};
  const api=(method,path,body)=>new Promise((resolve,reject)=>Homey.api(method,path,body,(err,result)=>err?reject(err):resolve(result)));
  const msg=e=>(e&&e.message)||String(e);
+ const tr=(key,tokens)=>Homey.__(key,tokens);
+
+ function setText(selector,key,tokens){const el=document.querySelector(selector);if(el)el.textContent=tr(key,tokens);}
+ function setFieldText(id,key,hintKey,tokens){const el=$(id);if(!el)return;const root=el.closest('.map-row,.threshold');if(!root)return;const label=root.querySelector('.map-label');const hint=root.querySelector('.hint');if(label)label.textContent=tr(key,tokens);if(hint&&hintKey)hint.textContent=tr(hintKey,tokens);}
+ function setOptionText(id,value,key){const el=$(id);if(!el)return;const option=[...el.options].find(o=>o.value===value);if(option)option.textContent=tr(key);}
+ function localizeStatic(){
+   const bodyIntro=document.querySelector('body > .sub'); if(bodyIntro)bodyIntro.textContent=tr('settings.page_intro');
+   const cards=document.querySelectorAll('body > .card');
+   if(cards[0]){const ok=cards[0].querySelector('.ok');const sub=cards[0].querySelector('.sub');if(ok)ok.textContent=tr('settings.native_access');if(sub)sub.textContent=tr('settings.native_access_hint');}
+   $('testconn').textContent=tr('settings.test_access'); $('scan').textContent=tr('settings.scan_homey'); status.textContent=tr('settings.starting');
+   if(cards[1]){const h=cards[1].querySelector('h2');const sub=cards[1].querySelector(':scope > .sub');if(h)h.textContent=tr('settings.energy_title');if(sub)sub.textContent=tr('settings.energy_intro');}
+   setFieldText('solarCount','settings.solar_count','settings.solar_count_hint'); setFieldText('batteryCount','settings.battery_count','settings.battery_count_hint'); setFieldText('chargerCount','settings.charger_count','settings.charger_count_hint');
+   for(let index=1;index<=10;index+=1){
+     const suffix=index===1?'':String(index);
+     setFieldText(index===1?'solar':`solar${index}`,'settings.solar_label',index===1?'settings.solar1_hint':'settings.solar_extra_hint',{index});
+     setFieldText(`battery${suffix}Soc`,'settings.battery_soc_label','settings.battery_soc_hint',{index});
+     setFieldText(`battery${suffix}CapacityKwh`,'settings.battery_capacity_label',index===1?'settings.battery_capacity1_hint':'settings.battery_capacity_hint',{index});
+     const cap=$(`battery${suffix}CapacityKwh`);if(cap)cap.placeholder=tr('settings.example_10');
+     setFieldText(`battery${suffix}Power`,'settings.battery_power_label',index===1?'settings.battery_power1_hint':'settings.battery_power_hint',{index});
+     setFieldText(`battery${suffix}Status`,'settings.battery_status_label',index===1?'settings.battery_status1_hint':'settings.battery_status_hint',{index});
+     setFieldText(`ev${suffix}Power`,'settings.ev_power_label',index===1?'settings.ev_power1_hint':'settings.ev_power_hint',{index});
+     setFieldText(`ev${suffix}Status`,'settings.ev_status_label',index===1?'settings.ev_status1_hint':'settings.ev_status_hint',{index});
+     setFieldText(`battery${suffix}Direction`,'settings.battery_direction',index===1?'settings.battery_direction1_hint':'settings.battery_direction_hint',{index});
+     setOptionText(`battery${suffix}Direction`,'positive_discharge','settings.positive_discharge'); setOptionText(`battery${suffix}Direction`,'positive_charge','settings.positive_charge');
+     setFieldText(`battery${suffix}LineDirection`,'settings.battery_line_direction',index===1?'settings.battery_line_direction1_hint':'settings.battery_line_direction_hint',{index});
+     setOptionText(`battery${suffix}LineDirection`,'follow_power','settings.follow_power'); setOptionText(`battery${suffix}LineDirection`,'positive_discharge','settings.positive_discharge'); setOptionText(`battery${suffix}LineDirection`,'positive_charge','settings.positive_charge');
+   }
+   setFieldText('gridPower','settings.grid_label','settings.grid_hint'); setFieldText('homePower','settings.home_label','settings.home_hint');
+   setFieldText('batteryThresholdKw','settings.battery_threshold','settings.battery_threshold_hint'); setFieldText('gridThresholdW','settings.grid_threshold','settings.grid_threshold_hint');
+   setFieldText('batteryLineMotion','settings.battery_motion','settings.battery_motion_hint'); setOptionText('batteryLineMotion','invert_flow','settings.motion_invert'); setOptionText('batteryLineMotion','follow_flow','settings.motion_auto');
+   if(cards[2]){const h=cards[2].querySelector('h2');const sub=cards[2].querySelector(':scope > .sub');if(h)h.textContent=tr('settings.background_title');if(sub)sub.textContent=tr('settings.background_intro');}
+   setFieldText('backgroundMode','settings.mode','settings.mode_hint'); setOptionText('backgroundMode','auto','settings.mode_auto'); setOptionText('backgroundMode','manual','settings.mode_manual');
+   setFieldText('weatherSource','settings.weather_source','settings.weather_source_hint'); setFieldText('scenePeriod','settings.period','settings.period_hint'); setOptionText('scenePeriod','auto','settings.period_auto');setOptionText('scenePeriod','day','settings.day');setOptionText('scenePeriod','night','settings.night');
+   setFieldText('sceneWeather','settings.weather_scene','settings.weather_scene_hint'); for(const [value,key] of [['clear','clear'],['cloudy','cloudy'],['rain','rain'],['mist','mist'],['snow','snow'],['thunder','thunder']])setOptionText('sceneWeather',value,`settings.${key}`);
+   setFieldText('refreshSeconds','settings.refresh','settings.refresh_hint'); const refreshMap={1:['second'],2:['seconds',{count:2}],3:['seconds',{count:3}],5:['seconds',{count:5}],10:['seconds',{count:10}],15:['seconds',{count:15}],30:['seconds',{count:30}],60:['minute'],120:['minutes',{count:2}],300:['minutes',{count:5}]};for(const [value,args] of Object.entries(refreshMap)){const option=[...$('refreshSeconds').options].find(o=>o.value===value);if(option)option.textContent=tr(`settings.${args[0]}`,args[1]);}
+   const preview=cards[2]&&cards[2].querySelector('.preview-note');if(preview)preview.textContent=tr('settings.weather_mapping');
+   if(cards[3]){const h=cards[3].querySelector('h2');const sub=cards[3].querySelector(':scope > .sub');const selectedTitle=cards[3].querySelector('.selected h3');const selectedSub=cards[3].querySelector('.selected > .sub');if(h)h.textContent=tr('settings.extras_title');if(sub)sub.textContent=tr('settings.extras_intro');if(selectedTitle)selectedTitle.textContent=tr('settings.selected_extras');if(selectedSub)selectedSub.textContent=tr('settings.selected_extras_hint');}
+   search.placeholder=tr('settings.extras_search_placeholder'); $('save').textContent=tr('settings.save');
+ }
 
  function sourceText(s){return `${s.label}${s.value!==undefined?'  ·  '+(s.value??'—')+(s.unit?' '+s.unit:''):''}`}
  function weatherScore(s){const t=`${s.name||''} ${s.label||''} ${s.key||''}`.toLowerCase();let score=0;if(/weather|weer|condition/.test(t))score+=100;if(/rain|regen|precip|neerslag/.test(t))score+=80;if(/cloud|bewolk|overcast/.test(t))score+=50;if(/status|state/.test(t))score+=20;return score;}
@@ -138,7 +177,7 @@ function onHomeyReady(Homey){
    const picker=pickerMap[field]; if(!picker) return;
    const value=$(field).value||'';
    const selectedOption=pickerOptions(field).find(opt=>opt.value===value);
-   if(!selectedOption){picker.selected.className='picker-selected empty';picker.selected.innerHTML=field==='weatherSource'?'— Geen weerbron gekozen —':'— Niet gekoppeld —';picker.clear.classList.add('hidden-row');return;}
+   if(!selectedOption){picker.selected.className='picker-selected empty';picker.selected.innerHTML=field==='weatherSource'?tr('settings.no_weather'):tr('settings.not_connected');picker.clear.classList.add('hidden-row');return;}
    picker.selected.className='picker-selected';
    picker.selected.innerHTML=`<div class="picker-selected-name">${selectedOption.label}</div><div class="picker-selected-meta">${selectedOption.text}</div>`;
    picker.clear.classList.remove('hidden-row');
@@ -150,7 +189,7 @@ function onHomeyReady(Homey){
    picker.results.innerHTML='';
    if(!q){picker.results.classList.add('hidden-row'); return;}
    const options=pickerOptions(field).filter(opt=>opt.text.toLowerCase().includes(q)||opt.label.toLowerCase().includes(q)||opt.meta.toLowerCase().includes(q));
-   if(!options.length){const empty=document.createElement('div');empty.className='inline-note';empty.textContent='Geen apparaten gevonden voor deze zoekterm.';picker.results.appendChild(empty);picker.results.classList.remove('hidden-row');return;}
+   if(!options.length){const empty=document.createElement('div');empty.className='inline-note';empty.textContent=tr('settings.no_devices');picker.results.appendChild(empty);picker.results.classList.remove('hidden-row');return;}
    for(const option of options.slice(0,60)){
      const row=document.createElement('div'); row.className='picker-option';
      row.innerHTML=`<div class="title">${option.label}</div><div class="meta">${option.text}</div>`;
@@ -162,10 +201,10 @@ function onHomeyReady(Homey){
  function setupPicker(field){
    const select=$(field); if(!select||pickerMap[field]) return;
    const picker=document.createElement('div'); picker.className='picker';
-   const searchInput=document.createElement('input'); searchInput.className='picker-search'; searchInput.type='search'; searchInput.placeholder='Typ om te zoeken…';
+   const searchInput=document.createElement('input'); searchInput.className='picker-search'; searchInput.type='search'; searchInput.placeholder=tr('settings.search_placeholder');
    const results=document.createElement('div'); results.className='picker-results hidden-row';
    const selectedView=document.createElement('div'); selectedView.className='picker-selected empty';
-   const clearBtn=document.createElement('button'); clearBtn.type='button'; clearBtn.className='picker-clear hidden-row'; clearBtn.textContent=field==='weatherSource'?'Weerbron wissen':'Koppeling wissen';
+   const clearBtn=document.createElement('button'); clearBtn.type='button'; clearBtn.className='picker-clear hidden-row'; clearBtn.textContent=field==='weatherSource'?tr('settings.clear_weather'):tr('settings.clear_link');
    picker.appendChild(searchInput); picker.appendChild(results); picker.appendChild(selectedView); picker.appendChild(clearBtn);
    select.parentNode.insertBefore(picker, select); select.style.display='none';
    pickerMap[field]={search:searchInput,results,selected:selectedView,clear:clearBtn};
@@ -179,7 +218,7 @@ function onHomeyReady(Homey){
  function fillEnergySelects(){
    for(const field of energyFields){
      const select=$(field); const current=state.energyConfig[field]||''; select.innerHTML='';
-     const none=document.createElement('option'); none.value=''; none.textContent='— Niet gekoppeld —'; select.appendChild(none);
+     const none=document.createElement('option'); none.value=''; none.textContent=tr('settings.not_connected'); select.appendChild(none);
      for(const s of state.sources){
        const o=document.createElement('option');o.value=s.key;o.textContent=sourceText(s);select.appendChild(o);
      }
@@ -187,7 +226,7 @@ function onHomeyReady(Homey){
      updatePickerSelected(field);
    }
    const weatherSelect=$('weatherSource'); const currentWeather=state.visualConfig.weatherSource||''; weatherSelect.innerHTML='';
-   const noWeather=document.createElement('option');noWeather.value='';noWeather.textContent='— Kies Homey weerbron —';weatherSelect.appendChild(noWeather);
+   const noWeather=document.createElement('option');noWeather.value='';noWeather.textContent=tr('settings.choose_weather');weatherSelect.appendChild(noWeather);
    const weatherCandidates=[...state.sources].sort((a,b)=>weatherScore(b)-weatherScore(a)||a.label.localeCompare(b.label));
    for(const src of weatherCandidates){const o=document.createElement('option');o.value=src.key;o.textContent=sourceText(src);weatherSelect.appendChild(o);}weatherSelect.value=currentWeather;
    updatePickerSelected('weatherSource');
@@ -215,28 +254,28 @@ function onHomeyReady(Homey){
    const q=search.value.trim().toLowerCase();
    list.innerHTML='';
    if(!q){
-     const note=document.createElement('div'); note.className='inline-note'; note.textContent='Typ eerst om apparaten of variabelen te zoeken.'; list.appendChild(note);
-     status.textContent=`${state.sources.length} bronnen gevonden · ${state.selected.length} extra item(s)`;
+     const note=document.createElement('div'); note.className='inline-note'; note.textContent=tr('settings.type_to_search'); list.appendChild(note);
+     status.textContent=tr('settings.sources_found',{sources:state.sources.length,selected:state.selected.length});
      return;
    }
    const filtered=state.sources.filter(s=>s.label.toLowerCase().includes(q)||String(s.value??'').toLowerCase().includes(q)||s.key.toLowerCase().includes(q));
    let last='';
    filtered.forEach(s=>{
-     if(s.type!==last){const g=document.createElement('div');g.className='group';g.textContent=s.type==='device'?'Device capabilities':'Logic variabelen';list.appendChild(g);last=s.type;}
+     if(s.type!==last){const g=document.createElement('div');g.className='group';g.textContent=s.type==='device'?tr('settings.device_capabilities'):tr('settings.logic_variables');list.appendChild(g);last=s.type;}
      const row=document.createElement('label');row.className='row';const checked=state.selected.some(x=>x.key===s.key);
      row.innerHTML=`<input type="checkbox" ${checked?'checked':''}><div><div class="title"></div><div class="meta"></div></div><div class="value"></div>`;
      row.querySelector('.title').textContent=s.label;row.querySelector('.meta').textContent=s.key;row.querySelector('.value').textContent=`${s.value??'—'}${s.unit?' '+s.unit:''}`;
      row.querySelector('input').onchange=e=>{if(e.target.checked){if(!state.selected.some(x=>x.key===s.key))state.selected.push({key:s.key,label:s.type==='device'?(s.deviceName||s.name):s.name,sourceLabel:s.label,unit:s.unit||''});}else state.selected=state.selected.filter(x=>x.key!==s.key);renderSelected();};
      list.appendChild(row);
    });
-   if(!filtered.length){const note=document.createElement('div'); note.className='inline-note'; note.textContent='Geen extra items gevonden voor deze zoekterm.'; list.appendChild(note);}
-   status.textContent=`${state.sources.length} bronnen gevonden · ${state.selected.length} extra item(s)`;
+   if(!filtered.length){const note=document.createElement('div'); note.className='inline-note'; note.textContent=tr('settings.no_extra_items'); list.appendChild(note);}
+   status.textContent=tr('settings.sources_found',{sources:state.sources.length,selected:state.selected.length});
  }
 
  function renderSelected(){
    selected.innerHTML='';
    state.selected.forEach((item,index)=>{
-     const row=document.createElement('div');row.className='selected-row';row.innerHTML='<input><div><button class="up">↑</button> <button class="down">↓</button> <button class="remove">Verwijder</button></div>';
+     const row=document.createElement('div');row.className='selected-row';row.innerHTML='<input><div><button class="up">↑</button> <button class="down">↓</button> <button class="remove"></button></div>';row.querySelector('.remove').textContent=tr('settings.remove');
      const input=row.querySelector('input');input.value=item.label;input.title=item.sourceLabel||item.key;input.oninput=()=>item.label=input.value;
      row.querySelector('.up').onclick=()=>{if(index>0){[state.selected[index-1],state.selected[index]]=[state.selected[index],state.selected[index-1]];renderSelected();}};
      row.querySelector('.down').onclick=()=>{if(index<state.selected.length-1){[state.selected[index+1],state.selected[index]]=[state.selected[index],state.selected[index+1]];renderSelected();}};
@@ -244,10 +283,11 @@ function onHomeyReady(Homey){
    });
  }
 
- async function testConnection(){try{status.textContent='Homey toegang testen…';const r=await api('POST','/test',{});status.textContent=`Homey toegang OK · ${r.devices} devices · ${r.variables} Logic variabelen`;Homey.alert(status.textContent);}catch(e){status.textContent='Homey toegang mislukt: '+msg(e);Homey.alert(status.textContent);}}
- async function scan(){status.textContent='Homey scannen…';try{state.sources=await api('GET','/sources');fillEnergySelects();renderSources();}catch(e){status.textContent='Scan mislukt: '+msg(e);Homey.alert(status.textContent);}}
+ async function testConnection(){try{status.textContent=tr('settings.testing_access');const r=await api('POST','/test',{});status.textContent=tr('settings.access_ok',{devices:r.devices,variables:r.variables});Homey.alert(status.textContent);}catch(e){status.textContent=tr('settings.access_failed',{error:msg(e)});Homey.alert(status.textContent);}}
+ async function scan(){status.textContent=tr('settings.scanning');try{state.sources=await api('GET','/sources');fillEnergySelects();renderSources();}catch(e){status.textContent=tr('settings.scan_failed',{error:msg(e)});Homey.alert(status.textContent);}}
 
  createAdditionalFields();
+ localizeStatic();
  setupPickers();
  $('testconn').onclick=testConnection;$('scan').onclick=scan;search.oninput=renderSources;$('backgroundMode').onchange=updateBackgroundMode;$('solarCount').onchange=updateInstallCountsVisibility;$('batteryCount').onchange=updateInstallCountsVisibility;$('chargerCount').onchange=updateInstallCountsVisibility;
  $('save').onclick=async()=>{
@@ -273,13 +313,13 @@ function onHomeyReady(Homey){
      if(index>energyConfig.chargerCount){energyConfig[`${evPrefix}Power`]='';energyConfig[`${evPrefix}Status`]='';}
      if(index<=energyConfig.batteryCount && energyConfig[`${batteryPrefix}Soc`]) configuredBatterySoc.push(batteryPrefix);
    }
-   if(configuredBatterySoc.length>1 && configuredBatterySoc.some(prefix=>!(energyConfig[`${prefix}CapacityKwh`]>0))){Homey.alert('Vul voor alle gekoppelde batterijen de bruikbare capaciteit in kWh in. Dit is nodig om het totale SOC correct gewogen te berekenen.');return;}
+   if(configuredBatterySoc.length>1 && configuredBatterySoc.some(prefix=>!(energyConfig[`${prefix}CapacityKwh`]>0))){Homey.alert(tr('settings.capacity_required'));return;}
    const visualConfig={backgroundMode:$('backgroundMode').value||'auto',weatherSource:$('weatherSource').value||'',periodMode:$('scenePeriod').value||'auto',weather:$('sceneWeather').value||'clear',refreshSeconds:Number($('refreshSeconds').value||30)};
-   status.textContent='Dashboard opslaan…';
-   try{await api('PUT','/config',{energyConfig,visualConfig,selection:state.selected});state.energyConfig=energyConfig;state.visualConfig=visualConfig;status.textContent='Dashboard opgeslagen. Live updates zijn actief.';}catch(e){status.textContent='Opslaan mislukt: '+msg(e);Homey.alert(status.textContent);}
+   status.textContent=tr('settings.saving');
+   try{await api('PUT','/config',{energyConfig,visualConfig,selection:state.selected});state.energyConfig=energyConfig;state.visualConfig=visualConfig;status.textContent=tr('settings.saved');}catch(e){status.textContent=tr('settings.save_failed',{error:msg(e)});Homey.alert(status.textContent);}
  };
 
- (async()=>{try{const cfg=await api('GET','/config');state.selected=cfg.selection||[];state.energyConfig=cfg.energyConfig||{};state.visualConfig=cfg.visualConfig||{};renderSelected();await scan();}catch(e){status.textContent='Startfout: '+msg(e);}finally{Homey.ready();}})();
+ (async()=>{try{const cfg=await api('GET','/config');state.selected=cfg.selection||[];state.energyConfig=cfg.energyConfig||{};state.visualConfig=cfg.visualConfig||{};renderSelected();await scan();}catch(e){status.textContent=tr('settings.start_failed',{error:msg(e)});}finally{Homey.ready();}})();
 }
 </script>
 </body>

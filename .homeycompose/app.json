@@ -4,10 +4,12 @@
   "compatibility": ">=12.3.0",
   "sdk": 3,
   "name": {
-    "en": "HomeFlux"
+    "en": "HomeFlux",
+    "nl": "HomeFlux"
   },
   "description": {
-    "en": "See where your energy goes."
+    "en": "See where your energy goes.",
+    "nl": "Zie waar je energie naartoe gaat."
   },
   "permissions": [
     "homey:manager:api"
@@ -50,6 +52,13 @@
       "solar",
       "battery",
       "ev"
+    ],
+    "nl": [
+      "energie",
+      "dashboard",
+      "zonnepanelen",
+      "batterij",
+      "autolader"
     ]
   },
   "images": {

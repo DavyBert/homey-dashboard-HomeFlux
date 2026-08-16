@@ -160,3 +160,17 @@ v0.6.22 diagnostics: adds low-overhead aggregated runtime logging every 60 secon
 - Increased the configurable maximum to 10 PV installations, 10 batteries, and 10 EV chargers.
 - Additional configuration fields remain hidden until the selected device count requires them.
 - Combined PV, battery, EV power, weighted battery SOC, battery flow, and 24-hour SOC history now support up to 10 configured sources.
+
+## Support
+For support, bug reports, and feature requests, please use the HomeFlux GitHub Issues page:
+https://github.com/DavyBert/homey-dashboard-HomeFlux/issues
+
+
+## Support HomeFlux
+If you enjoy HomeFlux and would like to support its development, you can buy me a coffee:
+https://buymeacoffee.com/davybert
+
+
+## v0.6.46
+- Added native Dutch and English localization for the widget and settings page using Homey's locale system.
+- English is the fallback language; Dutch is shown automatically when Homey uses Dutch.
