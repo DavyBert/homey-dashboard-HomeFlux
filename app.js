@@ -20,7 +20,8 @@ const HISTORY_KEEP_MS = 30 * 60 * 60 * 1000;
 const INSIGHTS_REFRESH_MS = 6 * 60 * 60 * 1000;
 const FALLBACK_REFRESH_MS = 60 * 1000;
 const BACKGROUND_STALE_MS = 5 * 60 * 1000;
-const REALTIME_REFRESH_MIN_MS = 3 * 1000;
+const REALTIME_REFRESH_MIN_MS = 750;
+const REALTIME_REFRESH_MAX_MS = 3000;
 
 class DashboardBridgeApp extends Homey.App {
   async onInit() {
@@ -120,7 +121,14 @@ class DashboardBridgeApp extends Homey.App {
       home: String(c.labels && c.labels.home || '').trim().slice(0, 32),
       ev: String(c.labels && c.labels.ev || '').trim().slice(0, 32)
     };
-    return { backgroundMode, periodMode, weather, weatherSource, refreshSeconds, widgetTextScale, widgetTitleScale, labels };
+    const unitChoice = value => ['w', 'kw'].includes(String(value || '').toLowerCase()) ? String(value).toLowerCase() : null;
+    const powerUnits = {
+      solar: unitChoice(c.powerUnits && c.powerUnits.solar) || 'kw',
+      battery: unitChoice(c.powerUnits && c.powerUnits.battery) || 'kw',
+      home: unitChoice(c.powerUnits && c.powerUnits.home) || 'w',
+      grid: unitChoice(c.powerUnits && c.powerUnits.grid) || 'w'
+    };
+    return { backgroundMode, periodMode, weather, weatherSource, refreshSeconds, widgetTextScale, widgetTitleScale, labels, powerUnits };
   }
 
   _restartRefreshTimer() {
@@ -490,7 +498,11 @@ class DashboardBridgeApp extends Homey.App {
     // targets whose cached value is actually stale. This keeps the widget live
     // without returning to full-device polling on every widget request.
     const refreshMs = Math.min(300, Math.max(1, Number(this.visualConfig.refreshSeconds) || 30)) * 1000;
-    const maxAge = Math.max(3000, Math.floor(refreshMs * 0.9));
+    // Honour short widget refresh intervals as well. The previous 3-second
+    // minimum meant that selecting 1 second could never actually refresh once
+    // per second. Keep a small floor only to avoid duplicate reads caused by
+    // timer jitter or overlapping widget requests.
+    const maxAge = Math.max(800, Math.floor(refreshMs * 0.9));
     await this._refreshStaleConfiguredSources('widget-stale-fallback', maxAge);
     if (Date.now() - this._lastInsightsRefreshAt >= INSIGHTS_REFRESH_MS) {
       this._refreshBattery24hFromInsights().catch(err => this.error('Battery Insights refresh failed:', err));
@@ -674,6 +686,11 @@ class DashboardBridgeApp extends Homey.App {
     this._refreshDebounce.set(key, timer);
   }
 
+  _realtimeRefreshMinMs() {
+    const refreshMs = Math.min(300, Math.max(1, Number(this.visualConfig.refreshSeconds) || 30)) * 1000;
+    return Math.min(REALTIME_REFRESH_MAX_MS, Math.max(REALTIME_REFRESH_MIN_MS, Math.floor(refreshMs * 0.75)));
+  }
+
   _subscribeConfiguredSources() {
     this._clearSubscriptions();
     const deviceIds = this._configuredDeviceIds;
@@ -686,7 +703,7 @@ class DashboardBridgeApp extends Homey.App {
           this._markTargetRealtime('device', deviceId, now);
           const targetKey = this._targetKey('device', deviceId);
           const lastRead = Number(this._targetRealtimeRefreshAt.get(targetKey) || 0);
-          if (now - lastRead < REALTIME_REFRESH_MIN_MS) return;
+          if (now - lastRead < this._realtimeRefreshMinMs()) return;
           this._targetRealtimeRefreshAt.set(targetKey, now);
           this._debouncedRefresh(
             `device:${deviceId}`,
@@ -708,7 +725,7 @@ class DashboardBridgeApp extends Homey.App {
             this._markTargetRealtime('variable', variableId, now);
             const targetKey = this._targetKey('variable', variableId);
             const lastRead = Number(this._targetRealtimeRefreshAt.get(targetKey) || 0);
-            if (now - lastRead >= REALTIME_REFRESH_MIN_MS) {
+            if (now - lastRead >= this._realtimeRefreshMinMs()) {
               this._targetRealtimeRefreshAt.set(targetKey, now);
               shouldRefresh = true;
             }

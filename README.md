@@ -226,3 +226,12 @@ v0.6.52
 - Restored live widget updates with a selective stale-source fallback.
 - Fixed realtime debounce so busy devices can no longer postpone updates indefinitely.
 - Realtime event noise no longer marks cached values as fresh until a real source read completes.
+
+
+## v0.6.57
+- Fixed 1-second widget refresh: short refresh intervals are now honoured instead of being limited by a 3-second stale/realtime throttle.
+- Realtime refresh throttling now adapts to the configured widget refresh interval while retaining a safety floor.
+
+
+## v0.6.58
+- Added per-branch W/kW display settings for solar, battery power, home consumption and grid power.

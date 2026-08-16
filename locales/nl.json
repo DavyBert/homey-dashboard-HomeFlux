@@ -129,7 +129,15 @@
     "label_battery": "Naam batterij",
     "label_home": "Naam huisverbruik",
     "label_ev": "Naam autolader",
-    "label_custom_hint": "Leeg laten voor de standaard vertaalde naam."
+    "label_custom_hint": "Leeg laten voor de standaard vertaalde naam.",
+    "solar_power_unit": "Eenheid zonnepanelen",
+    "solar_power_unit_hint": "Kies hoe het totale PV-vermogen in de widget wordt weergegeven.",
+    "battery_power_unit": "Eenheid batterijvermogen",
+    "battery_power_unit_hint": "Kies W of kW voor het gezamenlijke batterijvermogen.",
+    "home_power_unit": "Eenheid huisverbruik",
+    "home_power_unit_hint": "Kies W of kW voor het huisverbruik.",
+    "grid_power_unit": "Eenheid elektriciteitsnet",
+    "grid_power_unit_hint": "Kies W of kW voor afname en teruglevering."
   },
   "widget": {
     "aria_energy": "Live energie-overzicht",

@@ -66,6 +66,28 @@ function onHomeyReady(Homey){
  }
  function scheduleHeightSync(force=false){[0,60,180,420,900].forEach((delay,i)=>setTimeout(()=>syncHeight(force&&i===0),delay));}
  function setEnergy(prefix,data){$(prefix+'Value').textContent=data&&data.online?(data.value??'—'):'—';$(prefix+'Unit').textContent=data&&data.online?(data.unit||''):'';}
+ function powerToWatts(data){
+   if(!data||!data.online||typeof data.rawValue!=='number'||!Number.isFinite(data.rawValue))return null;
+   const unit=String(data.unit||'').trim().toLowerCase();
+   if(unit==='kw'||unit.includes('kilowatt'))return data.rawValue*1000;
+   if(unit==='mw'||unit.includes('megawatt'))return data.rawValue*1000000;
+   return data.rawValue;
+ }
+ function formatPower(data,targetUnit='w',absolute=false){
+   const watts=powerToWatts(data);
+   if(watts===null)return {value:'—',unit:''};
+   const base=absolute?Math.abs(watts):watts;
+   if(targetUnit==='kw'){
+     const value=Math.round((base/1000)*100)/100;
+     return {value:String(value),unit:'kW'};
+   }
+   return {value:String(Math.round(base)),unit:'W'};
+ }
+ function setPowerEnergy(prefix,data,targetUnit){
+   const formatted=formatPower(data,targetUnit,false);
+   $(prefix+'Value').textContent=formatted.value;
+   $(prefix+'Unit').textContent=formatted.unit;
+ }
  function capabilitySubtitle(tile){if(tile.sourceName&&tile.sourceName!==tile.label)return tile.sourceName;if(tile.sourceLabel&&tile.sourceLabel.includes('—')){const p=tile.sourceLabel.split('—').slice(1).join('—').trim();if(p&&p!==tile.label)return p;}return tile.kind==='boolean'?tr('widget.status'):tr('widget.value');}
  function applyScene(scene){const key=scene&&scene.key?scene.key:'day-clear';if(key===currentScene)return;currentScene=key;const url=BACKGROUNDS[key]||BACKGROUNDS['day-clear'];energyEl.style.backgroundImage=`url('${url}')`;const img=new Image();img.onload=()=>scheduleHeightSync(true);img.src=url;}
  function ensurePoll(seconds){
@@ -88,7 +110,13 @@ function onHomeyReady(Homey){
    document.querySelector('.battery .kicker').textContent=customLabels.battery||tr('widget.battery');
    document.querySelector('.home .kicker').textContent=customLabels.home||tr('widget.home');
    document.querySelector('.ev .kicker').textContent=customLabels.ev||tr('widget.ev');
-   const e=d.energy||{};setEnergy('solar',e.solar);setEnergy('grid',e.gridPower);setEnergy('batterySoc',e.batterySoc);setEnergy('home',e.homePower);setEnergy('ev',e.evPower);
+   const e=d.energy||{};
+   const powerUnits=d.visualConfig&&d.visualConfig.powerUnits||{};
+   setPowerEnergy('solar',e.solar,powerUnits.solar||'kw');
+   setPowerEnergy('grid',e.gridPower,powerUnits.grid||'w');
+   setEnergy('batterySoc',e.batterySoc);
+   setPowerEnergy('home',e.homePower,powerUnits.home||'w');
+   setEnergy('ev',e.evPower);
    $('homeStatus').textContent=e.homePower&&e.homePower.derived?tr('widget.calculated'):tr('widget.consumption');
    const bs=$('batteryStatus');
    let status=e.batteryStatus||'—';
@@ -107,14 +135,8 @@ function onHomeyReady(Homey){
    bs.textContent=status;bs.className='sub batteryState '+(isCharge?'status-charge':isDischarge?'status-discharge':'status-idle');
    const bp=$('batteryPower');
    if(e.batteryPower&&e.batteryPower.online){
-     let displayValue=e.batteryPower.value;
-     if(typeof e.batteryPower.rawValue==='number'&&Number.isFinite(e.batteryPower.rawValue)&&(isCharge||isDischarge)){
-       const absValue=Math.abs(e.batteryPower.rawValue);
-       displayValue=String(Math.round(absValue*10)/10).replace(/\.0$/,'');
-     }else if(typeof displayValue==='string'&&(isCharge||isDischarge)){
-       displayValue=displayValue.replace(/^-/,'');
-     }
-     bp.textContent=`${displayValue}${e.batteryPower.unit?' '+e.batteryPower.unit:''}`;
+     const formattedBattery=formatPower(e.batteryPower,powerUnits.battery||'kw',isCharge||isDischarge);
+     bp.textContent=`${formattedBattery.value}${formattedBattery.unit?' '+formattedBattery.unit:''}`;
    }else bp.textContent='';
    bp.className='sub batteryPower '+(isCharge?'power-charge':isDischarge?'power-discharge':'power-idle');
    $('batteryAgo').textContent=e.battery24hAgo?`◷ 24h · ${e.battery24hAgo.valueFormatted}${e.battery24hAgo.unit?' '+e.battery24hAgo.unit:''}`:'◷ 24h · —';

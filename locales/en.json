@@ -129,7 +129,15 @@
     "label_battery": "Battery label",
     "label_home": "Home consumption label",
     "label_ev": "EV charger label",
-    "label_custom_hint": "Leave empty to use the default translated name."
+    "label_custom_hint": "Leave empty to use the default translated name.",
+    "solar_power_unit": "Solar power unit",
+    "solar_power_unit_hint": "Choose how total PV power is displayed in the widget.",
+    "battery_power_unit": "Battery power unit",
+    "battery_power_unit_hint": "Choose W or kW for combined battery power.",
+    "home_power_unit": "Home consumption unit",
+    "home_power_unit_hint": "Choose W or kW for home consumption.",
+    "grid_power_unit": "Grid power unit",
+    "grid_power_unit_hint": "Choose W or kW for grid import and export."
   },
   "widget": {
     "aria_energy": "Live energy overview",
