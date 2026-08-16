@@ -25,5 +25,8 @@
   },
   "0.6.46": {
     "en": "Changed maximum deviced to 10"
+  },
+  "0.6.53": {
+    "en": "added: Set custom namen, set widget scaling."
   }
 }
