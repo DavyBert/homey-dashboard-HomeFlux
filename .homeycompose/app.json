@@ -1,6 +1,6 @@
 {
   "id": "com.dashboard.homeflux",
-  "version": "0.6.53",
+  "version": "0.6.54",
   "compatibility": ">=12.3.0",
   "sdk": 3,
   "name": {
@@ -65,5 +65,6 @@
     "small": "/assets/images/small.png",
     "large": "/assets/images/large.png",
     "xlarge": "/assets/images/xlarge.png"
-  }
+  },
+  "support": "https://github.com/DavyBert/homey-dashboard-HomeFlux/issues"
 }

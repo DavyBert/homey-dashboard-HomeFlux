@@ -28,5 +28,8 @@
   },
   "0.6.53": {
     "en": "added: Set custom namen, set widget scaling."
+  },
+  "0.6.54": {
+    "en": "Added support page"
   }
 }
