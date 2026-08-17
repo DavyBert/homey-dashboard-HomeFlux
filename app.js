@@ -108,10 +108,11 @@ class DashboardBridgeApp extends Homey.App {
 
   _normalizeVisualConfig(config) {
     const c = config || {};
-    const backgroundMode = ['auto', 'manual'].includes(c.backgroundMode) ? c.backgroundMode : 'auto';
+    const backgroundMode = ['auto', 'manual', 'light', 'dark'].includes(c.backgroundMode) ? c.backgroundMode : 'auto';
     const periodMode = ['auto', 'day', 'night'].includes(c.periodMode) ? c.periodMode : 'auto';
     const weather = ['clear', 'cloudy', 'rain', 'mist', 'snow', 'thunder'].includes(c.weather) ? c.weather : 'clear';
     const weatherSource = typeof c.weatherSource === 'string' ? c.weatherSource : '';
+    const panelTransparency = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100].includes(Number(c.panelTransparency)) ? Number(c.panelTransparency) : 30;
     const refreshSeconds = Math.min(300, Math.max(1, Number(c.refreshSeconds) || 30));
     const widgetTextScale = [50, 60, 70, 80, 90, 100, 110].includes(Number(c.widgetTextScale)) ? Number(c.widgetTextScale) : 90;
     const widgetTitleScale = [50, 60, 70, 80, 90, 100, 110, 120, 130].includes(Number(c.widgetTitleScale)) ? Number(c.widgetTitleScale) : 100;
@@ -129,7 +130,7 @@ class DashboardBridgeApp extends Homey.App {
       home: unitChoice(c.powerUnits && c.powerUnits.home) || 'w',
       grid: unitChoice(c.powerUnits && c.powerUnits.grid) || 'w'
     };
-    return { backgroundMode, periodMode, weather, weatherSource, refreshSeconds, widgetTextScale, widgetTitleScale, labels, powerUnits };
+    return { backgroundMode, periodMode, weather, weatherSource, panelTransparency, refreshSeconds, widgetTextScale, widgetTitleScale, labels, powerUnits };
   }
 
   _widgetRefreshMs() {
@@ -1184,6 +1185,12 @@ class DashboardBridgeApp extends Homey.App {
   }
 
   _sceneState(now = new Date()) {
+    if (this.visualConfig.backgroundMode === 'light') {
+      return { period: 'fixed', weather: 'fixed', key: 'simple-light', mode: 'light' };
+    }
+    if (this.visualConfig.backgroundMode === 'dark') {
+      return { period: 'fixed', weather: 'fixed', key: 'simple-dark', mode: 'dark' };
+    }
     if (this.visualConfig.backgroundMode === 'manual') {
       const period = this.visualConfig.periodMode === 'auto' ? this._automaticPeriod(now) : this.visualConfig.periodMode;
       const weather = this.visualConfig.weather;

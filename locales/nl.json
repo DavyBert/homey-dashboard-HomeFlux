@@ -56,9 +56,9 @@
     "motion_invert": "Omgekeerde bewegingsrichting (standaard)",
     "motion_auto": "Automatisch volgens laden/ontladen",
     "background_title": "Achtergrond",
-    "background_intro": "Laat Homey automatisch dag/nacht en het weerbeeld kiezen, of gebruik handmatige instellingen om te testen.",
+    "background_intro": "Laat Homey automatisch dag/nacht en het weerbeeld kiezen, gebruik handmatige instellingen om te testen, of kies een vaste lichte of donkere achtergrond.",
     "mode": "Modus",
-    "mode_hint": "Automatisch gebruikt zonsopgang/zonsondergang van de Homey-locatie en, indien gekozen, een weer-capability van een geïnstalleerd weerdevice.",
+    "mode_hint": "Automatisch gebruikt zonsopgang/zonsondergang en optioneel een weerdevice. Handmatig blijft instelbaar zoals voorheen. Licht en Dark gebruiken een vaste achtergrond.",
     "mode_auto": "Automatisch (aanbevolen)",
     "mode_manual": "Handmatig",
     "weather_source": "Weerdevice / capability",
@@ -138,7 +138,11 @@
     "home_power_unit_hint": "Kies W of kW voor het huisverbruik.",
     "grid_power_unit": "Eenheid elektriciteitsnet",
     "grid_power_unit_hint": "Kies W of kW voor afname en teruglevering.",
-    "battery_motion1_hint": "Extra optie om alleen de richting van de bewegende lijn om te keren."
+    "battery_motion1_hint": "Extra optie om alleen de richting van de bewegende lijn om te keren.",
+    "mode_light": "Licht",
+    "mode_dark": "Dark",
+    "panel_transparency": "Transparantie vakken",
+    "panel_transparency_hint": "0% = volledig zichtbaar, 100% = volledig transparant. Geldt voor de vakken op de illustratie en de extra kaarten."
   },
   "widget": {
     "aria_energy": "Live energie-overzicht",

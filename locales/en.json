@@ -56,9 +56,9 @@
     "motion_invert": "Reversed movement direction (default)",
     "motion_auto": "Automatic based on charge/discharge",
     "background_title": "Background",
-    "background_intro": "Let Homey automatically choose day/night and weather, or use manual settings for testing.",
+    "background_intro": "Let Homey automatically choose day/night and weather, use manual settings for testing, or choose a fixed light or dark background.",
     "mode": "Mode",
-    "mode_hint": "Automatic mode uses sunrise/sunset from the Homey location and, if selected, a weather capability from an installed weather device.",
+    "mode_hint": "Automatic uses sunrise/sunset and optionally a weather device. Manual remains configurable as before. Light and Dark use a fixed background.",
     "mode_auto": "Automatic (recommended)",
     "mode_manual": "Manual",
     "weather_source": "Weather device / capability",
@@ -138,7 +138,11 @@
     "home_power_unit_hint": "Choose W or kW for home consumption.",
     "grid_power_unit": "Grid power unit",
     "grid_power_unit_hint": "Choose W or kW for grid import and export.",
-    "battery_motion1_hint": "Optionally reverse only the movement direction of the animated line."
+    "battery_motion1_hint": "Optionally reverse only the movement direction of the animated line.",
+    "mode_light": "Light",
+    "mode_dark": "Dark",
+    "panel_transparency": "Panel transparency",
+    "panel_transparency_hint": "0% = fully visible, 100% = fully transparent. Applies to the panels on the illustration and the extra cards."
   },
   "widget": {
     "aria_energy": "Live energy overview",
