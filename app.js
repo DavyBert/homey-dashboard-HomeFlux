@@ -99,20 +99,34 @@ class DashboardBridgeApp extends Homey.App {
       if (normalized[`${evPrefix}Power`] || normalized[`${evPrefix}Status`]) inferredChargerCount = index;
     }
 
-    normalized.solarCount = Math.max(1, Math.min(10, Number(c.solarCount || inferredSolarCount) || 1));
-    normalized.batteryCount = Math.max(1, Math.min(10, Number(c.batteryCount || inferredBatteryCount) || 1));
-    normalized.chargerCount = Math.max(1, Math.min(10, Number(c.chargerCount || inferredChargerCount) || 1));
+    normalized.solarCount = Math.max(0, Math.min(10, Number(c.solarCount !== undefined ? c.solarCount : inferredSolarCount) || 0));
+    normalized.batteryCount = Math.max(0, Math.min(10, Number(c.batteryCount !== undefined ? c.batteryCount : inferredBatteryCount) || 0));
+    normalized.chargerCount = Math.max(0, Math.min(10, Number(c.chargerCount !== undefined ? c.chargerCount : inferredChargerCount) || 0));
 
     return normalized;
   }
 
   _normalizeVisualConfig(config) {
     const c = config || {};
-    const backgroundMode = ['auto', 'manual', 'light', 'dark'].includes(c.backgroundMode) ? c.backgroundMode : 'auto';
+    const backgroundMode = ['auto', 'manual'].includes(c.backgroundMode) ? c.backgroundMode : 'auto';
     const periodMode = ['auto', 'day', 'night'].includes(c.periodMode) ? c.periodMode : 'auto';
     const weather = ['clear', 'cloudy', 'rain', 'mist', 'snow', 'thunder'].includes(c.weather) ? c.weather : 'clear';
     const weatherSource = typeof c.weatherSource === 'string' ? c.weatherSource : '';
     const panelTransparency = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100].includes(Number(c.panelTransparency)) ? Number(c.panelTransparency) : 30;
+    const overlayTheme = ['auto', 'light', 'dark'].includes(c.overlayTheme) ? c.overlayTheme : 'auto';
+    const lineBlinkTempo = [1.2, 1.8, 2.4, 3.2, 4.2].includes(Number(c.lineBlinkTempo)) ? Number(c.lineBlinkTempo) : 2.4;
+    const legacyBlink = c.lineBlinkEnabled === true;
+    const standbyStyle = (value, fallback) => ['blue', 'green', 'greenblue'].includes(String(value || '').toLowerCase()) ? String(value).toLowerCase() : fallback;
+    const solarStandbyLineEnabled = c.solarStandbyLineEnabled === true;
+    const solarStandbyLineBlink = c.solarStandbyLineBlink === true;
+    const solarStandbyLineStyle = standbyStyle(c.solarStandbyLineStyle, 'green');
+    const batteryStandbyLineEnabled = c.batteryStandbyLineEnabled !== false;
+    const batteryStandbyLineBlink = c.batteryStandbyLineBlink !== undefined ? c.batteryStandbyLineBlink === true : legacyBlink;
+    const batteryStandbyLineStyle = standbyStyle(c.batteryStandbyLineStyle || c.batteryStandbyLineColor, 'blue');
+    const gridStandbyLineEnabled = c.gridStandbyLineEnabled !== false;
+    const gridStandbyLineBlink = c.gridStandbyLineBlink !== undefined ? c.gridStandbyLineBlink === true : legacyBlink;
+    const gridStandbyLineStyle = standbyStyle(c.gridStandbyLineStyle || c.gridStandbyLineColor, 'blue');
+    const showBattery24h = c.showBattery24h !== false;
     const refreshSeconds = Math.min(300, Math.max(1, Number(c.refreshSeconds) || 30));
     const widgetTextScale = [50, 60, 70, 80, 90, 100, 110].includes(Number(c.widgetTextScale)) ? Number(c.widgetTextScale) : 90;
     const widgetTitleScale = [50, 60, 70, 80, 90, 100, 110, 120, 130].includes(Number(c.widgetTitleScale)) ? Number(c.widgetTitleScale) : 100;
@@ -130,7 +144,7 @@ class DashboardBridgeApp extends Homey.App {
       home: unitChoice(c.powerUnits && c.powerUnits.home) || 'w',
       grid: unitChoice(c.powerUnits && c.powerUnits.grid) || 'w'
     };
-    return { backgroundMode, periodMode, weather, weatherSource, panelTransparency, refreshSeconds, widgetTextScale, widgetTitleScale, labels, powerUnits };
+    return { backgroundMode, periodMode, weather, weatherSource, panelTransparency, overlayTheme, lineBlinkTempo, solarStandbyLineEnabled, solarStandbyLineBlink, solarStandbyLineStyle, batteryStandbyLineEnabled, batteryStandbyLineBlink, batteryStandbyLineStyle, gridStandbyLineEnabled, gridStandbyLineBlink, gridStandbyLineStyle, showBattery24h, refreshSeconds, widgetTextScale, widgetTitleScale, labels, powerUnits };
   }
 
   _widgetRefreshMs() {
@@ -277,9 +291,7 @@ class DashboardBridgeApp extends Homey.App {
     return sources;
   }
 
-  getConfig() {
-    return { energyConfig: this.energyConfig, selection: this.selection, visualConfig: this.visualConfig };
-  }
+  getConfig() { return { energyConfig: this.energyConfig, selection: this.selection, visualConfig: this.visualConfig }; }
 
   async saveConfig(config = {}) {
     const energyConfig = this._normalizeEnergyConfig(config.energyConfig || {});
@@ -532,7 +544,7 @@ class DashboardBridgeApp extends Homey.App {
 
     // Insights remains lazy and single-flight. It never wakes HomeFlux while
     // the widget is closed and overlapping requests cannot duplicate the work.
-    if (now - this._lastInsightsRefreshAt >= INSIGHTS_REFRESH_MS && !this._insightsRefreshPromise) {
+    if (this.energyConfig.batteryCount > 0 && this.visualConfig.showBattery24h !== false && now - this._lastInsightsRefreshAt >= INSIGHTS_REFRESH_MS && !this._insightsRefreshPromise) {
       this._insightsRefreshPromise = this._refreshBattery24hFromInsights()
         .catch(err => this.error('Battery Insights refresh failed:', err))
         .finally(() => { this._insightsRefreshPromise = null; });
@@ -541,6 +553,7 @@ class DashboardBridgeApp extends Homey.App {
   }
 
   async _recordBatteryHistory(now = Date.now()) {
+    if (this.energyConfig.batteryCount <= 0 || this.visualConfig.showBattery24h === false) return;
     const soc = this._combinedBatterySocData();
     if (!soc || !soc.online || typeof soc.rawValue !== 'number') return;
 
@@ -625,11 +638,12 @@ class DashboardBridgeApp extends Homey.App {
   }
 
   async _refreshBattery24hFromInsights(force = false) {
+    if (this.energyConfig.batteryCount <= 0 || this.visualConfig.showBattery24h === false) { this._batteryInsights24h = null; return null; }
     if (!force && Date.now() - this._lastInsightsRefreshAt < INSIGHTS_REFRESH_MS) return this._batteryInsights24h;
     this._lastInsightsRefreshAt = Date.now();
 
     const batteries = [];
-    for (let index = 1; index <= 10; index += 1) {
+    for (let index = 1; index <= this.energyConfig.batteryCount; index += 1) {
       const suffix = index === 1 ? '' : String(index);
       const key = this.energyConfig[`battery${suffix}Soc`];
       if (!key) continue;
@@ -821,14 +835,16 @@ class DashboardBridgeApp extends Homey.App {
   }
 
   _combinedSolarData() {
-    const keys = Array.from({ length: 10 }, (_, index) => index === 0 ? this.energyConfig.solar : this.energyConfig[`solar${index + 1}`]);
+    const count = Math.max(0, Math.min(10, Number(this.energyConfig.solarCount) || 0));
+    if (!count) return null;
+    const keys = Array.from({ length: count }, (_, index) => index === 0 ? this.energyConfig.solar : this.energyConfig[`solar${index + 1}`]);
     return this._sumPowerSources(keys, 'Zonnepanelen totaal');
   }
 
   _batteryPowerWatts() {
     let total = 0;
     let count = 0;
-    for (let index = 1; index <= 10; index += 1) {
+    for (let index = 1; index <= this.energyConfig.batteryCount; index += 1) {
       const suffix = index === 1 ? '' : String(index);
       const key = this.energyConfig[`battery${suffix}Power`];
       if (!key) continue;
@@ -846,7 +862,7 @@ class DashboardBridgeApp extends Homey.App {
   _batteryLineWatts() {
     let total = 0;
     let count = 0;
-    for (let index = 1; index <= 10; index += 1) {
+    for (let index = 1; index <= this.energyConfig.batteryCount; index += 1) {
       const suffix = index === 1 ? '' : String(index);
       const key = this.energyConfig[`battery${suffix}Power`];
       if (!key) continue;
@@ -867,7 +883,7 @@ class DashboardBridgeApp extends Homey.App {
     let forwardWeight = 0;
     const thresholdW = Math.max(0, Number(this.energyConfig.batteryThresholdKw) || 0.2) * 1000;
 
-    for (let index = 1; index <= 10; index += 1) {
+    for (let index = 1; index <= this.energyConfig.batteryCount; index += 1) {
       const suffix = index === 1 ? '' : String(index);
       const prefix = `battery${suffix}`;
       const key = this.energyConfig[`${prefix}Power`];
@@ -894,7 +910,7 @@ class DashboardBridgeApp extends Homey.App {
 
   _combinedBatterySocData() {
     const entries = [];
-    for (let index = 1; index <= 10; index += 1) {
+    for (let index = 1; index <= this.energyConfig.batteryCount; index += 1) {
       const suffix = index === 1 ? '' : String(index);
       const key = this.energyConfig[`battery${suffix}Soc`];
       if (!key) continue;
@@ -936,7 +952,9 @@ class DashboardBridgeApp extends Homey.App {
   }
 
   _combinedEvPowerData() {
-    const keys = Array.from({ length: 10 }, (_, index) => {
+    const count = Math.max(0, Math.min(10, Number(this.energyConfig.chargerCount) || 0));
+    if (!count) return null;
+    const keys = Array.from({ length: count }, (_, index) => {
       const suffix = index === 0 ? '' : String(index + 1);
       return this.energyConfig[`ev${suffix}Power`];
     });
@@ -975,7 +993,7 @@ class DashboardBridgeApp extends Homey.App {
     const solar = this._combinedSolarData();
     const grid = this._sourceData(this.energyConfig.gridPower);
 
-    const solarW = this._powerToWatts(solar);
+    const solarW = this.energyConfig.solarCount === 0 ? 0 : this._powerToWatts(solar);
     const gridW = this._powerToWatts(grid);
     if (solarW === null || gridW === null) return null;
 
@@ -1012,7 +1030,7 @@ class DashboardBridgeApp extends Homey.App {
     if (flow === 'charge') return { text: 'Laden', source: 'derived', flow };
     if (flow === 'discharge') return { text: 'Ontladen', source: 'derived', flow };
 
-    const hasSecondBattery = Array.from({ length: 9 }, (_, index) => index + 2).some(index => this.energyConfig[`battery${index}Power`] || this.energyConfig[`battery${index}Soc`] || this.energyConfig[`battery${index}Status`]);
+    const hasSecondBattery = this.energyConfig.batteryCount > 1 && Array.from({ length: this.energyConfig.batteryCount - 1 }, (_, index) => index + 2).some(index => this.energyConfig[`battery${index}Power`] || this.energyConfig[`battery${index}Soc`] || this.energyConfig[`battery${index}Status`]);
     if (!hasSecondBattery) {
       const explicit = this._sourceData(this.energyConfig.batteryStatus);
       if (explicit && explicit.online && explicit.rawValue !== null && explicit.rawValue !== '') {
@@ -1185,12 +1203,6 @@ class DashboardBridgeApp extends Homey.App {
   }
 
   _sceneState(now = new Date()) {
-    if (this.visualConfig.backgroundMode === 'light') {
-      return { period: 'fixed', weather: 'fixed', key: 'simple-light', mode: 'light' };
-    }
-    if (this.visualConfig.backgroundMode === 'dark') {
-      return { period: 'fixed', weather: 'fixed', key: 'simple-dark', mode: 'dark' };
-    }
     if (this.visualConfig.backgroundMode === 'manual') {
       const period = this.visualConfig.periodMode === 'auto' ? this._automaticPeriod(now) : this.visualConfig.periodMode;
       const weather = this.visualConfig.weather;
@@ -1220,10 +1232,12 @@ class DashboardBridgeApp extends Homey.App {
       batteryFlow: batteryStatus.flow || this._batteryFlowState(),
       batteryLineFlow: this._batteryLineFlowState(),
       batteryLineMotionReverse: this._batteryLineMotionReverse(),
-      battery24hAgo: this._battery24hAgoBest(),
+      battery24hAgo: this.energyConfig.batteryCount > 0 && this.visualConfig.showBattery24h !== false ? this._battery24hAgoBest() : null,
+      solarCount: this.energyConfig.solarCount,
+      batteryCount: this.energyConfig.batteryCount,
       evPower: this._combinedEvPowerData(),
-      evChargerCount: this.energyConfig.chargerCount || 1,
-      evStatus: this.energyConfig.chargerCount > 1 ? { value: String(this.energyConfig.chargerCount), rawValue: this.energyConfig.chargerCount, unit: '', online: true, synthetic: true } : this._sourceData(this.energyConfig.evStatus),
+      evChargerCount: this.energyConfig.chargerCount,
+      evStatus: this.energyConfig.chargerCount > 1 ? { value: String(this.energyConfig.chargerCount), rawValue: this.energyConfig.chargerCount, unit: '', online: true, synthetic: true } : this.energyConfig.chargerCount === 1 ? this._sourceData(this.energyConfig.evStatus) : null,
       gridPower: this._sourceData(this.energyConfig.gridPower),
       gridFlow: this._gridFlowState(),
       homePower: this._homePowerData()

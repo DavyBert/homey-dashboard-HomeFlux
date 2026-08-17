@@ -90,22 +90,33 @@ body{padding:8px}
   z-index:1;
   transition:background .28s ease;
 }
-.flow-overlay{position:absolute;inset:0;width:100%;height:100%;z-index:2;pointer-events:none;overflow:visible}
-.flow-overlay .battery-flow-glow,.flow-overlay .battery-flow-core{fill:none;stroke-linecap:round;stroke-linejoin:round;transition:opacity .25s ease,stroke .25s ease}
-.flow-overlay .battery-flow-glow{stroke-width:2.8;opacity:.28;filter:blur(.9px)}
-.flow-overlay .battery-flow-core{stroke-width:1.15;stroke-dasharray:3.2 2.2;animation:batteryFlow 1.15s linear infinite}
-.flow-overlay.idle{opacity:0}
-.flow-overlay.charge .battery-flow-glow,.flow-overlay.charge .battery-flow-core{stroke:#70e93f}
-.flow-overlay.discharge .battery-flow-glow,.flow-overlay.discharge .battery-flow-core{stroke:#49a4ff}
-.flow-overlay.motion-reverse .battery-flow-core{animation-direction:reverse}
-.flow-overlay .grid-flow-glow,.flow-overlay .grid-flow-core{fill:none;stroke-linecap:round;stroke-linejoin:round;transition:opacity .25s ease,stroke .25s ease}
-.flow-overlay .grid-flow-glow{stroke-width:2.8;opacity:.28;filter:blur(.9px)}
-.flow-overlay .grid-flow-core{stroke-width:1.15;stroke-dasharray:3.2 2.2;animation:batteryFlow 1.15s linear infinite}
-.flow-overlay.grid-idle{opacity:0}
-.flow-overlay.grid-import .grid-flow-glow,.flow-overlay.grid-import .grid-flow-core{stroke:#49a4ff}
-.flow-overlay.grid-export .grid-flow-glow,.flow-overlay.grid-export .grid-flow-core{stroke:#70e93f}
-.flow-overlay.grid-export .grid-flow-core{animation-direction:reverse}
-@keyframes batteryFlow{to{stroke-dashoffset:-10.8}}
+.flow-overlay{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+.flow-overlay{z-index:2.4;opacity:1;transition:opacity .25s ease}
+.flow-overlay path{fill:none;stroke-linecap:round;stroke-linejoin:round;transition:opacity .25s ease,stroke .25s ease}
+.flow-overlay .flow-glow{stroke-width:2.8;opacity:.28;filter:blur(.9px)}
+.flow-overlay .flow-core{stroke-width:1.15;stroke-dasharray:3.2 2.2;animation:flowMove 1.15s linear infinite}
+.flow-overlay.flow-hidden{opacity:0}
+.flow-overlay.motion-reverse .flow-core{animation-direction:reverse}
+.flow-overlay.standby .flow-core,.flow-overlay.standby .flow-glow{stroke-dasharray:3.2 2.2;stroke-dashoffset:0;animation:none}
+.flow-overlay.standby-blue .flow-glow,.flow-overlay.standby-blue .flow-core{stroke:#49a4ff}
+.flow-overlay.standby-green .flow-glow,.flow-overlay.standby-green .flow-core{stroke:#70e93f}
+#solarFlowOverlay.standby-greenblue .flow-glow,#solarFlowOverlay.standby-greenblue .flow-core{stroke:url(#solarStandbyGreenBlue)}
+#batteryFlowOverlay.standby-greenblue .flow-glow,#batteryFlowOverlay.standby-greenblue .flow-core{stroke:url(#batteryStandbyGreenBlue)}
+#gridFlowOverlay.standby-greenblue .flow-glow,#gridFlowOverlay.standby-greenblue .flow-core{stroke:url(#gridStandbyGreenBlue)}
+.flow-overlay.standby.standby-blink .flow-core{animation:standbyBlinkCore var(--line-blink-interval,2.4s) ease-in-out infinite}
+.flow-overlay.standby.standby-blink .flow-glow{animation:standbyBlinkGlow var(--line-blink-interval,2.4s) ease-in-out infinite}
+.flow-overlay.solar-active .flow-glow,.flow-overlay.solar-active .flow-core{stroke:#70e93f}
+.flow-overlay.charge .flow-glow,.flow-overlay.charge .flow-core{stroke:#70e93f}
+.flow-overlay.discharge .flow-glow,.flow-overlay.discharge .flow-core{stroke:#49a4ff}
+.flow-overlay.grid-import .flow-glow,.flow-overlay.grid-import .flow-core{stroke:#49a4ff}
+.flow-overlay.grid-export .flow-glow,.flow-overlay.grid-export .flow-core{stroke:#70e93f}
+.flow-overlay.grid-export .flow-core{animation-direction:reverse}
+.flow-overlay.ev-grid .flow-glow,.flow-overlay.ev-grid .flow-core{stroke:#49a4ff}
+.flow-overlay.ev-solar .flow-glow,.flow-overlay.ev-solar .flow-core{stroke:#70e93f}
+@keyframes flowMove{to{stroke-dashoffset:-10.8}}
+@keyframes flowBlink{0%,46%{stroke:#49a4ff}54%,100%{stroke:#70e93f}}
+@keyframes standbyBlinkCore{0%,100%{opacity:1}50%{opacity:.28}}
+@keyframes standbyBlinkGlow{0%,100%{opacity:.28}50%{opacity:.08}}
 .callout{
   position:absolute;
   z-index:3;
@@ -134,6 +145,7 @@ body{padding:8px}
 .home{left:39%;top:40%;width:27%}
 .ev{right:5.5%;bottom:4.5%;width:23%;transition:opacity .28s ease,transform .28s ease,background .28s ease,border-color .28s ease,box-shadow .28s ease}
 .ev.ev-inactive{opacity:0;transform:translateY(6px) scale(.97);pointer-events:none;visibility:hidden}
+.component-hidden{display:none!important}
 .solar .value{color:#70e93f}
 .grid .value,.ev .value{color:#49a4ff}
 .battery .value{color:#70e93f}
@@ -181,13 +193,25 @@ body{padding:8px}
 <body>
 <main class="frame" id="frame">
   <section class="energy" id="energy" aria-label="Live energie-overzicht">
-    <svg id="batteryFlowOverlay" class="flow-overlay idle" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-      <path class="battery-flow-glow" d="M46 61 L46 76 L35 76"/>
-      <path class="battery-flow-core" d="M46 61 L46 76 L35 76"/>
+
+    <svg id="solarFlowOverlay" class="flow-overlay flow-hidden" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+      <defs><linearGradient id="solarStandbyGreenBlue" x1="0" y1="0" x2="12" y2="0" gradientUnits="userSpaceOnUse" spreadMethod="repeat"><stop offset="0" stop-color="#70e93f"/><stop offset=".48" stop-color="#70e93f"/><stop offset=".52" stop-color="#49a4ff"/><stop offset="1" stop-color="#49a4ff"/></linearGradient></defs>
+      <path class="flow-glow" d="M16.7 25.5 L16.7 50.0 L39.0 50.0"/>
+      <path class="flow-core" d="M16.7 25.5 L16.7 50.0 L39.0 50.0"/>
     </svg>
-    <svg id="gridFlowOverlay" class="flow-overlay grid-idle" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-      <path class="grid-flow-glow" d="M86 21 L86 47 L61 47"/>
-      <path class="grid-flow-core" d="M86 21 L86 47 L61 47"/>
+    <svg id="batteryFlowOverlay" class="flow-overlay flow-hidden" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+      <defs><linearGradient id="batteryStandbyGreenBlue" x1="0" y1="0" x2="12" y2="0" gradientUnits="userSpaceOnUse" spreadMethod="repeat"><stop offset="0" stop-color="#70e93f"/><stop offset=".48" stop-color="#70e93f"/><stop offset=".52" stop-color="#49a4ff"/><stop offset="1" stop-color="#49a4ff"/></linearGradient></defs>
+      <path class="flow-glow" d="M46.0 61.0 L46.0 75.8 L35.4 75.8"/>
+      <path class="flow-core" d="M46.0 61.0 L46.0 75.8 L35.4 75.8"/>
+    </svg>
+    <svg id="gridFlowOverlay" class="flow-overlay flow-hidden" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+      <defs><linearGradient id="gridStandbyGreenBlue" x1="0" y1="0" x2="12" y2="0" gradientUnits="userSpaceOnUse" spreadMethod="repeat"><stop offset="0" stop-color="#70e93f"/><stop offset=".48" stop-color="#70e93f"/><stop offset=".52" stop-color="#49a4ff"/><stop offset="1" stop-color="#49a4ff"/></linearGradient></defs>
+      <path class="flow-glow" d="M88.5 18.7 L88.5 47.5 L63.9 47.5"/>
+      <path class="flow-core" d="M88.5 18.7 L88.5 47.5 L63.9 47.5"/>
+    </svg>
+    <svg id="evFlowOverlay" class="flow-overlay flow-hidden" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+      <path class="flow-glow" d="M63.9 47.5 L73.6 47.5 L73.6 75.8"/>
+      <path class="flow-core" d="M63.9 47.5 L73.6 47.5 L73.6 75.8"/>
     </svg>
     <div class="callout solar"><div class="callout-inner"><div class="kicker">Zonnepanelen</div><div class="reading"><span class="value" id="solarValue">—</span><span class="unit" id="solarUnit"></span></div><div class="sub">Productie</div></div></div>
     <div class="callout grid"><div class="callout-inner"><div class="kicker">Elektriciteitsnet</div><div class="reading"><span class="value" id="gridValue">—</span><span class="unit" id="gridUnit"></span></div><div class="sub" id="gridStatus">Net</div></div></div>
@@ -218,8 +242,6 @@ function onHomeyReady(Homey){
    'night-mist':'./scene-night-mist.jpg',
    'night-snow':'./scene-night-snow.jpg',
    'night-thunder':'./scene-night-thunder.jpg',
-   'simple-light':'./simple-light.jpg',
-   'simple-dark':'./simple-dark.jpg'
  };
  let readyCalled=false,lastHeight=0,heightTimer=null,currentScene='',pollTimer=null,pollSeconds=0;
  function measuredHeight(){
@@ -261,7 +283,7 @@ function onHomeyReady(Homey){
    $(prefix+'Unit').textContent=formatted.unit;
  }
  function capabilitySubtitle(tile){if(tile.sourceName&&tile.sourceName!==tile.label)return tile.sourceName;if(tile.sourceLabel&&tile.sourceLabel.includes('—')){const p=tile.sourceLabel.split('—').slice(1).join('—').trim();if(p&&p!==tile.label)return p;}return tile.kind==='boolean'?tr('widget.status'):tr('widget.value');}
- function sceneTheme(key){return key==='simple-light'||String(key||'').startsWith('day-')?'light':'dark';}
+ function sceneTheme(key,config){const forced=config&&config.overlayTheme;if(forced==='light'||forced==='dark')return forced;return String(key||'').startsWith('day-')?'light':'dark';}
  function alpha(base,transparency){return Math.max(0,Math.min(1,base*(1-(Math.max(0,Math.min(100,Number(transparency)||0))/100))));}
  function applyPanelStyles(config){
    const transparency=Math.max(0,Math.min(100,Number((config&&config.panelTransparency) ?? 30)));
@@ -278,9 +300,9 @@ function onHomeyReady(Homey){
      frame.style.setProperty('--tile-border',`rgba(255,255,255,${Math.max(.08,alpha(.10,Math.max(0,transparency-10)))})`);
    }
  }
- function applyScene(scene){
+ function applyScene(scene,config){
    const key=scene&&scene.key?scene.key:'day-clear';
-   frame.dataset.theme=sceneTheme(key);
+   frame.dataset.theme=sceneTheme(key,config);
    if(key===currentScene)return;
    currentScene=key;
    const url=BACKGROUNDS[key]||BACKGROUNDS['day-clear'];
@@ -295,8 +317,9 @@ function onHomeyReady(Homey){
    pollTimer=setInterval(refresh,next*1000);
  }
  function render(d){
-   applyScene(d.scene||{});
+   applyScene(d.scene||{},d.visualConfig||{});
    applyPanelStyles(d.visualConfig||{});
+   frame.style.setProperty('--line-blink-interval',`${Number(d.visualConfig&&d.visualConfig.lineBlinkTempo||2.4)}s`);
    ensurePoll(d.visualConfig&&d.visualConfig.refreshSeconds);
    const textScale=Math.min(1.1,Math.max(.5,Number(d.visualConfig&&d.visualConfig.widgetTextScale||90)/100));
    const titleScale=Math.min(1.3,Math.max(.5,Number(d.visualConfig&&d.visualConfig.widgetTitleScale||100)/100));
@@ -309,8 +332,30 @@ function onHomeyReady(Homey){
    document.querySelector('.home .kicker').textContent=customLabels.home||tr('widget.home');
    document.querySelector('.ev .kicker').textContent=customLabels.ev||tr('widget.ev');
    const e=d.energy||{};
+   const hasSolar=Number(e.solarCount)>0,hasBattery=Number(e.batteryCount)>0,hasEv=Number(e.evChargerCount)>0;
+   document.querySelector('.callout.solar').classList.toggle('component-hidden',!hasSolar);
+   document.querySelector('.callout.battery').classList.toggle('component-hidden',!hasBattery);
+   document.querySelector('.callout.ev').classList.toggle('component-hidden',!hasEv);
+   const showBattery24h=hasBattery && (!d.visualConfig || d.visualConfig.showBattery24h!==false);
+   const standbyStyle=value=>['blue','green','greenblue','gray'].includes(String(value||''))?String(value):'blue';
+   const solarStandbyLineEnabled=Boolean(d.visualConfig&&d.visualConfig.solarStandbyLineEnabled);
+   const solarStandbyLineBlink=Boolean(d.visualConfig&&d.visualConfig.solarStandbyLineBlink);
+   const solarStandbyLineStyle=standbyStyle(d.visualConfig&&d.visualConfig.solarStandbyLineStyle||'green');
+   const batteryStandbyLineEnabled=!d.visualConfig||d.visualConfig.batteryStandbyLineEnabled!==false;
+   const batteryStandbyLineBlink=Boolean(d.visualConfig&&d.visualConfig.batteryStandbyLineBlink);
+   const batteryStandbyLineStyle=standbyStyle(d.visualConfig&&d.visualConfig.batteryStandbyLineStyle||'blue');
+   const gridStandbyLineEnabled=!d.visualConfig||d.visualConfig.gridStandbyLineEnabled!==false;
+   const gridStandbyLineBlink=Boolean(d.visualConfig&&d.visualConfig.gridStandbyLineBlink);
+   const gridStandbyLineStyle=standbyStyle(d.visualConfig&&d.visualConfig.gridStandbyLineStyle||'blue');
+   $('batteryAgo').classList.toggle('component-hidden',!showBattery24h);
    const powerUnits=d.visualConfig&&d.visualConfig.powerUnits||{};
    setPowerEnergy('solar',e.solar,powerUnits.solar||'kw');
+   const solarWatts=powerToWatts(e.solar);
+   const solarAvailable=Boolean(e.solar&&e.solar.online);
+   const solarActive=hasSolar && solarAvailable && solarWatts!==null && solarWatts>15;
+   if(solarActive){$('solarFlowOverlay').setAttribute('class','flow-overlay solar-active');}
+   else if(hasSolar&&solarAvailable&&solarStandbyLineEnabled){$('solarFlowOverlay').setAttribute('class','flow-overlay standby standby-'+solarStandbyLineStyle+(solarStandbyLineBlink?' standby-blink':''));}
+   else{$('solarFlowOverlay').setAttribute('class','flow-overlay flow-hidden');}
    setPowerEnergy('grid',e.gridPower,powerUnits.grid||'w');
    setEnergy('batterySoc',e.batterySoc);
    setPowerEnergy('home',e.homePower,powerUnits.home||'w');
@@ -327,7 +372,15 @@ function onHomeyReady(Homey){
    const isDischarge=flowMode?flowMode==='discharge':/(ontladen|discharging|discharge)/.test(statusKey);
    const batteryFlowMode=isCharge?'charge':isDischarge?'discharge':'idle';
    const reverseMotion=typeof e.batteryLineMotionReverse==='boolean' ? e.batteryLineMotionReverse : batteryFlowMode!=='charge';
-   $('batteryFlowOverlay').setAttribute('class','flow-overlay '+batteryFlowMode+' '+(reverseMotion?'motion-reverse':'motion-normal'));
+   if(!hasBattery){
+     $('batteryFlowOverlay').setAttribute('class','flow-overlay flow-hidden');
+   }else if(batteryFlowMode==='idle'&&batteryStandbyLineEnabled){
+     $('batteryFlowOverlay').setAttribute('class','flow-overlay standby standby-'+batteryStandbyLineStyle+(batteryStandbyLineBlink?' standby-blink':''));
+   }else if(batteryFlowMode==='idle'){
+     $('batteryFlowOverlay').setAttribute('class','flow-overlay flow-hidden');
+   }else{
+     $('batteryFlowOverlay').setAttribute('class','flow-overlay '+batteryFlowMode+' '+(reverseMotion?'motion-reverse':'motion-normal'));
+   }
    bs.textContent=status;bs.className='sub batteryState '+(isCharge?'status-charge':isDischarge?'status-discharge':'status-idle');
    const bp=$('batteryPower');
    if(e.batteryPower&&e.batteryPower.online){
@@ -335,20 +388,30 @@ function onHomeyReady(Homey){
      bp.textContent=`${formattedBattery.value}${formattedBattery.unit?' '+formattedBattery.unit:''}`;
    }else bp.textContent='';
    bp.className='sub batteryPower '+(isCharge?'power-charge':isDischarge?'power-discharge':'power-idle');
-   $('batteryAgo').textContent=e.battery24hAgo?`◷ 24h · ${e.battery24hAgo.valueFormatted}${e.battery24hAgo.unit?' '+e.battery24hAgo.unit:''}`:'◷ 24h · —';
+   $('batteryAgo').textContent=showBattery24h?(e.battery24hAgo?`◷ 24h · ${e.battery24hAgo.valueFormatted}${e.battery24hAgo.unit?' '+e.battery24hAgo.unit:''}`:'◷ 24h · —'):'';
    const gp=e.gridPower&&typeof e.gridPower.rawValue==='number'?e.gridPower.rawValue:null, gridStatus=$('gridStatus'), gridValue=$('gridValue');
    const gridFlow=['import','export','idle'].includes(e.gridFlow)?e.gridFlow:'idle';
    const gridMode=gridFlow==='import'?'grid-import':gridFlow==='export'?'grid-export':'';
-   $('gridFlowOverlay').setAttribute('class','flow-overlay '+(gridFlow==='import'?'grid-import':gridFlow==='export'?'grid-export':'grid-idle'));
+   const gridAvailable=Boolean(e.gridPower&&e.gridPower.online);
+   if(gridFlow==='idle'&&gridAvailable&&gridStandbyLineEnabled){
+     $('gridFlowOverlay').setAttribute('class','flow-overlay standby standby-'+gridStandbyLineStyle+(gridStandbyLineBlink?' standby-blink':''));
+   }else if(gridFlow==='idle'){
+     $('gridFlowOverlay').setAttribute('class','flow-overlay flow-hidden');
+   }else{
+     $('gridFlowOverlay').setAttribute('class','flow-overlay '+(gridFlow==='import'?'grid-import':'grid-export'));
+   }
    gridStatus.textContent=gp===null?tr('widget.grid_short'):gridFlow==='export'?tr('widget.exporting'):gridFlow==='import'?tr('widget.importing'):tr('widget.grid_short');
    gridStatus.className='sub '+gridMode;gridValue.className='value '+gridMode;
    $('evStatus').textContent=e.evChargerCount>1?tr('widget.chargers',{count:e.evChargerCount}):(e.evStatus&&e.evStatus.online?String(e.evStatus.value):tr('widget.charger'));
    const evCard=document.querySelector('.callout.ev');
    if(evCard){
      const evPower=e.evPower;
-     const evKw=evPower&&evPower.online&&Number.isFinite(Number(evPower.rawValue))?Math.abs(Number(evPower.rawValue)):0;
-     evCard.classList.toggle('ev-inactive',evKw<0.05);
-   }
+     const evWatts=powerToWatts(evPower);
+     const evActive=hasEv && evWatts!==null && Math.abs(evWatts)>=50;
+     evCard.classList.toggle('ev-inactive',!evActive);
+     const evMode=evActive && gridFlow!=='import' ? 'ev-solar' : 'ev-grid';
+     $('evFlowOverlay').setAttribute('class','flow-overlay '+(evActive?evMode:'flow-hidden'));
+   }else $('evFlowOverlay').setAttribute('class','flow-overlay flow-hidden');
    extra.innerHTML='';const tiles=Array.isArray(d.tiles)?d.tiles:[];
    if(!tiles.length){extra.classList.add('hidden');scheduleHeightSync(true);return;}
    extra.classList.remove('hidden');
