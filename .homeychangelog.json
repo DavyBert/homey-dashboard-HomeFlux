@@ -54,5 +54,9 @@
   "0.8.1": {
     "en": "Improved and localized the Homey App Store description.",
     "nl": "De Homey App Store-beschrijving is verbeterd en gelokaliseerd."
+  },
+  "0.8.2": {
+    "en": "Reduced fallback polling by considering silent sources stale only after 30 minutes, independent of the widget refresh interval.",
+    "nl": "Fallback-polling verminderd door stille bronnen pas na 30 minuten als stale te beschouwen, onafhankelijk van de widget-refreshinterval."
   }
 }

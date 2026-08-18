@@ -20,6 +20,7 @@ const HISTORY_KEEP_MS = 30 * 60 * 60 * 1000;
 const INSIGHTS_REFRESH_MS = 6 * 60 * 60 * 1000;
 const REALTIME_REFRESH_MIN_MS = 750;
 const REALTIME_REFRESH_MAX_MS = 300000;
+const STALE_AFTER_MS = 1800 * 1000;
 const MAX_HISTORY_SAMPLES = 200;
 const EMPTY_SET = new Set();
 
@@ -36,6 +37,7 @@ class DashboardBridgeApp extends Homey.App {
     this._localUrl = null;
     this._subscriptions = [];
     this._lastWidgetRequestAt = 0;
+    this._lastRealtimeActivityAt = 0;
     this._refreshDebounce = new Map();
     this._refreshSourcesPromise = null;
     this._targetRefreshAt = new Map();
@@ -521,28 +523,26 @@ class DashboardBridgeApp extends Homey.App {
     // configured target dirty; they never perform REST/API work by themselves.
     const now = Date.now();
     this._lastWidgetRequestAt = now;
-    const refreshMs = this._widgetRefreshMs();
-    const maxAge = Math.max(800, Math.floor(refreshMs * 0.9));
-    const realtimeGraceMs = Math.max(5000, Math.ceil(refreshMs * 2.5));
     const { deviceIds, variableIds } = this._configuredTargets();
 
     const dirtyDevices = [];
     const dirtyVariables = [];
     for (const id of deviceIds) {
       const targetKey = this._targetKey('device', id);
-      const realtimeAt = Number(this._targetRealtimeAt.get(targetKey) || 0);
       const isDirty = this._dirtyTargets.has(targetKey);
-      const isSilentAndStale = (!realtimeAt || now - realtimeAt > realtimeGraceMs)
-        && now - this._targetLastActivity('device', id) >= maxAge;
-      if (isDirty || isSilentAndStale) dirtyDevices.push(id);
+      const targetAge = now - this._targetLastActivity('device', id);
+      // A configured source is only considered genuinely stale after 30 minutes.
+      // Normal device reporting intervals can range from seconds to many minutes,
+      // so widget refresh frequency must not be used as a stale threshold.
+      const isStale = targetAge >= STALE_AFTER_MS;
+      if (isDirty || isStale) dirtyDevices.push(id);
     }
     for (const id of variableIds) {
       const targetKey = this._targetKey('variable', id);
-      const realtimeAt = Number(this._targetRealtimeAt.get(targetKey) || 0);
       const isDirty = this._dirtyTargets.has(targetKey);
-      const isSilentAndStale = (!realtimeAt || now - realtimeAt > realtimeGraceMs)
-        && now - this._targetLastActivity('variable', id) >= maxAge;
-      if (isDirty || isSilentAndStale) dirtyVariables.push(id);
+      const targetAge = now - this._targetLastActivity('variable', id);
+      const isStale = targetAge >= STALE_AFTER_MS;
+      if (isDirty || isStale) dirtyVariables.push(id);
     }
 
     if (dirtyDevices.length || dirtyVariables.length) {
@@ -756,6 +756,7 @@ class DashboardBridgeApp extends Homey.App {
         api.on('realtime', () => {
           const now = Date.now();
           const targetKey = this._targetKey('device', deviceId);
+          this._lastRealtimeActivityAt = now;
           this._markTargetRealtime('device', deviceId, now);
           this._dirtyTargets.add(targetKey);
         });
@@ -768,6 +769,7 @@ class DashboardBridgeApp extends Homey.App {
         const api = this.homey.api.getApi('homey:manager:logic');
         api.on('realtime', () => {
           const now = Date.now();
+          this._lastRealtimeActivityAt = now;
           for (const variableId of this._configuredVariableIds) {
             const targetKey = this._targetKey('variable', variableId);
             this._markTargetRealtime('variable', variableId, now);
@@ -1302,6 +1304,7 @@ class DashboardBridgeApp extends Homey.App {
       this._timezoneRefreshTimer = null;
     }
     this._lastWidgetRequestAt = 0;
+    this._lastRealtimeActivityAt = 0;
     this.sourceCache.clear();
     this._targetRefreshAt.clear();
     this._targetRealtimeAt.clear();

@@ -10,6 +10,11 @@
 - Added overlay colour setting: Automatic, Light or Dark.
 - Removed fixed Light, Dark and Custom Image background modes.
 
+## v0.8.2
+
+- Reworked stale-source fallback logic so the widget refresh interval no longer determines when a source is considered stale.
+- Sources are now considered genuinely stale only after 1800 seconds (30 minutes) without a completed refresh; realtime changes are still handled immediately on the next widget request.
+
 ## v0.8.0
 
 - Refined the solar and grid energy-flow line geometry and aligned their connection height at the home card.

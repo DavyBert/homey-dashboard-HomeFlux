@@ -24,6 +24,13 @@ Day scenes are bright and use no house lighting. Evening scenes use an early-eve
 
 Open the HomeFlux app settings in Homey and map the capabilities for your installation.
 
+## What's new in v0.8.2
+
+- Reduced fallback polling for unchanged sources.
+- Realtime events remain the primary update path; changed sources refresh normally on the next widget request.
+- The stale threshold is a fixed 1800 seconds (30 minutes), independent of the widget refresh interval.
+- Sources with naturally slow reporting intervals are therefore not treated as stale after only a few widget refreshes.
+
 ## What's new in v0.8.1
 
 - Added separate English and Dutch Homey App Store descriptions (`README.txt` and `README.nl.txt`).
