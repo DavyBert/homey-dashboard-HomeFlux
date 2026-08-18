@@ -24,6 +24,12 @@ Day scenes are bright and use no house lighting. Evening scenes use an early-eve
 
 Open the HomeFlux app settings in Homey and map the capabilities for your installation.
 
+## What's new in v0.8.1
+
+- Added separate English and Dutch Homey App Store descriptions (`README.txt` and `README.nl.txt`).
+- Updated the App Store day/night wording so it accurately reflects the current automatic behavior.
+- This version follows v0.8.0 because v0.8.0 was already uploaded to Athom Test.
+
 ## What's new in v0.8.0
 
 - Refined the dynamic energy-line layout for a more balanced visual composition.

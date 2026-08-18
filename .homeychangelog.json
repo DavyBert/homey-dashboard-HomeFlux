@@ -50,5 +50,9 @@
   "0.8.0": {
     "en": "Improved the energy-flow line layout and App Store metadata.",
     "nl": "De energielijnen en App Store-metadata zijn verbeterd."
+  },
+  "0.8.1": {
+    "en": "Improved and localized the Homey App Store description.",
+    "nl": "De Homey App Store-beschrijving is verbeterd en gelokaliseerd."
   }
 }
