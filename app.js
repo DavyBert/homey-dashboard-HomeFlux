@@ -50,6 +50,15 @@ class DashboardBridgeApp extends Homey.App {
     this._batteryInsights24h = null;
     this._lastInsightsRefreshAt = 0;
     this._insightsRefreshPromise = null;
+    this._homeyTimezone = 'UTC';
+    this._timezoneRefreshTimer = null;
+
+    await this._refreshHomeyTimezone().catch(err => {
+      this.error('Unable to read Homey timezone, temporarily using UTC:', err);
+    });
+    this._timezoneRefreshTimer = this.homey.setInterval(() => {
+      this._refreshHomeyTimezone().catch(err => this.error('Homey timezone refresh failed:', err));
+    }, 6 * 60 * 60 * 1000);
 
     this._rebuildRuntimeConfigIndex();
     await this._ensureOwnerSession();
@@ -1061,16 +1070,41 @@ class DashboardBridgeApp extends Homey.App {
     };
   }
 
-  _dayOfYear(date) {
-    const start = Date.UTC(date.getUTCFullYear(), 0, 0);
-    return Math.floor((Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()) - start) / 86400000);
+  async _refreshHomeyTimezone() {
+    const timezone = await this.homey.clock.getTimezone();
+    if (typeof timezone !== 'string' || !timezone.trim()) throw new Error('Geen geldige Homey tijdzone');
+    // Validate the IANA timezone before storing it.
+    new Intl.DateTimeFormat('en-US', { timeZone: timezone }).format(new Date());
+    this._homeyTimezone = timezone;
+    return timezone;
+  }
+
+  _homeyDateParts(date) {
+    const formatter = new Intl.DateTimeFormat('en-CA', {
+      timeZone: this._homeyTimezone || 'UTC',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      hourCycle: 'h23'
+    });
+    const parts = Object.fromEntries(formatter.formatToParts(date)
+      .filter(part => part.type !== 'literal')
+      .map(part => [part.type, Number(part.value)]));
+    return { year: parts.year, month: parts.month, day: parts.day, hour: parts.hour };
+  }
+
+  _dayOfYear(year, month, day) {
+    const start = Date.UTC(year, 0, 0);
+    return Math.floor((Date.UTC(year, month - 1, day) - start) / 86400000);
   }
 
   _sunTimeUtc(date, latitude, longitude, sunrise) {
     const rad = Math.PI / 180;
     const deg = 180 / Math.PI;
     const normalize = value => ((value % 360) + 360) % 360;
-    const n = this._dayOfYear(date);
+    const localDate = this._homeyDateParts(date);
+    const n = this._dayOfYear(localDate.year, localDate.month, localDate.day);
     const lngHour = longitude / 15;
     const t = n + ((sunrise ? 6 : 18) - lngHour) / 24;
     const m = (0.9856 * t) - 3.289;
@@ -1090,7 +1124,7 @@ class DashboardBridgeApp extends Homey.App {
     const localMean = h + ra - (0.06571 * t) - 6.622;
     let utcHours = localMean - lngHour;
     utcHours = ((utcHours % 24) + 24) % 24;
-    return Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()) + (utcHours * 3600000);
+    return Date.UTC(localDate.year, localDate.month - 1, localDate.day) + (utcHours * 3600000);
   }
 
   _automaticPeriod(now = new Date()) {
@@ -1107,7 +1141,7 @@ class DashboardBridgeApp extends Homey.App {
     } catch (err) {
       this.error('Unable to calculate sunrise/sunset, using hour fallback:', err);
     }
-    const hour = now.getHours();
+    const { hour } = this._homeyDateParts(now);
     return hour >= 7 && hour < 20 ? 'day' : 'night';
   }
 
@@ -1263,6 +1297,10 @@ class DashboardBridgeApp extends Homey.App {
 
   async onUninit() {
     this._clearSubscriptions();
+    if (this._timezoneRefreshTimer) {
+      this.homey.clearInterval(this._timezoneRefreshTimer);
+      this._timezoneRefreshTimer = null;
+    }
     this._lastWidgetRequestAt = 0;
     this.sourceCache.clear();
     this._targetRefreshAt.clear();

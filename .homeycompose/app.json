@@ -1,6 +1,6 @@
 {
   "id": "com.dashboard.homeflux",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "compatibility": ">=12.3.0",
   "sdk": 3,
   "name": {
@@ -66,5 +66,10 @@
     "large": "/assets/images/large.png",
     "xlarge": "/assets/images/xlarge.png"
   },
-  "support": "https://github.com/DavyBert/homey-dashboard-HomeFlux/issues"
+  "support": "https://github.com/DavyBert/homey-dashboard-HomeFlux/issues",
+  "bugs": {
+    "url": "https://github.com/DavyBert/homey-dashboard-HomeFlux/issues"
+  },
+  "source": "https://github.com/DavyBert/homey-dashboard-HomeFlux",
+  "homepage": "https://buymeacoffee.com/davybert"
 }

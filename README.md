@@ -23,3 +23,17 @@ Day scenes are bright and use no house lighting. Evening scenes use an early-eve
 ## Configuration
 
 Open the HomeFlux app settings in Homey and map the capabilities for your installation.
+
+## What's new in v0.8.0
+
+- Refined the dynamic energy-line layout for a more balanced visual composition.
+- Moved the grid line start lower and further left, closer to the bottom of the grid value card.
+- Shortened the solar line and aligned the solar/grid connection height at the home-consumption card.
+- Added Homey App Store metadata for the GitHub source, issue tracker and Buy Me a Coffee homepage.
+- Shortened `README.txt` for the Homey App Store and removed links/changelog-style release notes from it.
+- Automatic day/night switching now uses Homey's configured timezone when determining the local date and fallback hour for sunrise/sunset calculation.
+
+## Release/versioning policy
+
+The HomeFlux app version follows the version that is actually published to Athom/Homey. During normal development the version in `.homeycompose/app.json` stays unchanged. Only bump the version when a new build is intentionally prepared for `homey app publish`; after publishing, commit/tag that exact version. GitHub release notes can be maintained here in `README.md` (and/or `CHANGELOG.md`), while `README.txt` remains a short App Store description without version history.
+
