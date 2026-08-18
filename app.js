@@ -18,9 +18,6 @@ const ENERGY_FIELDS = [
 const HISTORY_SAMPLE_MS = 10 * 60 * 1000;
 const HISTORY_KEEP_MS = 30 * 60 * 60 * 1000;
 const INSIGHTS_REFRESH_MS = 6 * 60 * 60 * 1000;
-const REALTIME_REFRESH_MIN_MS = 750;
-const REALTIME_REFRESH_MAX_MS = 300000;
-const STALE_AFTER_MS = 1800 * 1000;
 const MAX_HISTORY_SAMPLES = 200;
 const EMPTY_SET = new Set();
 
@@ -37,12 +34,7 @@ class DashboardBridgeApp extends Homey.App {
     this._localUrl = null;
     this._subscriptions = [];
     this._lastWidgetRequestAt = 0;
-    this._lastRealtimeActivityAt = 0;
-    this._refreshDebounce = new Map();
     this._refreshSourcesPromise = null;
-    this._targetRefreshAt = new Map();
-    this._targetRealtimeAt = new Map();
-    this._targetRealtimeRefreshAt = new Map();
     this._dirtyTargets = new Set();
     this._configuredKeyList = [];
     this._configuredKeySet = new Set();
@@ -158,15 +150,6 @@ class DashboardBridgeApp extends Homey.App {
     return { backgroundMode, periodMode, weather, weatherSource, panelTransparency, overlayTheme, lineBlinkTempo, solarStandbyLineEnabled, solarStandbyLineBlink, solarStandbyLineStyle, batteryStandbyLineEnabled, batteryStandbyLineBlink, batteryStandbyLineStyle, gridStandbyLineEnabled, gridStandbyLineBlink, gridStandbyLineStyle, showBattery24h, refreshSeconds, widgetTextScale, widgetTitleScale, labels, powerUnits };
   }
 
-  _widgetRefreshMs() {
-    return Math.min(300, Math.max(1, Number(this.visualConfig.refreshSeconds) || 30)) * 1000;
-  }
-
-  _widgetIsActive(now = Date.now()) {
-    if (!this._lastWidgetRequestAt) return false;
-    const graceMs = Math.max(5000, Math.min(310000, Math.ceil(this._widgetRefreshMs() * 2.5)));
-    return now - this._lastWidgetRequestAt <= graceMs;
-  }
 
   _values(obj) {
     if (!obj) return [];
@@ -381,10 +364,6 @@ class DashboardBridgeApp extends Homey.App {
       ...this._configuredDeviceIds.map(id => this._targetKey('device', id)),
       ...this._configuredVariableIds.map(id => this._targetKey('variable', id))
     ]);
-    for (const map of [this._targetRefreshAt, this._targetRealtimeAt, this._targetRealtimeRefreshAt]) {
-      if (!map) continue;
-      for (const key of map.keys()) if (!validTargets.has(key)) map.delete(key);
-    }
     for (const key of this._dirtyTargets || []) if (!validTargets.has(key)) this._dirtyTargets.delete(key);
   }
 
@@ -408,21 +387,6 @@ class DashboardBridgeApp extends Homey.App {
     return `${type}:${id}`;
   }
 
-  _markTargetRefreshed(type, id, now = Date.now()) {
-    this._targetRefreshAt.set(this._targetKey(type, id), now);
-  }
-
-  _markTargetRealtime(type, id, now = Date.now()) {
-    this._targetRealtimeAt.set(this._targetKey(type, id), now);
-  }
-
-  _targetLastActivity(type, id) {
-    const key = this._targetKey(type, id);
-    // Only a completed read proves that the cached value is fresh. Some Homey
-    // integrations emit generic realtime events without the configured
-    // capability value, so those events must not suppress fallback polling.
-    return Number(this._targetRefreshAt.get(key) || 0);
-  }
 
   _configuredTargets() {
     return {
@@ -431,14 +395,6 @@ class DashboardBridgeApp extends Homey.App {
     };
   }
 
-  _staleConfiguredTargets(maxAgeMs, now = Date.now()) {
-    const { deviceIds, variableIds } = this._configuredTargets();
-    const age = Math.max(1000, Number(maxAgeMs) || 1000);
-    return {
-      deviceIds: deviceIds.filter(id => now - this._targetLastActivity('device', id) >= age),
-      variableIds: variableIds.filter(id => now - this._targetLastActivity('variable', id) >= age)
-    };
-  }
 
   _configuredCapabilitiesForDevice(deviceId) {
     return this._configuredDeviceCapabilities.get(deviceId) || EMPTY_SET;
@@ -454,7 +410,6 @@ class DashboardBridgeApp extends Homey.App {
         const source = this._deviceSource(device, capabilityId);
         this.sourceCache.set(source.key, source);
       }
-      this._markTargetRefreshed('device', deviceId);
       this._dirtyTargets.delete(this._targetKey('device', deviceId));
       if (emit) this._emitDashboard();
     } catch (err) {
@@ -469,7 +424,6 @@ class DashboardBridgeApp extends Homey.App {
     try {
       const variable = await this._apiGet(`/api/manager/logic/variable/${encodeURIComponent(variableId)}`);
       this.sourceCache.set(key, this._variableSource(variable));
-      this._markTargetRefreshed('variable', variableId);
       this._dirtyTargets.delete(this._targetKey('variable', variableId));
       if (emit) this._emitDashboard();
     } catch (err) {
@@ -488,17 +442,11 @@ class DashboardBridgeApp extends Homey.App {
     return this._refreshConfiguredTargets(reason, deviceIds, variableIds, emit);
   }
 
-  async _refreshStaleConfiguredSources(reason, maxAgeMs) {
-    const { deviceIds, variableIds } = this._staleConfiguredTargets(maxAgeMs);
-    if (!deviceIds.length && !variableIds.length) return false;
-    await this._refreshConfiguredTargets(reason, deviceIds, variableIds);
-    return true;
-  }
 
   async _refreshConfiguredTargets(reason, deviceIds, variableIds, emit = true) {
-    // Collapse overlapping widget, realtime and fallback reads into one batch.
-    // Realtime-triggered single-device refreshes are handled separately and also
-    // update per-target freshness, so they naturally suppress later polling.
+    // Collapse overlapping configured-source reads into one batch.
+    // During normal runtime, reads happen only after Homey reports a realtime
+    // change and the widget reaches its next configured refresh tick.
     if (this._refreshSourcesPromise) return this._refreshSourcesPromise;
     this._refreshSourcesPromise = this._doRefreshConfiguredTargets(reason, deviceIds, variableIds, emit)
       .finally(() => { this._refreshSourcesPromise = null; });
@@ -519,36 +467,19 @@ class DashboardBridgeApp extends Homey.App {
   }
 
   async getDashboardForWidget() {
-    // Widget requests drive all fallback reads. Realtime events only mark a
-    // configured target dirty; they never perform REST/API work by themselves.
+    // The user-selected widget interval is the authoritative live refresh.
+    // Every widget request refreshes only the configured sources, never the
+    // complete Homey device list. This keeps slow-reporting devices correct
+    // without stale timers and does not depend on realtime events being emitted
+    // consistently by every third-party app.
     const now = Date.now();
     this._lastWidgetRequestAt = now;
     const { deviceIds, variableIds } = this._configuredTargets();
 
-    const dirtyDevices = [];
-    const dirtyVariables = [];
-    for (const id of deviceIds) {
-      const targetKey = this._targetKey('device', id);
-      const isDirty = this._dirtyTargets.has(targetKey);
-      const targetAge = now - this._targetLastActivity('device', id);
-      // A configured source is only considered genuinely stale after 30 minutes.
-      // Normal device reporting intervals can range from seconds to many minutes,
-      // so widget refresh frequency must not be used as a stale threshold.
-      const isStale = targetAge >= STALE_AFTER_MS;
-      if (isDirty || isStale) dirtyDevices.push(id);
-    }
-    for (const id of variableIds) {
-      const targetKey = this._targetKey('variable', id);
-      const isDirty = this._dirtyTargets.has(targetKey);
-      const targetAge = now - this._targetLastActivity('variable', id);
-      const isStale = targetAge >= STALE_AFTER_MS;
-      if (isDirty || isStale) dirtyVariables.push(id);
-    }
-
-    if (dirtyDevices.length || dirtyVariables.length) {
+    if (deviceIds.length || variableIds.length) {
       // The HTTP response itself carries the refreshed dashboard, so avoid a
       // second realtime dashboard emission and duplicate widget render.
-      await this._refreshConfiguredTargets('widget-request', dirtyDevices, dirtyVariables, false);
+      await this._refreshConfiguredTargets('widget-refresh-tick', deviceIds, variableIds, false);
     }
 
     // Insights remains lazy and single-flight. It never wakes HomeFlux while
@@ -723,57 +654,55 @@ class DashboardBridgeApp extends Homey.App {
   _clearSubscriptions() {
     for (const api of this._subscriptions) { try { api.unregister(); } catch (_) {} }
     this._subscriptions = [];
-    for (const timer of this._refreshDebounce.values()) this.homey.clearTimeout(timer);
-    this._refreshDebounce.clear();
   }
 
-  _debouncedRefresh(key, refreshFn, delay = 150) {
-    // Do not keep pushing the timer forward on every event. A chatty device can
-    // otherwise prevent the refresh callback from ever running.
-    if (this._refreshDebounce.has(key)) return;
-    const timer = this.homey.setTimeout(async () => {
-      this._refreshDebounce.delete(key);
-      await refreshFn().catch(err => this.error('Realtime refresh failed:', err));
-    }, delay);
-    this._refreshDebounce.set(key, timer);
-  }
-
-  _realtimeRefreshMinMs() {
-    // Follow the user's requested cadence. Older builds capped this at 3 s,
-    // which caused a busy device to trigger API reads every few seconds even
-    // when the widget was configured for 30 s or slower.
-    const refreshMs = this._widgetRefreshMs();
-    return Math.min(REALTIME_REFRESH_MAX_MS, Math.max(REALTIME_REFRESH_MIN_MS, Math.floor(refreshMs * 0.9)));
-  }
 
   _subscribeConfiguredSources() {
     this._clearSubscriptions();
-    const deviceIds = this._configuredDeviceIds;
 
-    for (const deviceId of deviceIds) {
+    // Listen on Homey's manager realtime channels. Capability value changes are
+    // reported as device.update events by ManagerDevices; subscribing to a
+    // homey:device:<id> API URI does not reliably deliver these state changes.
+    if (this._configuredDeviceIds.length) {
       try {
-        const api = this.homey.api.getApi(`homey:device:${deviceId}`);
-        api.on('realtime', () => {
-          const now = Date.now();
-          const targetKey = this._targetKey('device', deviceId);
-          this._lastRealtimeActivityAt = now;
-          this._markTargetRealtime('device', deviceId, now);
-          this._dirtyTargets.add(targetKey);
+        const api = this.homey.api.getApi('homey:manager:devices');
+        api.on('realtime', (event, data) => {
+          if (event !== 'device.update') return;
+
+          const deviceId = data?.id || data?.deviceId || data?.device?.id || null;
+          if (deviceId && this._configuredDeviceCapabilities.has(deviceId)) {
+            this._dirtyTargets.add(this._targetKey('device', deviceId));
+            return;
+          }
+
+          // Be conservative if Homey ever sends a device.update payload without
+          // an id: refresh configured devices on the next normal widget tick.
+          if (!deviceId) {
+            for (const id of this._configuredDeviceIds) {
+              this._dirtyTargets.add(this._targetKey('device', id));
+            }
+          }
         });
         this._subscriptions.push(api);
-      } catch (err) { this.error(`Unable to subscribe to device ${deviceId}:`, err); }
+      } catch (err) { this.error('Unable to subscribe to device changes:', err); }
     }
 
     if (this._configuredVariableIds.length) {
       try {
         const api = this.homey.api.getApi('homey:manager:logic');
-        api.on('realtime', () => {
-          const now = Date.now();
-          this._lastRealtimeActivityAt = now;
-          for (const variableId of this._configuredVariableIds) {
-            const targetKey = this._targetKey('variable', variableId);
-            this._markTargetRealtime('variable', variableId, now);
-            this._dirtyTargets.add(targetKey);
+        api.on('realtime', (event, data) => {
+          if (event !== 'variable.update') return;
+
+          const variableId = data?.id || data?.variableId || data?.variable?.id || null;
+          if (variableId && this._configuredVariableIds.includes(variableId)) {
+            this._dirtyTargets.add(this._targetKey('variable', variableId));
+            return;
+          }
+
+          if (!variableId) {
+            for (const id of this._configuredVariableIds) {
+              this._dirtyTargets.add(this._targetKey('variable', id));
+            }
           }
         });
         this._subscriptions.push(api);
@@ -1304,11 +1233,7 @@ class DashboardBridgeApp extends Homey.App {
       this._timezoneRefreshTimer = null;
     }
     this._lastWidgetRequestAt = 0;
-    this._lastRealtimeActivityAt = 0;
     this.sourceCache.clear();
-    this._targetRefreshAt.clear();
-    this._targetRealtimeAt.clear();
-    this._targetRealtimeRefreshAt.clear();
     this._configuredDeviceCapabilities.clear();
     this._dirtyTargets.clear();
     this._insightsRefreshPromise = null;

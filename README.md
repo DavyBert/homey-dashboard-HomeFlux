@@ -24,6 +24,13 @@ Day scenes are bright and use no house lighting. Evening scenes use an early-eve
 
 Open the HomeFlux app settings in Homey and map the capabilities for your installation.
 
+## What's new in v0.8.3
+
+- Removed stale-source detection and fallback polling during normal runtime.
+- The selected widget refresh interval is now the authoritative live refresh: each widget tick rereads only the configured sources.
+- HomeFlux no longer depends on third-party apps emitting realtime change events for dashboard values to advance.
+- App startup and dashboard configuration saves still perform an initial/full configured-source read so the cache starts with current values.
+
 ## What's new in v0.8.2
 
 - Reduced fallback polling for unchanged sources.

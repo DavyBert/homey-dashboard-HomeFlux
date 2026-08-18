@@ -10,6 +10,13 @@
 - Added overlay colour setting: Automatic, Light or Dark.
 - Removed fixed Light, Dark and Custom Image background modes.
 
+## v0.8.3
+
+- Removed stale and fallback polling from normal runtime updates.
+- The user-selected widget refresh interval now performs the actual live refresh of all configured sources.
+- Only configured devices and Logic variables are reread; HomeFlux does not rescan the complete Homey device list.
+- Initial app startup and dashboard saves still refresh all configured sources once.
+
 ## v0.8.2
 
 - Reworked stale-source fallback logic so the widget refresh interval no longer determines when a source is considered stale.

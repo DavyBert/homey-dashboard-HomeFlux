@@ -58,5 +58,9 @@
   "0.8.2": {
     "en": "Reduced fallback polling by considering silent sources stale only after 30 minutes, independent of the widget refresh interval.",
     "nl": "Fallback-polling verminderd door stille bronnen pas na 30 minuten als stale te beschouwen, onafhankelijk van de widget-refreshinterval."
+  },
+  "0.8.3": {
+    "en": "The configured widget refresh interval now performs the actual live refresh of configured sources, without stale polling.",
+    "nl": "De ingestelde widget-refreshinterval voert nu de echte live verversing van geconfigureerde bronnen uit, zonder stale-polling."
   }
 }
