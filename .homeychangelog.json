@@ -62,5 +62,9 @@
   "0.8.3": {
     "en": "The configured widget refresh interval now performs the actual live refresh of configured sources, without stale polling.",
     "nl": "De ingestelde widget-refreshinterval voert nu de echte live verversing van geconfigureerde bronnen uit, zonder stale-polling."
+  },
+  "0.8.4": {
+    "en": "Reduced runtime load with one shared refresh loop for all active widgets and targeted reads of only configured sources.",
+    "nl": "Runtimebelasting verlaagd met een gedeelde refreshlus voor alle actieve widgets en gerichte uitlezing van alleen geconfigureerde bronnen."
   }
 }

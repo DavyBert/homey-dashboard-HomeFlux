@@ -243,7 +243,7 @@ function onHomeyReady(Homey){
    'night-snow':'./scene-night-snow.jpg',
    'night-thunder':'./scene-night-thunder.jpg',
  };
- let readyCalled=false,lastHeight=0,heightTimer=null,currentScene='',pollTimer=null,pollSeconds=0;
+ let readyCalled=false,lastHeight=0,heightTimer=null,currentScene='';
  function measuredHeight(){
    const frameRect=frame.getBoundingClientRect();
    const style=getComputedStyle(document.body);
@@ -309,18 +309,10 @@ function onHomeyReady(Homey){
    energyEl.style.backgroundImage=`url('${url}')`;
    const img=new Image();img.onload=()=>scheduleHeightSync(true);img.src=url;
  }
- function ensurePoll(seconds){
-   const next=Math.min(300,Math.max(1,Number(seconds)||30));
-   if(next===pollSeconds&&pollTimer)return;
-   if(pollTimer)clearInterval(pollTimer);
-   pollSeconds=next;
-   pollTimer=setInterval(refresh,next*1000);
- }
  function render(d){
    applyScene(d.scene||{},d.visualConfig||{});
    applyPanelStyles(d.visualConfig||{});
    frame.style.setProperty('--line-blink-interval',`${Number(d.visualConfig&&d.visualConfig.lineBlinkTempo||2.4)}s`);
-   ensurePoll(d.visualConfig&&d.visualConfig.refreshSeconds);
    const textScale=Math.min(1.1,Math.max(.5,Number(d.visualConfig&&d.visualConfig.widgetTextScale||90)/100));
    const titleScale=Math.min(1.3,Math.max(.5,Number(d.visualConfig&&d.visualConfig.widgetTitleScale||100)/100));
    energyEl.style.setProperty('--widget-text-scale',String(textScale));
@@ -418,12 +410,22 @@ function onHomeyReady(Homey){
    for(const t of tiles){const el=document.createElement('article');const isBool=t.kind==='boolean',isOn=isBool&&Boolean(t.rawValue);el.className=`tile${isBool?' boolean':''}${isOn?' boolean-on':''}${t.online?'':' offline'}`;el.innerHTML='<div class="tile-head"><div class="names"><div class="label"></div><div class="subtitle"></div></div><div class="dot"></div></div><div class="reading2"><div class="value2"></div><div class="unit2"></div></div>';el.querySelector('.label').textContent=t.label||t.deviceName||tr('widget.item');el.querySelector('.subtitle').textContent=capabilitySubtitle(t);el.querySelector('.dot').className='dot'+(t.online?' online':'');el.querySelector('.value2').textContent=t.value??'—';el.querySelector('.unit2').textContent=!isBool&&t.unit?t.unit:'';extra.appendChild(el);}
    scheduleHeightSync(true);
  }
- async function refresh(){try{render(await Homey.api('GET','/dashboard'));}catch(err){console.error(err);extra.classList.add('hidden');scheduleHeightSync(true);}}
+ async function loadInitialDashboard(){try{render(await Homey.api('GET','/dashboard'));}catch(err){console.error(err);extra.classList.add('hidden');scheduleHeightSync(true);}}
  Homey.on('dashboard.updated',render);
+ let wasHidden=false;
+ document.addEventListener('visibilitychange',()=>{
+   if(document.hidden){
+     wasHidden=true;
+     return;
+   }
+   if(wasHidden){
+     window.location.reload();
+   }
+ });
  const ro=new ResizeObserver(()=>scheduleHeightSync());ro.observe(frame);ro.observe(document.body);ro.observe(extra);ro.observe(energyEl);
  new MutationObserver(()=>scheduleHeightSync()).observe(frame,{childList:true,subtree:true,attributes:true});
  window.addEventListener('resize',()=>scheduleHeightSync(true));
- refresh().finally(()=>scheduleHeightSync(true));
+ loadInitialDashboard().finally(()=>scheduleHeightSync(true));
 }
 </script>
 </body>

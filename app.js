@@ -1,6 +1,7 @@
 'use strict';
 
 const Homey = require('homey');
+const { HomeyAPI } = require('homey-api');
 
 const ENERGY_FIELDS = [
   ...Array.from({ length: 10 }, (_, index) => index === 0 ? 'solar' : `solar${index + 1}`),
@@ -15,10 +16,7 @@ const ENERGY_FIELDS = [
   'gridPower', 'homePower'
 ];
 
-const HISTORY_SAMPLE_MS = 10 * 60 * 1000;
-const HISTORY_KEEP_MS = 30 * 60 * 60 * 1000;
 const INSIGHTS_REFRESH_MS = 6 * 60 * 60 * 1000;
-const MAX_HISTORY_SAMPLES = 200;
 const EMPTY_SET = new Set();
 
 class DashboardBridgeApp extends Homey.App {
@@ -26,16 +24,22 @@ class DashboardBridgeApp extends Homey.App {
     this.selection = this.homey.settings.get('selection') || [];
     this.energyConfig = this._normalizeEnergyConfig(this.homey.settings.get('energyConfig') || {});
     this.visualConfig = this._normalizeVisualConfig(this.homey.settings.get('visualConfig') || {});
-    const storedBatteryHistory = this.homey.settings.get('batteryHistory');
-    this.batteryHistory = Array.isArray(storedBatteryHistory) ? storedBatteryHistory.slice(-MAX_HISTORY_SAMPLES) : [];
     this.revision = Number(this.homey.settings.get('revision') || 1);
     this.sourceCache = new Map();
     this._ownerToken = null;
     this._localUrl = null;
-    this._subscriptions = [];
-    this._lastWidgetRequestAt = 0;
-    this._refreshSourcesPromise = null;
-    this._dirtyTargets = new Set();
+    this._homeyApi = null;
+    this._realtimeDevices = new Map();
+    this._capabilityInstances = new Map();
+    this._logicChangeHandler = null;
+    this._logicUpdateHandler = null;
+    this._dashboardSnapshot = null;
+    this._lastPublishedDashboardSignature = '';
+    this._dashboardDirty = false;
+    this._forceNextDashboardPush = false;
+    this._dashboardPushTimer = null;
+    this._lastDashboardPushAt = 0;
+    this._insightsRefreshTimer = null;
     this._configuredKeyList = [];
     this._configuredKeySet = new Set();
     this._configuredDeviceIds = [];
@@ -56,9 +60,12 @@ class DashboardBridgeApp extends Homey.App {
 
     this._rebuildRuntimeConfigIndex();
     await this._ensureOwnerSession();
-    await this._refreshConfiguredSources('initial').catch(err => this.error('Initial source refresh failed:', err));
+    await this._setupTruePushSources();
     await this._migrateLegacyDeviceLabels().catch(err => this.error('Label migration failed:', err));
-    this._subscribeConfiguredSources();
+    this._startInsightsRefreshLoop();
+    this._refreshBattery24hFromInsights()
+      .then(result => { if (result) this._markDashboardDirty('insights-initial'); })
+      .catch(err => this.error('Battery Insights refresh failed:', err));
     this.log(`HomeFlux v${this.homey.manifest.version} initialized`);
   }
 
@@ -244,6 +251,21 @@ class DashboardBridgeApp extends Homey.App {
     const capsObj = device.capabilitiesObj || {};
     const cap = capsObj[capabilityId] || {};
     const value = cap.value !== undefined ? cap.value : (device.state ? device.state[capabilityId] : null);
+    const valueTitles = {};
+    const candidates = [
+      cap?.values,
+      cap?.options?.values,
+      cap?.opts?.values,
+      device?.capabilitiesOptions?.[capabilityId]?.values
+    ];
+    const enumValues = candidates.find(Array.isArray) || [];
+    for (const item of enumValues) {
+      if (!item) continue;
+      const title = this._translatedTitle(item.title || item.label || item.name);
+      for (const id of [item.id, item.value, item.key]) {
+        if (id !== undefined && id !== null && title) valueTitles[String(id)] = title;
+      }
+    }
     return {
       key: `device:${device.id}:${capabilityId}`,
       type: 'device', deviceId: device.id, capabilityId,
@@ -253,7 +275,8 @@ class DashboardBridgeApp extends Homey.App {
       value,
       displayValue: this._capabilityValueTitle(device, capabilityId, cap, value),
       unit: cap.units || cap.unit || '',
-      valueType: cap.type || typeof cap.value
+      valueType: cap.type || typeof cap.value,
+      valueTitles
     };
   }
 
@@ -273,19 +296,102 @@ class DashboardBridgeApp extends Homey.App {
     };
   }
 
-  async listSources() {
-    // Source discovery is only used by the settings page. Do NOT copy the full
-    // Homey device/capability list into the runtime cache: that cache must stay
-    // limited to sources that HomeFlux is actually configured to use.
-    const [devices, variables] = await Promise.all([this._getDevices(), this._getVariables()]);
+  _settingsSourceView(source) {
+    if (!source) return null;
+    return {
+      key: source.key,
+      type: source.type,
+      deviceName: source.deviceName || '',
+      label: source.label || source.name || source.key,
+      name: source.name || source.label || source.key,
+      value: source.value,
+      unit: source.unit || ''
+    };
+  }
+
+  _configuredSettingsSources() {
+    // Settings opens from the already-seeded runtime cache. This avoids a full
+    // Homey device discovery just to render the sources that are already linked.
+    const selectedByKey = new Map(this.selection.map(item => [item.key, item]));
     const sources = [];
-    for (const device of devices) sources.push(...this._deviceSources(device));
-    for (const variable of variables) sources.push(this._variableSource(variable));
+    for (const key of this._configuredKeyList) {
+      const cached = this._settingsSourceView(this.sourceCache.get(key));
+      if (cached) {
+        sources.push(cached);
+        continue;
+      }
+
+      // Keep a configured-but-currently-unavailable source visible in Settings.
+      const parsed = this._parseKey(key);
+      const selected = selectedByKey.get(key);
+      if (parsed.type === 'device') {
+        const fallbackName = selected?.label || parsed.capabilityId || key;
+        sources.push({
+          key, type: 'device', deviceName: selected?.label || parsed.deviceId || '',
+          label: selected?.sourceLabel || `${parsed.deviceId || 'Device'} — ${fallbackName}`,
+          name: fallbackName, value: undefined, unit: selected?.unit || ''
+        });
+      } else if (parsed.type === 'variable') {
+        const fallbackName = selected?.label || parsed.variableId || key;
+        sources.push({
+          key, type: 'variable', deviceName: 'Logic',
+          label: selected?.sourceLabel || `Logic — ${fallbackName}`,
+          name: fallbackName, value: undefined, unit: selected?.unit || ''
+        });
+      }
+    }
     sources.sort((a, b) => a.label.localeCompare(b.label));
     return sources;
   }
 
-  getConfig() { return { energyConfig: this.energyConfig, selection: this.selection, visualConfig: this.visualConfig }; }
+  _deviceSettingsSources(device) {
+    const capsObj = device.capabilitiesObj || {};
+    const capabilityIds = device.capabilities || Object.keys(capsObj);
+    const deviceName = device.name || device.id;
+    return capabilityIds.map(capabilityId => {
+      const cap = capsObj[capabilityId] || {};
+      const value = cap.value !== undefined ? cap.value : (device.state ? device.state[capabilityId] : null);
+      const name = this._capabilityTitle(capabilityId, cap);
+      return {
+        key: `device:${device.id}:${capabilityId}`,
+        type: 'device',
+        deviceName,
+        label: `${deviceName} — ${name}`,
+        name,
+        value,
+        unit: cap.units || cap.unit || ''
+      };
+    });
+  }
+
+  async listSources() {
+    // Full discovery is deliberately lazy: Settings calls this only when the
+    // user wants to choose/add a source (or explicitly presses Scan Homey).
+    // Return only the fields the settings UI needs and release the large Homey
+    // payloads immediately after compacting them.
+    let devices = await this._getDevices();
+    const sources = [];
+    for (const device of devices) sources.push(...this._deviceSettingsSources(device));
+    devices.length = 0;
+    devices = null;
+
+    let variables = await this._getVariables();
+    for (const variable of variables) sources.push(this._settingsSourceView(this._variableSource(variable)));
+    variables.length = 0;
+    variables = null;
+
+    sources.sort((a, b) => a.label.localeCompare(b.label));
+    return sources;
+  }
+
+  getConfig() {
+    return {
+      energyConfig: this.energyConfig,
+      selection: this.selection,
+      visualConfig: this.visualConfig,
+      configuredSources: this._configuredSettingsSources()
+    };
+  }
 
   async saveConfig(config = {}) {
     const energyConfig = this._normalizeEnergyConfig(config.energyConfig || {});
@@ -313,9 +419,9 @@ class DashboardBridgeApp extends Homey.App {
     await this.homey.settings.set('selection', this.selection);
     await this.homey.settings.set('visualConfig', this.visualConfig);
     await this.homey.settings.set('revision', this.revision);
-    await this._refreshConfiguredSources('config-save');
-    this._subscribeConfiguredSources();
-    this._emitDashboard();
+    this._clearDashboardPushTimer();
+    await this._setupTruePushSources();
+    this._markDashboardDirty('config-save', true);
     return this.getConfig();
   }
 
@@ -360,11 +466,6 @@ class DashboardBridgeApp extends Homey.App {
     this._configuredDeviceIds = [...deviceCapabilities.keys()];
     this._configuredVariableIds = [...variableIds];
 
-    const validTargets = new Set([
-      ...this._configuredDeviceIds.map(id => this._targetKey('device', id)),
-      ...this._configuredVariableIds.map(id => this._targetKey('variable', id))
-    ]);
-    for (const key of this._dirtyTargets || []) if (!validTargets.has(key)) this._dirtyTargets.delete(key);
   }
 
   _configuredKeys() {
@@ -383,10 +484,6 @@ class DashboardBridgeApp extends Homey.App {
     return removed;
   }
 
-  _targetKey(type, id) {
-    return `${type}:${id}`;
-  }
-
 
   _configuredTargets() {
     return {
@@ -400,135 +497,214 @@ class DashboardBridgeApp extends Homey.App {
     return this._configuredDeviceCapabilities.get(deviceId) || EMPTY_SET;
   }
 
-  async _refreshConfiguredDevice(deviceId, emit = true) {
-    const wantedCapabilities = this._configuredCapabilitiesForDevice(deviceId);
-    if (!wantedCapabilities.size) return;
 
-    try {
-      const device = await this._apiGet(`/api/manager/devices/device/${encodeURIComponent(deviceId)}`);
-      for (const capabilityId of wantedCapabilities) {
-        const source = this._deviceSource(device, capabilityId);
-        this.sourceCache.set(source.key, source);
-      }
-      this._dirtyTargets.delete(this._targetKey('device', deviceId));
-      if (emit) this._emitDashboard();
-    } catch (err) {
-      this.error(`Unable to refresh device ${deviceId}:`, err);
-    }
+  async _ensureHomeyApi() {
+    if (this._homeyApi) return this._homeyApi;
+    this._homeyApi = await HomeyAPI.createAppAPI({ homey: this.homey });
+    return this._homeyApi;
   }
 
-  async _refreshConfiguredVariable(variableId, emit = true) {
+  _clearDashboardPushTimer() {
+    if (!this._dashboardPushTimer) return;
+    this.homey.clearTimeout(this._dashboardPushTimer);
+    this._dashboardPushTimer = null;
+  }
+
+  _dashboardPushIntervalMs() {
+    return Math.min(300000, Math.max(1000, Number(this.visualConfig.refreshSeconds || 30) * 1000));
+  }
+
+  _dashboardSignature(dashboard) {
+    return JSON.stringify({
+      revision: dashboard.revision,
+      configured: dashboard.configured,
+      energy: dashboard.energy,
+      tiles: dashboard.tiles,
+      scene: dashboard.scene,
+      visualConfig: dashboard.visualConfig
+    });
+  }
+
+  _markDashboardDirty(reason = 'source-event', force = false) {
+    this._dashboardDirty = true;
+    if (force) this._forceNextDashboardPush = true;
+    this._scheduleDashboardPush(reason);
+  }
+
+  _scheduleDashboardPush(reason = 'source-event') {
+    if (this._dashboardPushTimer) return;
+    const intervalMs = this._dashboardPushIntervalMs();
+    const sinceLast = this._lastDashboardPushAt ? Date.now() - this._lastDashboardPushAt : intervalMs;
+    const delay = Math.max(0, intervalMs - sinceLast);
+    this._dashboardPushTimer = this.homey.setTimeout(() => {
+      this._dashboardPushTimer = null;
+      this._flushDashboardPush(reason);
+    }, delay);
+  }
+
+  _flushDashboardPush(reason = 'source-event') {
+    if (!this._dashboardDirty && !this._forceNextDashboardPush) return false;
+    const dashboard = this.getDashboard();
+    const signature = this._dashboardSignature(dashboard);
+    const force = this._forceNextDashboardPush;
+    this._dashboardSnapshot = dashboard;
+    this._dashboardDirty = false;
+    this._forceNextDashboardPush = false;
+
+    if (!force && signature === this._lastPublishedDashboardSignature) {
+      return false;
+    }
+
+    this._lastPublishedDashboardSignature = signature;
+    this._lastDashboardPushAt = Date.now();
+    this.homey.api.realtime('dashboard.updated', dashboard);
+    return true;
+  }
+
+  _updateDeviceSourceValue(deviceId, capabilityId, value, origin = 'unknown') {
+    const key = `device:${deviceId}:${capabilityId}`;
+    if (!this._configuredKeySet.has(key)) return false;
+    const source = this.sourceCache.get(key);
+    if (!source) return false;
+    if (Object.is(source.value, value)) return false;
+    source.value = value;
+    source.displayValue = source.valueTitles?.[String(value)] || '';
+    this.sourceCache.set(key, source);
+    this._markDashboardDirty(`${origin}:${capabilityId}`);
+    return true;
+  }
+
+  _updateLogicVariable(variable, origin = 'logic-event') {
+    if (!variable || typeof variable !== 'object') return false;
+    const candidate = variable.variable && typeof variable.variable === 'object' ? variable.variable : variable;
+    const variableId = String(candidate.id || variable.variableId || '');
+    if (!variableId || !this._configuredVariableIds.includes(variableId)) return false;
     const key = `variable:${variableId}`;
-    if (!this._configuredKeySet.has(key)) return;
+    const previous = this.sourceCache.get(key);
+    const next = this._variableSource(candidate);
+    this.sourceCache.set(key, next);
+    if (previous && Object.is(previous.value, next.value)) return false;
+    this._markDashboardDirty(`${origin}:logic`);
+    return true;
+  }
 
-    try {
-      const variable = await this._apiGet(`/api/manager/logic/variable/${encodeURIComponent(variableId)}`);
-      this.sourceCache.set(key, this._variableSource(variable));
-      this._dirtyTargets.delete(this._targetKey('variable', variableId));
-      if (emit) this._emitDashboard();
-    } catch (err) {
-      this.error(`Unable to refresh Logic variable ${variableId}:`, err);
+  async _destroyTruePushSources() {
+    for (const instance of this._capabilityInstances.values()) {
+      try { instance.destroy(); } catch (_) {}
     }
+    this._capabilityInstances.clear();
+
+    for (const device of this._realtimeDevices.values()) {
+      try { await device.disconnect(); } catch (_) {}
+    }
+    this._realtimeDevices.clear();
+
+    if (this._homeyApi?.devices) {
+      try { await this._homeyApi.devices.disconnect(); } catch (_) {}
+    }
+
+    if (this._homeyApi?.logic) {
+      try { if (this._logicChangeHandler) this._homeyApi.logic.off('variable.change', this._logicChangeHandler); } catch (_) {}
+      try { if (this._logicUpdateHandler) this._homeyApi.logic.off('variable.update', this._logicUpdateHandler); } catch (_) {}
+      try { await this._homeyApi.logic.disconnect(); } catch (_) {}
+    }
+    this._logicChangeHandler = null;
+    this._logicUpdateHandler = null;
   }
 
-  async _refreshConfiguredVariables(emit = true) {
-    const variableIds = this._configuredVariableIds;
-    await Promise.all(variableIds.map(variableId => this._refreshConfiguredVariable(variableId, false)));
-    if (emit && variableIds.length) this._emitDashboard();
-  }
-
-  async _refreshConfiguredSources(reason = 'manual', emit = true) {
-    const { deviceIds, variableIds } = this._configuredTargets();
-    return this._refreshConfiguredTargets(reason, deviceIds, variableIds, emit);
-  }
-
-
-  async _refreshConfiguredTargets(reason, deviceIds, variableIds, emit = true) {
-    // Collapse overlapping configured-source reads into one batch.
-    // During normal runtime, reads happen only after Homey reports a realtime
-    // change and the widget reaches its next configured refresh tick.
-    if (this._refreshSourcesPromise) return this._refreshSourcesPromise;
-    this._refreshSourcesPromise = this._doRefreshConfiguredTargets(reason, deviceIds, variableIds, emit)
-      .finally(() => { this._refreshSourcesPromise = null; });
-    return this._refreshSourcesPromise;
-  }
-
-  async _doRefreshConfiguredTargets(reason = 'manual', deviceIds = [], variableIds = [], emit = true) {
+  async _setupTruePushSources() {
+    await this._destroyTruePushSources();
     this._pruneSourceCache();
-    if (!deviceIds.length && !variableIds.length) return;
+    const api = await this._ensureHomeyApi();
 
-    await Promise.all([
-      ...deviceIds.map(deviceId => this._refreshConfiguredDevice(deviceId, false)),
-      ...variableIds.map(variableId => this._refreshConfiguredVariable(variableId, false))
-    ]);
+    // ManagerDevices must be connected before the configured device objects
+    // can deliver capability updates. No manager-wide update listeners are
+    // registered; only configured capability instances are kept.
+    try {
+      await api.devices.connect();
+    } catch (err) {
+      this.error('Unable to connect Homey device realtime API:', err);
+      return;
+    }
 
-    await this._recordBatteryHistory();
-    if (emit) this._emitDashboard();
+    for (const deviceId of this._configuredDeviceIds) {
+      const wantedCapabilities = this._configuredCapabilitiesForDevice(deviceId);
+      if (!wantedCapabilities.size) continue;
+      try {
+        const device = await api.devices.getDevice({ id: deviceId });
+
+        // Seed metadata and the current value once. From this point onward the
+        // cache is updated by makeCapabilityInstance() events only.
+        for (const capabilityId of wantedCapabilities) {
+          this.sourceCache.set(`device:${deviceId}:${capabilityId}`, this._deviceSource(device, capabilityId));
+        }
+
+        await device.connect();
+        this._realtimeDevices.set(deviceId, device);
+
+        for (const capabilityId of wantedCapabilities) {
+          const key = `device:${deviceId}:${capabilityId}`;
+          const instance = device.makeCapabilityInstance(capabilityId, value => {
+            this._updateDeviceSourceValue(deviceId, capabilityId, value, 'capability');
+          });
+          this._capabilityInstances.set(key, instance);
+
+          if (instance.value !== undefined) {
+            const source = this.sourceCache.get(key);
+            if (source) {
+              source.value = instance.value;
+              source.displayValue = source.valueTitles?.[String(instance.value)] || '';
+              this.sourceCache.set(key, source);
+            }
+          }
+        }
+      } catch (err) {
+        this.error(`Unable to subscribe configured device ${deviceId}:`, err);
+      }
+    }
+
+    if (this._configuredVariableIds.length) {
+      try {
+        for (const variableId of this._configuredVariableIds) {
+          const variable = await api.logic.getVariable({ id: variableId });
+          this.sourceCache.set(`variable:${variableId}`, this._variableSource(variable));
+        }
+        await api.logic.connect();
+
+        this._logicChangeHandler = variable => this._updateLogicVariable(variable, 'variable.change');
+        this._logicUpdateHandler = variable => this._updateLogicVariable(variable, 'variable.update');
+        api.logic.on('variable.change', this._logicChangeHandler);
+        api.logic.on('variable.update', this._logicUpdateHandler);
+      } catch (err) {
+        this.error('Unable to subscribe configured Logic variables:', err);
+      }
+    }
+
+    this._dashboardSnapshot = this.getDashboard();
+    this._lastPublishedDashboardSignature = this._dashboardSignature(this._dashboardSnapshot);
+    // The initial widget GET renders this snapshot. Subsequent source changes
+    // are coalesced and published no faster than refreshSeconds.
+    this._lastDashboardPushAt = Date.now();
+  }
+
+  _startInsightsRefreshLoop() {
+    if (this._insightsRefreshTimer) this.homey.clearInterval(this._insightsRefreshTimer);
+    this._insightsRefreshTimer = this.homey.setInterval(() => {
+      this._refreshBattery24hFromInsights()
+        .then(result => { if (result) this._markDashboardDirty('insights-6h'); })
+        .catch(err => this.error('Battery Insights refresh failed:', err));
+    }, INSIGHTS_REFRESH_MS);
   }
 
   async getDashboardForWidget() {
-    // The user-selected widget interval is the authoritative live refresh.
-    // Every widget request refreshes only the configured sources, never the
-    // complete Homey device list. This keeps slow-reporting devices correct
-    // without stale timers and does not depend on realtime events being emitted
-    // consistently by every third-party app.
-    const now = Date.now();
-    this._lastWidgetRequestAt = now;
-    const { deviceIds, variableIds } = this._configuredTargets();
-
-    if (deviceIds.length || variableIds.length) {
-      // The HTTP response itself carries the refreshed dashboard, so avoid a
-      // second realtime dashboard emission and duplicate widget render.
-      await this._refreshConfiguredTargets('widget-refresh-tick', deviceIds, variableIds, false);
+    // One cache-only initial read. After this, widgets receive only realtime
+    // dashboard.updated events. No device/Logic API reads are triggered here.
+    if (!this._dashboardSnapshot) {
+      this._dashboardSnapshot = this.getDashboard();
+      this._lastPublishedDashboardSignature = this._dashboardSignature(this._dashboardSnapshot);
     }
-
-    // Insights remains lazy and single-flight. It never wakes HomeFlux while
-    // the widget is closed and overlapping requests cannot duplicate the work.
-    if (this.energyConfig.batteryCount > 0 && this.visualConfig.showBattery24h !== false && now - this._lastInsightsRefreshAt >= INSIGHTS_REFRESH_MS && !this._insightsRefreshPromise) {
-      this._insightsRefreshPromise = this._refreshBattery24hFromInsights()
-        .catch(err => this.error('Battery Insights refresh failed:', err))
-        .finally(() => { this._insightsRefreshPromise = null; });
-    }
-    return this.getDashboard();
+    return this._dashboardSnapshot;
   }
-
-  async _recordBatteryHistory(now = Date.now()) {
-    if (this.energyConfig.batteryCount <= 0 || this.visualConfig.showBattery24h === false) return;
-    const soc = this._combinedBatterySocData();
-    if (!soc || !soc.online || typeof soc.rawValue !== 'number') return;
-
-    const last = this.batteryHistory[this.batteryHistory.length - 1];
-    if (last && now - Number(last.ts) < HISTORY_SAMPLE_MS) return;
-
-    const cutoff = now - HISTORY_KEEP_MS;
-    this.batteryHistory = this.batteryHistory
-      .filter(item => Number(item.ts) >= cutoff && Number.isFinite(Number(item.value)))
-      .concat({ ts: now, value: Number(soc.rawValue), unit: soc.unit || '%' })
-      .slice(-MAX_HISTORY_SAMPLES);
-
-    try {
-      await this.homey.settings.set('batteryHistory', this.batteryHistory);
-    } catch (err) {
-      this.error('Unable to persist battery history:', err);
-    }
-  }
-
-  _battery24hAgo(now = Date.now()) {
-    if (!Array.isArray(this.batteryHistory) || !this.batteryHistory.length) return null;
-    const target = now - (24 * 60 * 60 * 1000);
-    let best = null;
-    let bestDiff = Infinity;
-    for (const sample of this.batteryHistory) {
-      const ts = Number(sample.ts);
-      const value = Number(sample.value);
-      if (!Number.isFinite(ts) || !Number.isFinite(value)) continue;
-      const diff = Math.abs(ts - target);
-      if (diff < bestDiff) { bestDiff = diff; best = { ts, value, unit: sample.unit || '%' }; }
-    }
-    if (!best || bestDiff > 45 * 60 * 1000) return null;
-    return { ...best, valueFormatted: this._formatValue(best.value) };
-  }
-
 
   _closestInsightEntry(payload, target) {
     const rows = Array.isArray(payload) ? payload : (payload && Array.isArray(payload.values) ? payload.values : []);
@@ -571,7 +747,7 @@ class DashboardBridgeApp extends Homey.App {
         const best = this._closestInsightEntry(payload, target);
         if (best) return best;
       } catch (_) {
-        // Try the legacy id form before falling back to locally sampled history.
+        // Try the legacy id form before giving up.
       }
     }
     return null;
@@ -629,9 +805,7 @@ class DashboardBridgeApp extends Homey.App {
   }
 
   _battery24hAgoBest() {
-    if (this._batteryInsights24h) return this._batteryInsights24h;
-    const local = this._battery24hAgo();
-    return local ? { ...local, source: 'local' } : null;
+    return this._batteryInsights24h || null;
   }
 
   async _migrateLegacyDeviceLabels() {
@@ -648,65 +822,6 @@ class DashboardBridgeApp extends Homey.App {
       this.revision += 1;
       await this.homey.settings.set('selection', this.selection);
       await this.homey.settings.set('revision', this.revision);
-    }
-  }
-
-  _clearSubscriptions() {
-    for (const api of this._subscriptions) { try { api.unregister(); } catch (_) {} }
-    this._subscriptions = [];
-  }
-
-
-  _subscribeConfiguredSources() {
-    this._clearSubscriptions();
-
-    // Listen on Homey's manager realtime channels. Capability value changes are
-    // reported as device.update events by ManagerDevices; subscribing to a
-    // homey:device:<id> API URI does not reliably deliver these state changes.
-    if (this._configuredDeviceIds.length) {
-      try {
-        const api = this.homey.api.getApi('homey:manager:devices');
-        api.on('realtime', (event, data) => {
-          if (event !== 'device.update') return;
-
-          const deviceId = data?.id || data?.deviceId || data?.device?.id || null;
-          if (deviceId && this._configuredDeviceCapabilities.has(deviceId)) {
-            this._dirtyTargets.add(this._targetKey('device', deviceId));
-            return;
-          }
-
-          // Be conservative if Homey ever sends a device.update payload without
-          // an id: refresh configured devices on the next normal widget tick.
-          if (!deviceId) {
-            for (const id of this._configuredDeviceIds) {
-              this._dirtyTargets.add(this._targetKey('device', id));
-            }
-          }
-        });
-        this._subscriptions.push(api);
-      } catch (err) { this.error('Unable to subscribe to device changes:', err); }
-    }
-
-    if (this._configuredVariableIds.length) {
-      try {
-        const api = this.homey.api.getApi('homey:manager:logic');
-        api.on('realtime', (event, data) => {
-          if (event !== 'variable.update') return;
-
-          const variableId = data?.id || data?.variableId || data?.variable?.id || null;
-          if (variableId && this._configuredVariableIds.includes(variableId)) {
-            this._dirtyTargets.add(this._targetKey('variable', variableId));
-            return;
-          }
-
-          if (!variableId) {
-            for (const id of this._configuredVariableIds) {
-              this._dirtyTargets.add(this._targetKey('variable', id));
-            }
-          }
-        });
-        this._subscriptions.push(api);
-      } catch (err) { this.error('Unable to subscribe to Logic changes:', err); }
     }
   }
 
@@ -1222,20 +1337,26 @@ class DashboardBridgeApp extends Homey.App {
 
   _emitDashboard() {
     const dashboard = this.getDashboard();
-    this.homey.api.realtime('dashboard.updated', dashboard);
+    this._dashboardSnapshot = dashboard;
+    this._markDashboardDirty('manual-emit', true);
     return dashboard;
   }
 
   async onUninit() {
-    this._clearSubscriptions();
     if (this._timezoneRefreshTimer) {
       this.homey.clearInterval(this._timezoneRefreshTimer);
       this._timezoneRefreshTimer = null;
     }
-    this._lastWidgetRequestAt = 0;
+    if (this._insightsRefreshTimer) {
+      this.homey.clearInterval(this._insightsRefreshTimer);
+      this._insightsRefreshTimer = null;
+    }
+    this._clearDashboardPushTimer();
+    await this._destroyTruePushSources();
+    this._dashboardSnapshot = null;
+    this._lastPublishedDashboardSignature = '';
     this.sourceCache.clear();
     this._configuredDeviceCapabilities.clear();
-    this._dirtyTargets.clear();
     this._insightsRefreshPromise = null;
   }
 }

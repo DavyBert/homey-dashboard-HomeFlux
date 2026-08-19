@@ -77,7 +77,7 @@
     "snow": "Snow",
     "thunder": "Thunderstorm",
     "refresh": "Refresh interval",
-    "refresh_hint": "Widget fallback for silent sources. When no widget is open, HomeFlux performs no periodic source polling.",
+    "refresh_hint": "Controls how often changed cached values are sent to open widgets at most. HomeFlux does not periodically poll live sources.",
     "second": "1 second",
     "seconds": "__count__ seconds",
     "minute": "1 minute",
@@ -185,7 +185,8 @@
     "overlay_theme_hint": "Automatic follows day/evening. Light or Dark forces the colour of the information panels.",
     "overlay_auto": "Automatic",
     "overlay_light": "Light",
-    "overlay_dark": "Dark"
+    "overlay_dark": "Dark",
+    "linked_sources_ready": "__sources__ linked source(s) loaded. The full Homey list is loaded only when you search for a source or click Scan Homey."
   },
   "widget": {
     "aria_energy": "Live energy overview",

@@ -10,6 +10,15 @@
 - Added overlay colour setting: Automatic, Light or Dark.
 - Removed fixed Light, Dark and Custom Image background modes.
 
+## v0.8.4
+
+- Reworked live updates into true push for configured device capabilities: Homey capability events update the compact HomeFlux cache directly.
+- Widgets perform one initial cache read and then receive shared `dashboard.updated` pushes instead of polling the app.
+- Pushes are coalesced and limited by the configured refresh interval; unchanged dashboard snapshots are skipped.
+- Only configured device capability instances are kept at runtime; broad ManagerDevices/device update listeners are not used.
+- Full source discovery remains limited to the settings/source-selection screen.
+- Removed local battery-history sampling and persistence; the optional 24-hour comparison uses Homey Insights only.
+
 ## v0.8.3
 
 - Removed stale and fallback polling from normal runtime updates.

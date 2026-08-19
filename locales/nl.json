@@ -77,7 +77,7 @@
     "snow": "Sneeuw",
     "thunder": "Onweer",
     "refresh": "Vernieuwingsfrequentie",
-    "refresh_hint": "Widget fallback voor stille bronnen. Buiten een geopende widget voert HomeFlux geen periodieke bronpolling uit.",
+    "refresh_hint": "Bepaalt hoe vaak gewijzigde cachewaarden maximaal naar geopende widgets worden doorgestuurd. HomeFlux pollt live bronnen niet periodiek.",
     "second": "1 seconde",
     "seconds": "__count__ seconden",
     "minute": "1 minuut",
@@ -185,7 +185,8 @@
     "overlay_theme_hint": "Automatisch volgt dag/avond. Licht of Donker forceert de kleur van de informatievakken.",
     "overlay_auto": "Automatisch",
     "overlay_light": "Licht",
-    "overlay_dark": "Donker"
+    "overlay_dark": "Donker",
+    "linked_sources_ready": "__sources__ gekoppelde bron(nen) geladen. De volledige Homey-lijst wordt pas geladen wanneer je een bron zoekt of op Scan Homey klikt."
   },
   "widget": {
     "aria_energy": "Live energie-overzicht",

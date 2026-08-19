@@ -24,6 +24,14 @@ Day scenes are bright and use no house lighting. Evening scenes use an early-eve
 
 Open the HomeFlux app settings in Homey and map the capabilities for your installation.
 
+## What's new in v0.8.4
+
+- HomeFlux now keeps a compact cache that is updated by realtime Homey capability events for only the configured sources.
+- Widgets perform one initial cache read and then receive shared `dashboard.updated` pushes; opening extra widgets does not multiply device reads.
+- Dashboard pushes are coalesced and sent no faster than the configured refresh interval, and unchanged snapshots are not retransmitted.
+- Full device discovery remains limited to the settings/source-selection screen; configured device metadata is seeded once when subscriptions are created.
+- Removed local battery-history sampling and persistence; the optional 24-hour comparison relies on Homey Insights only.
+
 ## What's new in v0.8.3
 
 - Removed stale-source detection and fallback polling during normal runtime.

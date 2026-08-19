@@ -263,8 +263,12 @@ function onHomeyReady(Homey){
    picker.appendChild(searchInput); picker.appendChild(results); picker.appendChild(selectedView); picker.appendChild(clearBtn);
    select.parentNode.insertBefore(picker, select); select.style.display='none';
    pickerMap[field]={search:searchInput,results,selected:selectedView,clear:clearBtn};
-   searchInput.addEventListener('input',()=>renderPickerResults(field));
-   searchInput.addEventListener('focus',()=>renderPickerResults(field));
+   const openPicker=async()=>{
+     await ensureSourcesLoaded();
+     renderPickerResults(field);
+   };
+   searchInput.addEventListener('input',openPicker);
+   searchInput.addEventListener('focus',openPicker);
    clearBtn.onclick=()=>{ select.value=''; searchInput.value=''; updatePickerSelected(field); closePickerResults(field); };
    updatePickerSelected(field);
  }
@@ -369,13 +373,50 @@ function onHomeyReady(Homey){
    });
  }
 
+ let sourcesLoaded=false;
+ let sourcesLoadPromise=null;
+
+ function mergeSources(discovered){
+   const byKey=new Map();
+   for(const src of state.sources||[]) if(src&&src.key) byKey.set(src.key,src);
+   for(const src of discovered||[]) if(src&&src.key) byKey.set(src.key,src);
+   return [...byKey.values()].sort((a,b)=>a.label.localeCompare(b.label));
+ }
+
+ async function ensureSourcesLoaded(force=false){
+   if(sourcesLoaded&&!force)return state.sources;
+   if(sourcesLoadPromise&&!force)return sourcesLoadPromise;
+   status.textContent=tr('settings.scanning');
+   const load=(async()=>{
+     try{
+       const discovered=await api('GET','/sources');
+       state.sources=mergeSources(discovered);
+       sourcesLoaded=true;
+       fillEnergySelects();
+       renderSources();
+       return state.sources;
+     }catch(e){
+       status.textContent=tr('settings.scan_failed',{error:msg(e)});
+       Homey.alert(status.textContent);
+       return state.sources;
+     }finally{
+       sourcesLoadPromise=null;
+     }
+   })();
+   sourcesLoadPromise=load;
+   return load;
+ }
+
  async function testConnection(){try{status.textContent=tr('settings.testing_access');const r=await api('POST','/test',{});status.textContent=tr('settings.access_ok',{devices:r.devices,variables:r.variables});Homey.alert(status.textContent);}catch(e){status.textContent=tr('settings.access_failed',{error:msg(e)});Homey.alert(status.textContent);}}
- async function scan(){status.textContent=tr('settings.scanning');try{state.sources=await api('GET','/sources');fillEnergySelects();renderSources();}catch(e){status.textContent=tr('settings.scan_failed',{error:msg(e)});Homey.alert(status.textContent);}}
+ async function scan(){sourcesLoaded=false;return ensureSourcesLoaded(true);}
 
  createAdditionalFields();
  localizeStatic();
  setupPickers();
- $('testconn').onclick=testConnection;$('scan').onclick=scan;search.oninput=renderSources;$('backgroundMode').onchange=updateBackgroundMode;$('solarCount').onchange=updateInstallCountsVisibility;$('batteryCount').onchange=updateInstallCountsVisibility;$('chargerCount').onchange=updateInstallCountsVisibility;$('solarStandbyLineEnabled').onchange=updateStandbyOptionsVisibility;$('batteryStandbyLineEnabled').onchange=updateStandbyOptionsVisibility;$('gridStandbyLineEnabled').onchange=updateStandbyOptionsVisibility;
+ $('testconn').onclick=testConnection;$('scan').onclick=scan;
+ search.addEventListener('focus',async()=>{await ensureSourcesLoaded();renderSources();});
+ search.addEventListener('input',async()=>{if(search.value.trim())await ensureSourcesLoaded();renderSources();});
+ $('backgroundMode').onchange=updateBackgroundMode;$('solarCount').onchange=updateInstallCountsVisibility;$('batteryCount').onchange=updateInstallCountsVisibility;$('chargerCount').onchange=updateInstallCountsVisibility;$('solarStandbyLineEnabled').onchange=updateStandbyOptionsVisibility;$('batteryStandbyLineEnabled').onchange=updateStandbyOptionsVisibility;$('gridStandbyLineEnabled').onchange=updateStandbyOptionsVisibility;
  $('save').onclick=async()=>{
    const energyConfig={}; for(const field of energyFields) energyConfig[field]=$(field).value||'';
    energyConfig.batteryThresholdKw=Number($('batteryThresholdKw').value||0.2);
@@ -408,7 +449,17 @@ function onHomeyReady(Homey){
    }catch(e){status.textContent=tr('settings.save_failed',{error:msg(e)});Homey.alert(status.textContent);}
  };
 
- (async()=>{try{const cfg=await api('GET','/config');state.selected=cfg.selection||[];state.energyConfig=cfg.energyConfig||{};state.visualConfig=cfg.visualConfig||{};renderSelected();await scan();}catch(e){status.textContent=tr('settings.start_failed',{error:msg(e)});}finally{Homey.ready();}})();
+ (async()=>{try{
+   const cfg=await api('GET','/config');
+   state.selected=cfg.selection||[];
+   state.energyConfig=cfg.energyConfig||{};
+   state.visualConfig=cfg.visualConfig||{};
+   state.sources=cfg.configuredSources||[];
+   renderSelected();
+   fillEnergySelects();
+   renderSources();
+   status.textContent=tr('settings.linked_sources_ready',{sources:state.sources.length});
+ }catch(e){status.textContent=tr('settings.start_failed',{error:msg(e)});}finally{Homey.ready();}})();
 }
 </script>
 </body>
