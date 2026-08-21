@@ -70,5 +70,9 @@
   "0.8.5": {
     "en": "Improved energy-line spacing and EV flow colours, added configurable day/night control, and updated App Store metadata and Widget previews for certification.",
     "nl": "Energielijnen en autoladerkleuren verbeterd, instelbare dag/nachtregeling toegevoegd en App Store-metadata en Widget-previews aangepast voor certificering."
+  },
+  "0.8.6": {
+    "en": "Updated the app preview artwork and removed an unused legacy background asset.",
+    "nl": "De app-preview is vernieuwd en een ongebruikte oude achtergrondasset is verwijderd."
   }
 }

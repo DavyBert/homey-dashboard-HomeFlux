@@ -1,3 +1,6 @@
+## v0.8.6
+- Updated app preview images to the new HomeFlux house artwork.
+
 # Changelog
 
 ## Current development
