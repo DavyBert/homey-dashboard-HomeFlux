@@ -66,5 +66,9 @@
   "0.8.4": {
     "en": "Reduced runtime load with one shared refresh loop for all active widgets and targeted reads of only configured sources.",
     "nl": "Runtimebelasting verlaagd met een gedeelde refreshlus voor alle actieve widgets en gerichte uitlezing van alleen geconfigureerde bronnen."
+  },
+  "0.8.5": {
+    "en": "Improved energy-line spacing and EV flow colours, added configurable day/night control, and updated App Store metadata and Widget previews for certification.",
+    "nl": "Energielijnen en autoladerkleuren verbeterd, instelbare dag/nachtregeling toegevoegd en App Store-metadata en Widget-previews aangepast voor certificering."
   }
 }

@@ -10,6 +10,19 @@
 - Added overlay colour setting: Automatic, Light or Dark.
 - Removed fixed Light, Dark and Custom Image background modes.
 
+## v0.8.5
+- Restored the optional Buy Me a Coffee link in HomeFlux settings and GitHub project metadata; the App Store homepage remains the HomeFlux GitHub project page.
+
+- Lowered the battery energy-flow connection at the home card to keep it visually separated from the grid flow line.
+- EV charger flow colour now follows battery direction when a battery is configured: green while charging and blue while discharging.
+- When the battery is idle or no battery is configured, the EV charger flow colour follows the grid state/standby colour.
+- Removed the obsolete `simple-dark.jpg` and `simple-light.jpg` widget backgrounds.
+- Replaced sunrise/sunset geolocation calculations with a user-selectable day/night mode: configured local hours or PV production, with configured hours as fallback when PV is unavailable.
+- Made day/night control a top-level background setting, so Realistic / automatic always follows the selected hours or PV mode; manual mode can still explicitly override the period.
+- Updated the App Store homepage to the HomeFlux project page instead of a donation URL.
+- Replaced Widget screenshots with simplified, text-free transparent Widget previews for App Store certification.
+- Documented why the Energy app requires `homey:manager:api`: source discovery and realtime subscriptions for user-selected Homey devices/capabilities and Logic variables.
+
 ## v0.8.4
 
 - Reworked live updates into true push for configured device capabilities: Homey capability events update the compact HomeFlux cache directly.

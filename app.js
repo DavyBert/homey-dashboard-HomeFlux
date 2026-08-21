@@ -50,13 +50,17 @@ class DashboardBridgeApp extends Homey.App {
     this._insightsRefreshPromise = null;
     this._homeyTimezone = 'UTC';
     this._timezoneRefreshTimer = null;
+    this._dayNightSwitchTimer = null;
 
     await this._refreshHomeyTimezone().catch(err => {
       this.error('Unable to read Homey timezone, temporarily using UTC:', err);
     });
     this._timezoneRefreshTimer = this.homey.setInterval(() => {
-      this._refreshHomeyTimezone().catch(err => this.error('Homey timezone refresh failed:', err));
+      this._refreshHomeyTimezone()
+        .then(() => this._scheduleDayNightSwitch())
+        .catch(err => this.error('Homey timezone refresh failed:', err));
     }, 6 * 60 * 60 * 1000);
+    this._scheduleDayNightSwitch();
 
     this._rebuildRuntimeConfigIndex();
     await this._ensureOwnerSession();
@@ -120,6 +124,14 @@ class DashboardBridgeApp extends Homey.App {
     const c = config || {};
     const backgroundMode = ['auto', 'manual'].includes(c.backgroundMode) ? c.backgroundMode : 'auto';
     const periodMode = ['auto', 'day', 'night'].includes(c.periodMode) ? c.periodMode : 'auto';
+    const dayNightMode = ['hours', 'pv'].includes(c.dayNightMode) ? c.dayNightMode : 'hours';
+    const validTime = value => /^([01]\d|2[0-3]):[0-5]\d$/.test(String(value || '')) ? String(value) : null;
+    let dayStartTime = validTime(c.dayStartTime) || '07:00';
+    let nightStartTime = validTime(c.nightStartTime) || '20:00';
+    if (dayStartTime === nightStartTime) {
+      dayStartTime = '07:00';
+      nightStartTime = '20:00';
+    }
     const weather = ['clear', 'cloudy', 'rain', 'mist', 'snow', 'thunder'].includes(c.weather) ? c.weather : 'clear';
     const weatherSource = typeof c.weatherSource === 'string' ? c.weatherSource : '';
     const panelTransparency = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100].includes(Number(c.panelTransparency)) ? Number(c.panelTransparency) : 30;
@@ -154,7 +166,7 @@ class DashboardBridgeApp extends Homey.App {
       home: unitChoice(c.powerUnits && c.powerUnits.home) || 'w',
       grid: unitChoice(c.powerUnits && c.powerUnits.grid) || 'w'
     };
-    return { backgroundMode, periodMode, weather, weatherSource, panelTransparency, overlayTheme, lineBlinkTempo, solarStandbyLineEnabled, solarStandbyLineBlink, solarStandbyLineStyle, batteryStandbyLineEnabled, batteryStandbyLineBlink, batteryStandbyLineStyle, gridStandbyLineEnabled, gridStandbyLineBlink, gridStandbyLineStyle, showBattery24h, refreshSeconds, widgetTextScale, widgetTitleScale, labels, powerUnits };
+    return { backgroundMode, periodMode, dayNightMode, dayStartTime, nightStartTime, weather, weatherSource, panelTransparency, overlayTheme, lineBlinkTempo, solarStandbyLineEnabled, solarStandbyLineBlink, solarStandbyLineStyle, batteryStandbyLineEnabled, batteryStandbyLineBlink, batteryStandbyLineStyle, gridStandbyLineEnabled, gridStandbyLineBlink, gridStandbyLineStyle, showBattery24h, refreshSeconds, widgetTextScale, widgetTitleScale, labels, powerUnits };
   }
 
 
@@ -421,6 +433,7 @@ class DashboardBridgeApp extends Homey.App {
     await this.homey.settings.set('revision', this.revision);
     this._clearDashboardPushTimer();
     await this._setupTruePushSources();
+    this._scheduleDayNightSwitch();
     this._markDashboardDirty('config-save', true);
     return this.getConfig();
   }
@@ -1132,63 +1145,114 @@ class DashboardBridgeApp extends Homey.App {
       month: '2-digit',
       day: '2-digit',
       hour: '2-digit',
+      minute: '2-digit',
       hourCycle: 'h23'
     });
     const parts = Object.fromEntries(formatter.formatToParts(date)
       .filter(part => part.type !== 'literal')
       .map(part => [part.type, Number(part.value)]));
-    return { year: parts.year, month: parts.month, day: parts.day, hour: parts.hour };
+    return { year: parts.year, month: parts.month, day: parts.day, hour: parts.hour, minute: parts.minute };
   }
 
-  _dayOfYear(year, month, day) {
-    const start = Date.UTC(year, 0, 0);
-    return Math.floor((Date.UTC(year, month - 1, day) - start) / 86400000);
+  _timeToMinutes(value, fallback) {
+    const match = /^([01]\d|2[0-3]):([0-5]\d)$/.exec(String(value || ''));
+    if (!match) return fallback;
+    return (Number(match[1]) * 60) + Number(match[2]);
   }
 
-  _sunTimeUtc(date, latitude, longitude, sunrise) {
-    const rad = Math.PI / 180;
-    const deg = 180 / Math.PI;
-    const normalize = value => ((value % 360) + 360) % 360;
-    const localDate = this._homeyDateParts(date);
-    const n = this._dayOfYear(localDate.year, localDate.month, localDate.day);
-    const lngHour = longitude / 15;
-    const t = n + ((sunrise ? 6 : 18) - lngHour) / 24;
-    const m = (0.9856 * t) - 3.289;
-    let l = m + (1.916 * Math.sin(m * rad)) + (0.020 * Math.sin(2 * m * rad)) + 282.634;
-    l = normalize(l);
-    let ra = Math.atan(0.91764 * Math.tan(l * rad)) * deg;
-    ra = normalize(ra);
-    ra += (Math.floor(l / 90) * 90) - (Math.floor(ra / 90) * 90);
-    ra /= 15;
-    const sinDec = 0.39782 * Math.sin(l * rad);
-    const cosDec = Math.cos(Math.asin(sinDec));
-    const cosH = (Math.cos(90.833 * rad) - (sinDec * Math.sin(latitude * rad))) /
-      (cosDec * Math.cos(latitude * rad));
-    if (cosH > 1 || cosH < -1) return null;
-    let h = sunrise ? 360 - (Math.acos(cosH) * deg) : Math.acos(cosH) * deg;
-    h /= 15;
-    const localMean = h + ra - (0.06571 * t) - 6.622;
-    let utcHours = localMean - lngHour;
-    utcHours = ((utcHours % 24) + 24) % 24;
-    return Date.UTC(localDate.year, localDate.month - 1, localDate.day) + (utcHours * 3600000);
+  _periodFromHours(now = new Date()) {
+    const { hour, minute } = this._homeyDateParts(now);
+    const current = (hour * 60) + minute;
+    const dayStart = this._timeToMinutes(this.visualConfig.dayStartTime, 7 * 60);
+    const nightStart = this._timeToMinutes(this.visualConfig.nightStartTime, 20 * 60);
+
+    if (dayStart < nightStart) return current >= dayStart && current < nightStart ? 'day' : 'night';
+    if (dayStart > nightStart) return current >= dayStart || current < nightStart ? 'day' : 'night';
+    return 'day';
+  }
+
+  _periodFromPv(now = new Date()) {
+    if (Number(this.energyConfig.solarCount) > 0) {
+      const solarW = this._powerToWatts(this._combinedSolarData());
+      if (Number.isFinite(solarW)) return solarW > 0 ? 'day' : 'night';
+    }
+    // When no usable PV value is available, keep the dashboard predictable by
+    // falling back to the user's configured hours.
+    return this._periodFromHours(now);
   }
 
   _automaticPeriod(now = new Date()) {
-    try {
-      const latitude = Number(this.homey.geolocation.getLatitude());
-      const longitude = Number(this.homey.geolocation.getLongitude());
-      if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) throw new Error('Geen geldige Homey locatie');
-      const sunrise = this._sunTimeUtc(now, latitude, longitude, true);
-      const sunset = this._sunTimeUtc(now, latitude, longitude, false);
-      if (sunrise !== null && sunset !== null) {
-        const ts = now.getTime();
-        return ts >= sunrise && ts < sunset ? 'day' : 'night';
-      }
-    } catch (err) {
-      this.error('Unable to calculate sunrise/sunset, using hour fallback:', err);
+    return this.visualConfig.dayNightMode === 'pv' ? this._periodFromPv(now) : this._periodFromHours(now);
+  }
+
+  _clearDayNightSwitchTimer() {
+    if (!this._dayNightSwitchTimer) return;
+    this.homey.clearTimeout(this._dayNightSwitchTimer);
+    this._dayNightSwitchTimer = null;
+  }
+
+  _timezoneOffsetMinutes(date) {
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: this._homeyTimezone || 'UTC',
+      timeZoneName: 'longOffset',
+      hour: '2-digit',
+      hourCycle: 'h23'
+    });
+    const zone = formatter.formatToParts(date).find(part => part.type === 'timeZoneName')?.value || 'GMT';
+    if (zone === 'GMT' || zone === 'UTC') return 0;
+    const match = /^GMT([+-])(\d{2}):(\d{2})$/.exec(zone);
+    if (!match) return 0;
+    const minutes = (Number(match[2]) * 60) + Number(match[3]);
+    return match[1] === '-' ? -minutes : minutes;
+  }
+
+  _localDateTimeToUtc(year, month, day, minuteOfDay) {
+    const hour = Math.floor(minuteOfDay / 60);
+    const minute = minuteOfDay % 60;
+    const localStamp = Date.UTC(year, month - 1, day, hour, minute, 0, 0);
+    let utcStamp = localStamp;
+    // Two passes are enough to resolve the applicable offset around DST
+    // changes without using Homey's geolocation or astronomical calculations.
+    for (let pass = 0; pass < 2; pass += 1) {
+      const offsetMinutes = this._timezoneOffsetMinutes(new Date(utcStamp));
+      utcStamp = localStamp - (offsetMinutes * 60000);
     }
-    const { hour } = this._homeyDateParts(now);
-    return hour >= 7 && hour < 20 ? 'day' : 'night';
+    return utcStamp;
+  }
+
+  _scheduleDayNightSwitch() {
+    this._clearDayNightSwitchTimer();
+    if (!this.visualConfig || !['hours', 'pv'].includes(this.visualConfig.dayNightMode)) return;
+
+    const now = new Date();
+    const local = this._homeyDateParts(now);
+    const currentMinutes = (local.hour * 60) + local.minute;
+    const targets = [
+      this._timeToMinutes(this.visualConfig.dayStartTime, 7 * 60),
+      this._timeToMinutes(this.visualConfig.nightStartTime, 20 * 60)
+    ];
+
+    const todayStamp = Date.UTC(local.year, local.month - 1, local.day);
+    const tomorrow = new Date(todayStamp + 86400000);
+    const candidates = [];
+    for (const target of targets) {
+      const useTomorrow = target <= currentMinutes;
+      const year = useTomorrow ? tomorrow.getUTCFullYear() : local.year;
+      const month = useTomorrow ? tomorrow.getUTCMonth() + 1 : local.month;
+      const day = useTomorrow ? tomorrow.getUTCDate() : local.day;
+      candidates.push(this._localDateTimeToUtc(year, month, day, target));
+    }
+
+    const nextBoundary = Math.min(...candidates.filter(timestamp => timestamp > now.getTime() + 500));
+    if (!Number.isFinite(nextBoundary)) return;
+    const delayMs = Math.max(1000, nextBoundary - now.getTime() + 250);
+
+    // One sleeping timeout to the next configured boundary; no periodic poll.
+    this._dayNightSwitchTimer = this.homey.setTimeout(() => {
+      this._dayNightSwitchTimer = null;
+      this._markDashboardDirty('day-night-boundary', true);
+      this._scheduleDayNightSwitch();
+    }, delayMs);
   }
 
   _weatherFromText(value) {
@@ -1283,12 +1347,14 @@ class DashboardBridgeApp extends Homey.App {
   }
 
   _sceneState(now = new Date()) {
+    // Day/night is a top-level decision shared by automatic and manual-auto modes.
+    const automaticPeriod = this._automaticPeriod(now);
     if (this.visualConfig.backgroundMode === 'manual') {
-      const period = this.visualConfig.periodMode === 'auto' ? this._automaticPeriod(now) : this.visualConfig.periodMode;
+      const period = this.visualConfig.periodMode === 'auto' ? automaticPeriod : this.visualConfig.periodMode;
       const weather = this.visualConfig.weather;
       return { period, weather, key: `${period}-${weather}`, mode: 'manual' };
     }
-    const period = this._automaticPeriod(now);
+    const period = automaticPeriod;
     const mapped = this._mapWeatherSource();
     return {
       period,
@@ -1347,6 +1413,7 @@ class DashboardBridgeApp extends Homey.App {
       this.homey.clearInterval(this._timezoneRefreshTimer);
       this._timezoneRefreshTimer = null;
     }
+    this._clearDayNightSwitchTimer();
     if (this._insightsRefreshTimer) {
       this.homey.clearInterval(this._insightsRefreshTimer);
       this._insightsRefreshTimer = null;

@@ -1,6 +1,6 @@
 {
   "name": "com.dashboard.homeflux",
-  "version": "0.8.4",
+  "version": "0.8.5",
   "private": true,
   "dependencies": {
     "homey-api": "3.19.2"

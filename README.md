@@ -8,7 +8,7 @@ HomeFlux visualizes live household energy flows on Homey.
 - Up to 10 PV sources, 10 batteries and 10 EV chargers
 - Components disappear automatically when their configured count is 0
 - Animated energy lines with configurable standby lines for PV, battery and grid
-- Automatic day/evening backgrounds with weather scenes
+- Day/night backgrounds controlled by user-defined local hours or total PV production
 - Manual period and weather selection for testing
 - Overlay colour: Automatic, Light or Dark
 - Optional battery value from approximately 24 hours ago
@@ -23,6 +23,24 @@ Day scenes are bright and use no house lighting. Evening scenes use an early-eve
 ## Configuration
 
 Open the HomeFlux app settings in Homey and map the capabilities for your installation.
+
+## Support HomeFlux
+
+If HomeFlux is useful to you and you would like to support its development, you can [buy me a coffee](https://buymeacoffee.com/davybert). Donations are completely optional.
+
+## Why `homey:manager:api` is required
+
+HomeFlux is an Energy app that visualizes values from energy-related devices already installed in Homey, such as solar inverters, home batteries, grid meters and EV chargers. Because these sources can come from many different Homey apps and expose different capabilities, HomeFlux cannot declare one fixed set of devices in advance.
+
+The `homey:manager:api` permission is used locally to discover available devices/capabilities and Logic variables when the user opens source selection, read the initial value of configured sources, and create realtime subscriptions for only those configured sources. During normal runtime HomeFlux keeps a compact cache updated by those realtime events. HomeFlux does not use this permission to control devices or send Homey data to an external HomeFlux service.
+
+## What's new in v0.8.5
+
+- Lowered the battery flow connection at the home card for clearer separation from the grid line.
+- EV charger flow colour follows the battery when it is actively charging (green) or discharging (blue).
+- With an idle or unconfigured battery, the EV charger flow falls back to the grid colour.
+- Removed obsolete simple light/dark background assets that are no longer used.
+- Removed sunrise/sunset geolocation calculations; automatic day/night can now follow configured local hours or PV production.
 
 ## What's new in v0.8.4
 
@@ -57,7 +75,7 @@ Open the HomeFlux app settings in Homey and map the capabilities for your instal
 - Refined the dynamic energy-line layout for a more balanced visual composition.
 - Moved the grid line start lower and further left, closer to the bottom of the grid value card.
 - Shortened the solar line and aligned the solar/grid connection height at the home-consumption card.
-- Added Homey App Store metadata for the GitHub source, issue tracker and Buy Me a Coffee homepage.
+- Added Homey App Store metadata for the GitHub source, issue tracker and project homepage.
 - Shortened `README.txt` for the Homey App Store and removed links/changelog-style release notes from it.
 - Automatic day/night switching now uses Homey's configured timezone when determining the local date and fallback hour for sunrise/sunset calculation.
 

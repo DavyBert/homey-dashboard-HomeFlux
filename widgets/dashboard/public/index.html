@@ -113,6 +113,7 @@ body{padding:8px}
 .flow-overlay.grid-export .flow-core{animation-direction:reverse}
 .flow-overlay.ev-grid .flow-glow,.flow-overlay.ev-grid .flow-core{stroke:#49a4ff}
 .flow-overlay.ev-solar .flow-glow,.flow-overlay.ev-solar .flow-core{stroke:#70e93f}
+#evFlowOverlay.ev-greenblue .flow-glow,#evFlowOverlay.ev-greenblue .flow-core{stroke:url(#evGridGreenBlue)}
 @keyframes flowMove{to{stroke-dashoffset:-10.8}}
 @keyframes flowBlink{0%,46%{stroke:#49a4ff}54%,100%{stroke:#70e93f}}
 @keyframes standbyBlinkCore{0%,100%{opacity:1}50%{opacity:.28}}
@@ -140,8 +141,8 @@ body{padding:8px}
 .unit{font-size:clamp(8px,2.6vw,14px);font-weight:750;opacity:.9}
 .sub{font-size:clamp(7px,2.15vw,11px);margin-top:5px;font-weight:680;line-height:1.15}
 .solar{left:4.2%;top:5.8%;width:25%}
-.grid{right:4.5%;top:7.2%;width:24%}
-.battery{left:3.2%;bottom:10%;width:22%}
+.grid{right:4.5%;top:5.8%;width:24%}
+.battery{left:3.2%;bottom:4.5%;width:22%}
 .home{left:39%;top:40%;width:27%}
 .ev{right:5.5%;bottom:4.5%;width:23%;transition:opacity .28s ease,transform .28s ease,background .28s ease,border-color .28s ease,box-shadow .28s ease}
 .ev.ev-inactive{opacity:0;transform:translateY(6px) scale(.97);pointer-events:none;visibility:hidden}
@@ -187,7 +188,7 @@ body{padding:8px}
 .offline{opacity:.55}
 @media(min-width:520px){body{padding:10px}.extra{grid-template-columns:repeat(3,minmax(0,1fr))}.callout{padding:11px 13px}}
 @media(min-width:760px){.extra{grid-template-columns:repeat(4,minmax(0,1fr))}}
-@media(max-width:360px){body{padding:6px;--gap:7px;--radius:16px}.callout{padding:6px 7px;border-radius:10px}.battery{width:24%;bottom:8%}.home{width:29%;left:37%}.ev{width:24%}.tile{padding:10px;min-height:78px}}
+@media(max-width:360px){body{padding:6px;--gap:7px;--radius:16px}.callout{padding:6px 7px;border-radius:10px}.battery{width:24%;bottom:4.5%}.home{width:29%;left:37%}.ev{width:24%}.tile{padding:10px;min-height:78px}}
 </style>
 </head>
 <body>
@@ -201,8 +202,8 @@ body{padding:8px}
     </svg>
     <svg id="batteryFlowOverlay" class="flow-overlay flow-hidden" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
       <defs><linearGradient id="batteryStandbyGreenBlue" x1="0" y1="0" x2="12" y2="0" gradientUnits="userSpaceOnUse" spreadMethod="repeat"><stop offset="0" stop-color="#70e93f"/><stop offset=".48" stop-color="#70e93f"/><stop offset=".52" stop-color="#49a4ff"/><stop offset="1" stop-color="#49a4ff"/></linearGradient></defs>
-      <path class="flow-glow" d="M46.0 61.0 L46.0 75.8 L35.4 75.8"/>
-      <path class="flow-core" d="M46.0 61.0 L46.0 75.8 L35.4 75.8"/>
+      <path class="flow-glow" d="M46.0 63.5 L46.0 81.3 L35.4 81.3"/>
+      <path class="flow-core" d="M46.0 63.5 L46.0 81.3 L35.4 81.3"/>
     </svg>
     <svg id="gridFlowOverlay" class="flow-overlay flow-hidden" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
       <defs><linearGradient id="gridStandbyGreenBlue" x1="0" y1="0" x2="12" y2="0" gradientUnits="userSpaceOnUse" spreadMethod="repeat"><stop offset="0" stop-color="#70e93f"/><stop offset=".48" stop-color="#70e93f"/><stop offset=".52" stop-color="#49a4ff"/><stop offset="1" stop-color="#49a4ff"/></linearGradient></defs>
@@ -210,8 +211,9 @@ body{padding:8px}
       <path class="flow-core" d="M75.0 26.0 L75.0 49.5 L63.9 49.5"/>
     </svg>
     <svg id="evFlowOverlay" class="flow-overlay flow-hidden" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-      <path class="flow-glow" d="M63.9 49.5 L73.6 49.5 L73.6 75.8"/>
-      <path class="flow-core" d="M63.9 49.5 L73.6 49.5 L73.6 75.8"/>
+      <defs><linearGradient id="evGridGreenBlue" x1="0" y1="0" x2="12" y2="0" gradientUnits="userSpaceOnUse" spreadMethod="repeat"><stop offset="0" stop-color="#70e93f"/><stop offset=".48" stop-color="#70e93f"/><stop offset=".52" stop-color="#49a4ff"/><stop offset="1" stop-color="#49a4ff"/></linearGradient></defs>
+      <path class="flow-glow" d="M63.9 56.5 L73.6 56.5 L73.6 75.8"/>
+      <path class="flow-core" d="M63.9 56.5 L73.6 56.5 L73.6 75.8"/>
     </svg>
     <div class="callout solar"><div class="callout-inner"><div class="kicker">Zonnepanelen</div><div class="reading"><span class="value" id="solarValue">—</span><span class="unit" id="solarUnit"></span></div><div class="sub">Productie</div></div></div>
     <div class="callout grid"><div class="callout-inner"><div class="kicker">Elektriciteitsnet</div><div class="reading"><span class="value" id="gridValue">—</span><span class="unit" id="gridUnit"></span></div><div class="sub" id="gridStatus">Net</div></div></div>
@@ -401,7 +403,15 @@ function onHomeyReady(Homey){
      const evWatts=powerToWatts(evPower);
      const evActive=hasEv && evWatts!==null && Math.abs(evWatts)>=50;
      evCard.classList.toggle('ev-inactive',!evActive);
-     const evMode=evActive && gridFlow!=='import' ? 'ev-solar' : 'ev-grid';
+     const batteryFlowForEv=['charge','discharge','idle'].includes(e.batteryFlow)?e.batteryFlow:'idle';
+     let evMode;
+     if(hasBattery&&batteryFlowForEv==='charge') evMode='ev-solar';
+     else if(hasBattery&&batteryFlowForEv==='discharge') evMode='ev-grid';
+     else if(gridFlow==='export') evMode='ev-solar';
+     else if(gridFlow==='import') evMode='ev-grid';
+     else if(gridStandbyLineStyle==='green') evMode='ev-solar';
+     else if(gridStandbyLineStyle==='greenblue') evMode='ev-greenblue';
+     else evMode='ev-grid';
      $('evFlowOverlay').setAttribute('class','flow-overlay '+(evActive?evMode:'flow-hidden'));
    }else $('evFlowOverlay').setAttribute('class','flow-overlay flow-hidden');
    extra.innerHTML='';const tiles=Array.isArray(d.tiles)?d.tiles:[];
