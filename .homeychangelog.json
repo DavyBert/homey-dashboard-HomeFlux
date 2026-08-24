@@ -74,5 +74,9 @@
   "0.8.6": {
     "en": "Updated the app preview artwork and removed an unused legacy background asset.",
     "nl": "De app-preview is vernieuwd en een ongebruikte oude achtergrondasset is verwijderd."
+  },
+  "0.8.61": {
+    "en": "Added English localization to the main app settings page.",
+    "nl": "Engelse lokalisatie toegevoegd aan de hoofdinstellingen van de app."
   }
 }
