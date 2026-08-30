@@ -1,4 +1,4 @@
-## v0.8.7
+## v0.8.62
 - Added a lightweight widget watchdog: after five configured refresh intervals without a realtime update (minimum 60 seconds), HomeFlux compares the visible widget with the existing dashboard cache and reloads only when the widget is actually stale.
 - Removed the broad MutationObserver-driven height sync so EV appearance/disappearance no longer triggers repeated layout checks. ResizeObserver still handles real size changes.
 - Added a W/kW display choice for the combined EV charger power.
