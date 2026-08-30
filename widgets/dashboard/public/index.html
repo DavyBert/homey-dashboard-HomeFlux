@@ -353,7 +353,7 @@ function onHomeyReady(Homey){
    setPowerEnergy('grid',e.gridPower,powerUnits.grid||'w');
    setEnergy('batterySoc',e.batterySoc);
    setPowerEnergy('home',e.homePower,powerUnits.home||'w');
-   setEnergy('ev',e.evPower);
+   setPowerEnergy('ev',e.evPower,powerUnits.ev||'kw');
    $('homeStatus').textContent=e.homePower&&e.homePower.derived?tr('widget.calculated'):tr('widget.consumption');
    const bs=$('batteryStatus');
    let status=e.batteryStatus||'—';
@@ -415,26 +415,62 @@ function onHomeyReady(Homey){
      $('evFlowOverlay').setAttribute('class','flow-overlay '+(evActive?evMode:'flow-hidden'));
    }else $('evFlowOverlay').setAttribute('class','flow-overlay flow-hidden');
    extra.innerHTML='';const tiles=Array.isArray(d.tiles)?d.tiles:[];
-   if(!tiles.length){extra.classList.add('hidden');scheduleHeightSync(true);return;}
+   if(!tiles.length){extra.classList.add('hidden');return;}
    extra.classList.remove('hidden');
    for(const t of tiles){const el=document.createElement('article');const isBool=t.kind==='boolean',isOn=isBool&&Boolean(t.rawValue);el.className=`tile${isBool?' boolean':''}${isOn?' boolean-on':''}${t.online?'':' offline'}`;el.innerHTML='<div class="tile-head"><div class="names"><div class="label"></div><div class="subtitle"></div></div><div class="dot"></div></div><div class="reading2"><div class="value2"></div><div class="unit2"></div></div>';el.querySelector('.label').textContent=t.label||t.deviceName||tr('widget.item');el.querySelector('.subtitle').textContent=capabilitySubtitle(t);el.querySelector('.dot').className='dot'+(t.online?' online':'');el.querySelector('.value2').textContent=t.value??'—';el.querySelector('.unit2').textContent=!isBool&&t.unit?t.unit:'';extra.appendChild(el);}
-   scheduleHeightSync(true);
  }
- async function loadInitialDashboard(){try{render(await Homey.api('GET','/dashboard'));}catch(err){console.error(err);extra.classList.add('hidden');scheduleHeightSync(true);}}
- Homey.on('dashboard.updated',render);
+ let lastRenderedDashboardSignature='',watchdogTimer=null;
+ function dashboardSignature(d){
+   if(!d)return '';
+   return JSON.stringify({revision:d.revision,configured:d.configured,energy:d.energy,tiles:d.tiles,scene:d.scene,visualConfig:d.visualConfig});
+ }
+ function watchdogDelayMs(){
+   const seconds=Math.min(300,Math.max(1,Number(lastDashboard&&lastDashboard.visualConfig&&lastDashboard.visualConfig.refreshSeconds)||30));
+   return Math.max(60000,seconds*5*1000);
+ }
+ function clearWatchdog(){if(watchdogTimer){clearTimeout(watchdogTimer);watchdogTimer=null;}}
+ function scheduleWatchdog(){
+   clearWatchdog();
+   if(document.hidden)return;
+   watchdogTimer=setTimeout(async()=>{
+     watchdogTimer=null;
+     if(document.hidden)return;
+     try{
+       const fresh=await Homey.api('GET','/dashboard');
+       const freshSignature=dashboardSignature(fresh);
+       if(lastRenderedDashboardSignature&&freshSignature&&freshSignature!==lastRenderedDashboardSignature){
+         window.location.reload();
+         return;
+       }
+     }catch(err){console.error('Dashboard watchdog check failed',err);}
+     scheduleWatchdog();
+   },watchdogDelayMs());
+ }
+ let lastDashboard=null;
+ function renderDashboard(d){
+   lastDashboard=d||lastDashboard;
+   render(d);
+   lastRenderedDashboardSignature=dashboardSignature(d);
+   scheduleWatchdog();
+ }
+ async function loadInitialDashboard(){try{renderDashboard(await Homey.api('GET','/dashboard'));}catch(err){console.error(err);extra.classList.add('hidden');scheduleHeightSync(true);scheduleWatchdog();}}
+ Homey.on('dashboard.updated',renderDashboard);
  let wasHidden=false;
  document.addEventListener('visibilitychange',()=>{
    if(document.hidden){
      wasHidden=true;
+     clearWatchdog();
      return;
    }
    if(wasHidden){
      window.location.reload();
+     return;
    }
+   scheduleWatchdog();
  });
  const ro=new ResizeObserver(()=>scheduleHeightSync());ro.observe(frame);ro.observe(document.body);ro.observe(extra);ro.observe(energyEl);
- new MutationObserver(()=>scheduleHeightSync()).observe(frame,{childList:true,subtree:true,attributes:true});
  window.addEventListener('resize',()=>scheduleHeightSync(true));
+ window.addEventListener('pagehide',clearWatchdog);
  loadInitialDashboard().finally(()=>scheduleHeightSync(true));
 }
 </script>

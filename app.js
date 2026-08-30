@@ -164,7 +164,8 @@ class DashboardBridgeApp extends Homey.App {
       solar: unitChoice(c.powerUnits && c.powerUnits.solar) || 'kw',
       battery: unitChoice(c.powerUnits && c.powerUnits.battery) || 'kw',
       home: unitChoice(c.powerUnits && c.powerUnits.home) || 'w',
-      grid: unitChoice(c.powerUnits && c.powerUnits.grid) || 'w'
+      grid: unitChoice(c.powerUnits && c.powerUnits.grid) || 'w',
+      ev: unitChoice(c.powerUnits && c.powerUnits.ev) || 'kw'
     };
     return { backgroundMode, periodMode, dayNightMode, dayStartTime, nightStartTime, weather, weatherSource, panelTransparency, overlayTheme, lineBlinkTempo, solarStandbyLineEnabled, solarStandbyLineBlink, solarStandbyLineStyle, batteryStandbyLineEnabled, batteryStandbyLineBlink, batteryStandbyLineStyle, gridStandbyLineEnabled, gridStandbyLineBlink, gridStandbyLineStyle, showBattery24h, refreshSeconds, widgetTextScale, widgetTitleScale, labels, powerUnits };
   }

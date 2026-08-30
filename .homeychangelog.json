@@ -78,5 +78,9 @@
   "0.8.61": {
     "en": "Added English localization to the main app settings page.",
     "nl": "Engelse lokalisatie toegevoegd aan de hoofdinstellingen van de app."
+  },
+  "0.8.7": {
+    "en": "Improved widget self-recovery, reduced unnecessary layout work, and added W/kW selection for EV charging power.",
+    "nl": "Zelfherstel van de widget verbeterd, onnodige lay-outupdates verminderd en W/kW-keuze voor het laadvermogen toegevoegd."
   }
 }

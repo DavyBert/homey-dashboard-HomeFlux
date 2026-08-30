@@ -194,7 +194,9 @@
     "day_start": "Day from",
     "day_start_hint": "Local time according to Homey's timezone.",
     "night_start": "Night from",
-    "night_start_hint": "Local time according to Homey's timezone."
+    "night_start_hint": "Local time according to Homey's timezone.",
+    "ev_power_unit": "EV charger power unit",
+    "ev_power_unit_hint": "Choose W or kW for the combined EV charging power."
   },
   "widget": {
     "aria_energy": "Live energy overview",

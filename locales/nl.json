@@ -194,7 +194,9 @@
     "day_start": "Dag vanaf",
     "day_start_hint": "Lokale tijd volgens de tijdzone van Homey.",
     "night_start": "Nacht vanaf",
-    "night_start_hint": "Lokale tijd volgens de tijdzone van Homey."
+    "night_start_hint": "Lokale tijd volgens de tijdzone van Homey.",
+    "ev_power_unit": "Eenheid autolader",
+    "ev_power_unit_hint": "Kies W of kW voor het gezamenlijke laadvermogen."
   },
   "widget": {
     "aria_energy": "Live energie-overzicht",

@@ -34,6 +34,12 @@ HomeFlux is an Energy app that visualizes values from energy-related devices alr
 
 The `homey:manager:api` permission is used locally to discover available devices/capabilities and Logic variables when the user opens source selection, read the initial value of configured sources, and create realtime subscriptions for only those configured sources. During normal runtime HomeFlux keeps a compact cache updated by those realtime events. HomeFlux does not use this permission to control devices or send Homey data to an external HomeFlux service.
 
+## What's new in v0.8.7
+
+- Added a lightweight self-recovery watchdog for stale widget realtime connections, using only the existing HomeFlux dashboard cache.
+- Removed unnecessary MutationObserver-driven layout checks when EV visibility or other attributes change.
+- Added a W/kW display choice for combined EV charger power.
+
 ## What's new in v0.8.6
 
 - Updated the HomeFlux app preview artwork.
