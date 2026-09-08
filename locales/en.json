@@ -196,7 +196,11 @@
     "night_start": "Night from",
     "night_start_hint": "Local time according to Homey's timezone.",
     "ev_power_unit": "EV charger power unit",
-    "ev_power_unit_hint": "Choose W or kW for the combined EV charging power."
+    "ev_power_unit_hint": "Choose W or kW for the combined EV charging power.",
+    "scene_set": "Scene set",
+    "scene_set_hint": "Choose whether the widget uses the original house backgrounds or the new garden backgrounds.",
+    "scene_set_house": "House view (default)",
+    "scene_set_garden": "Garden view"
   },
   "widget": {
     "aria_energy": "Live energy overview",

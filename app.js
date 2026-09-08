@@ -123,6 +123,7 @@ class DashboardBridgeApp extends Homey.App {
   _normalizeVisualConfig(config) {
     const c = config || {};
     const backgroundMode = ['auto', 'manual'].includes(c.backgroundMode) ? c.backgroundMode : 'auto';
+    const backgroundSet = ['house', 'garden'].includes(c.backgroundSet) ? c.backgroundSet : 'house';
     const periodMode = ['auto', 'day', 'night'].includes(c.periodMode) ? c.periodMode : 'auto';
     const dayNightMode = ['hours', 'pv'].includes(c.dayNightMode) ? c.dayNightMode : 'hours';
     const validTime = value => /^([01]\d|2[0-3]):[0-5]\d$/.test(String(value || '')) ? String(value) : null;
@@ -167,7 +168,7 @@ class DashboardBridgeApp extends Homey.App {
       grid: unitChoice(c.powerUnits && c.powerUnits.grid) || 'w',
       ev: unitChoice(c.powerUnits && c.powerUnits.ev) || 'kw'
     };
-    return { backgroundMode, periodMode, dayNightMode, dayStartTime, nightStartTime, weather, weatherSource, panelTransparency, overlayTheme, lineBlinkTempo, solarStandbyLineEnabled, solarStandbyLineBlink, solarStandbyLineStyle, batteryStandbyLineEnabled, batteryStandbyLineBlink, batteryStandbyLineStyle, gridStandbyLineEnabled, gridStandbyLineBlink, gridStandbyLineStyle, showBattery24h, refreshSeconds, widgetTextScale, widgetTitleScale, labels, powerUnits };
+    return { backgroundMode, backgroundSet, periodMode, dayNightMode, dayStartTime, nightStartTime, weather, weatherSource, panelTransparency, overlayTheme, lineBlinkTempo, solarStandbyLineEnabled, solarStandbyLineBlink, solarStandbyLineStyle, batteryStandbyLineEnabled, batteryStandbyLineBlink, batteryStandbyLineStyle, gridStandbyLineEnabled, gridStandbyLineBlink, gridStandbyLineStyle, showBattery24h, refreshSeconds, widgetTextScale, widgetTitleScale, labels, powerUnits };
   }
 
 

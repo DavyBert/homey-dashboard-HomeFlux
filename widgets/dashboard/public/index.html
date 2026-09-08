@@ -231,19 +231,35 @@ function onHomeyReady(Homey){
  document.querySelector('.solar .kicker').textContent=tr('widget.solar'); document.querySelector('.solar .sub').textContent=tr('widget.production');
  document.querySelector('.grid .kicker').textContent=tr('widget.grid'); document.querySelector('.battery .kicker').textContent=tr('widget.battery');
  document.querySelector('.home .kicker').textContent=tr('widget.home'); document.querySelector('.ev .kicker').textContent=tr('widget.ev');
- const BACKGROUNDS={
-   'day-clear':'./scene-day-clear.jpg',
-   'day-cloudy':'./scene-day-cloudy.jpg',
-   'day-rain':'./scene-day-rain.jpg',
-   'day-mist':'./scene-day-mist.jpg',
-   'day-snow':'./scene-day-snow.jpg',
-   'day-thunder':'./scene-day-thunder.jpg',
-   'night-clear':'./scene-night-clear.jpg',
-   'night-cloudy':'./scene-night-cloudy.jpg',
-   'night-rain':'./scene-night-rain.jpg',
-   'night-mist':'./scene-night-mist.jpg',
-   'night-snow':'./scene-night-snow.jpg',
-   'night-thunder':'./scene-night-thunder.jpg',
+ const BACKGROUND_SETS={
+   house:{
+     'day-clear':'./scene-day-clear.jpg',
+     'day-cloudy':'./scene-day-cloudy.jpg',
+     'day-rain':'./scene-day-rain.jpg',
+     'day-mist':'./scene-day-mist.jpg',
+     'day-snow':'./scene-day-snow.jpg',
+     'day-thunder':'./scene-day-thunder.jpg',
+     'night-clear':'./scene-night-clear.jpg',
+     'night-cloudy':'./scene-night-cloudy.jpg',
+     'night-rain':'./scene-night-rain.jpg',
+     'night-mist':'./scene-night-mist.jpg',
+     'night-snow':'./scene-night-snow.jpg',
+     'night-thunder':'./scene-night-thunder.jpg',
+   },
+   garden:{
+     'day-clear':'./scene-garden-day-clear.jpg',
+     'day-cloudy':'./scene-garden-day-cloudy.jpg',
+     'day-rain':'./scene-garden-day-rain.jpg',
+     'day-mist':'./scene-garden-day-mist.jpg',
+     'day-snow':'./scene-garden-day-snow.jpg',
+     'day-thunder':'./scene-garden-day-thunder.jpg',
+     'night-clear':'./scene-garden-night-clear.jpg',
+     'night-cloudy':'./scene-garden-night-cloudy.jpg',
+     'night-rain':'./scene-garden-night-rain.jpg',
+     'night-mist':'./scene-garden-night-mist.jpg',
+     'night-snow':'./scene-garden-night-snow.jpg',
+     'night-thunder':'./scene-garden-night-thunder.jpg',
+   }
  };
  let readyCalled=false,lastHeight=0,heightTimer=null,currentScene='';
  function measuredHeight(){
@@ -304,10 +320,13 @@ function onHomeyReady(Homey){
  }
  function applyScene(scene,config){
    const key=scene&&scene.key?scene.key:'day-clear';
+   const setKey=config&&config.backgroundSet==='garden'?'garden':'house';
+   const backgrounds=BACKGROUND_SETS[setKey]||BACKGROUND_SETS.house;
+   const sceneSignature=`${setKey}:${key}`;
    frame.dataset.theme=sceneTheme(key,config);
-   if(key===currentScene)return;
-   currentScene=key;
-   const url=BACKGROUNDS[key]||BACKGROUNDS['day-clear'];
+   if(sceneSignature===currentScene)return;
+   currentScene=sceneSignature;
+   const url=backgrounds[key]||backgrounds['day-clear']||BACKGROUND_SETS.house['day-clear'];
    energyEl.style.backgroundImage=`url('${url}')`;
    const img=new Image();img.onload=()=>scheduleHeightSync(true);img.src=url;
  }
