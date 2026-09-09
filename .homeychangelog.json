@@ -82,5 +82,9 @@
   "0.8.62": {
     "en": "Improved widget self-recovery, reduced unnecessary layout work, and added W/kW selection for EV charging power.",
     "nl": "Zelfherstel van de widget verbeterd, onnodige lay-outupdates verminderd en W/kW-keuze voor het laadvermogen toegevoegd."
+  },
+  "0.8.66": {
+    "en": "Added selectable Integrated or lower-memory Flow-card input mode with per-input status and restart activation.",
+    "nl": "Keuze toegevoegd tussen geïntegreerde invoer en een geheugenzuinige Flow-kaartmodus, met status per invoer en activatie na herstart."
   }
 }

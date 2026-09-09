@@ -1,3 +1,9 @@
+## v0.8.66
+- Added a global data-source mode selector: Integrated configurator or lower-memory Flow cards.
+- Flow-card mode does not load `homey-api`, create realtime device/capability subscriptions, use the local owner API, or poll Insights after restart.
+- Added generic numeric and text Flow input cards with live received/waiting/stale status in Settings.
+- Added an explicit restart warning when the data-source mode is changed; the selected mode becomes active after restarting the app.
+
 ## v0.8.62
 - Added a lightweight widget watchdog: after five configured refresh intervals without a realtime update (minimum 60 seconds), HomeFlux compares the visible widget with the existing dashboard cache and reloads only when the widget is actually stale.
 - Removed the broad MutationObserver-driven height sync so EV appearance/disappearance no longer triggers repeated layout checks. ResizeObserver still handles real size changes.

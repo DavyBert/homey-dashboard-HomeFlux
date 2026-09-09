@@ -1,6 +1,6 @@
 {
   "id": "com.dashboard.homeflux",
-  "version": "0.8.65",
+  "version": "0.8.66",
   "compatibility": ">=12.3.0",
   "sdk": 3,
   "name": {
@@ -38,6 +38,10 @@
     "testConnection": {
       "method": "POST",
       "path": "/test"
+    },
+    "getFlowStatus": {
+      "method": "GET",
+      "path": "/flow-status"
     }
   },
   "author": {

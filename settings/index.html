@@ -5,23 +5,30 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <script type="text/javascript" src="/homey.js" data-origin="settings"></script>
 <style>
-:root{color-scheme:light dark}*{box-sizing:border-box}body{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;margin:0;padding:18px;max-width:1050px;color:var(--homey-text-color,#111);background:var(--homey-background-color,#fff)}h1{margin:0 0 4px;font-size:28px}h2{margin:0 0 10px;font-size:18px}h3{margin:0 0 6px;font-size:15px}.sub{opacity:.72;line-height:1.45}.card{background:rgba(127,127,127,.08);border:1px solid rgba(127,127,127,.18);border-radius:16px;padding:16px;margin:14px 0}.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}button{cursor:pointer;border:0;border-radius:10px;padding:10px 14px;font-weight:700;background:#1677ff;color:#fff}button.primary{background:#0a63ff}.status{margin-top:10px;font-size:14px;padding:10px 12px;border-radius:10px;background:rgba(127,127,127,.12)}.energy-grid,.visual-grid{display:grid;grid-template-columns:1fr;gap:12px}.install-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:10px}.hidden-row{display:none !important}.map-row{display:grid;grid-template-columns:minmax(180px,260px) 1fr;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid rgba(127,127,127,.14)}.map-label{font-weight:720}.hint{font-size:11px;opacity:.52;margin-top:3px}.map-row select,.map-row input[type=number],.map-row input[type=text],.map-row input[type=time],.threshold input,.threshold select,.visual-grid select{width:100%;box-sizing:border-box;padding:9px 10px;border:1px solid rgba(127,127,127,.45);border-radius:10px;background:var(--homey-background-color,#fff);color:inherit}.battery-options{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.threshold{padding:10px;border-radius:12px;background:rgba(127,127,127,.08)}.toggle{display:flex;gap:9px;align-items:center}.toggle input{width:18px;height:18px}.group{font-size:12px;font-weight:800;opacity:.55;margin:18px 0 7px;text-transform:uppercase}.row{display:grid;grid-template-columns:28px 1fr auto;gap:8px;align-items:center;padding:10px 6px;border-bottom:1px solid rgba(127,127,127,.18)}.title{font-weight:650}.meta{font-size:11px;opacity:.5;margin-top:2px;word-break:break-all}.value{font-variant-numeric:tabular-nums;opacity:.8}.selected{margin-top:14px}.selected-row{display:grid;grid-template-columns:1fr auto;gap:8px;margin-bottom:8px}.selected-row input{padding:9px;border-radius:9px;border:1px solid rgba(127,127,127,.45);background:var(--homey-background-color,#fff);color:inherit}.remove{background:rgba(127,127,127,.18);color:inherit}.picker{display:flex;flex-direction:column;gap:8px;position:relative}.picker-search{width:100%;padding:9px 10px;border:1px solid rgba(127,127,127,.45);border-radius:10px;background:var(--homey-background-color,#fff);color:inherit}.picker-results{display:flex;flex-direction:column;gap:6px;max-height:220px;overflow:auto;padding:6px;border:1px solid rgba(127,127,127,.18);border-radius:12px;background:rgba(127,127,127,.08)}.picker-option{padding:8px 10px;border-radius:9px;cursor:pointer}.picker-option:hover{background:rgba(127,127,127,.14)}.picker-selected{padding:8px 10px;border-radius:10px;background:rgba(127,127,127,.08);font-size:13px;line-height:1.35}.picker-selected.empty{opacity:.6;font-style:italic}.picker-selected-name{font-weight:650}.picker-selected-meta{font-size:11px;opacity:.65;margin-top:2px;word-break:break-word}.picker-clear{padding:7px 9px;border-radius:9px;border:1px solid rgba(127,127,127,.18);background:rgba(127,127,127,.12);cursor:pointer;align-self:flex-start}.inline-note{padding:10px 2px;font-size:13px;opacity:.68}#search{box-sizing:border-box;flex:1;min-width:220px;padding:10px 12px;border-radius:10px;border:1px solid rgba(127,127,127,.45);font-size:15px;background:var(--homey-background-color,#fff);color:inherit}.ok{font-weight:700}.savebar{position:sticky;bottom:0;padding:12px 0 0;background:linear-gradient(transparent,var(--homey-background-color,#fff) 30%);display:flex;justify-content:flex-end}.preview-note{font-size:12px;opacity:.65;margin-top:6px}.support-mini{font-size:11px;opacity:.48;text-align:center;margin:4px 0 8px}.support-mini a{color:inherit;text-decoration:none;border-bottom:1px dotted currentColor}.support-mini a:hover{opacity:.8}.custom-image-control{display:flex;flex-direction:column;gap:8px;align-items:flex-start}.custom-image-control input[type=file]{width:100%;font-size:13px}.custom-image-status{font-size:12px;opacity:.72}.custom-image-status.ok{opacity:.9;font-weight:650}.custom-image-status.error{opacity:1;font-weight:700}.standby-style-note{font-size:11px;opacity:.58;margin-top:4px}@media(max-width:650px){.map-row{grid-template-columns:1fr}.battery-options,.install-grid{grid-template-columns:1fr}}
+:root{color-scheme:light dark}*{box-sizing:border-box}body{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;margin:0;padding:18px;max-width:1050px;color:var(--homey-text-color,#111);background:var(--homey-background-color,#fff)}h1{margin:0 0 4px;font-size:28px}h2{margin:0 0 10px;font-size:18px}h3{margin:0 0 6px;font-size:15px}.sub{opacity:.72;line-height:1.45}.card{background:rgba(127,127,127,.08);border:1px solid rgba(127,127,127,.18);border-radius:16px;padding:16px;margin:14px 0}.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}button{cursor:pointer;border:0;border-radius:10px;padding:10px 14px;font-weight:700;background:#1677ff;color:#fff}button.primary{background:#0a63ff}.status{margin-top:10px;font-size:14px;padding:10px 12px;border-radius:10px;background:rgba(127,127,127,.12)}.energy-grid,.visual-grid{display:grid;grid-template-columns:1fr;gap:12px}.install-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:10px}.hidden-row{display:none !important}.map-row{display:grid;grid-template-columns:minmax(180px,260px) 1fr;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid rgba(127,127,127,.14)}.map-label{font-weight:720}.hint{font-size:11px;opacity:.52;margin-top:3px}.map-row select,.map-row input[type=number],.map-row input[type=text],.map-row input[type=time],.threshold input,.threshold select,.visual-grid select{width:100%;box-sizing:border-box;padding:9px 10px;border:1px solid rgba(127,127,127,.45);border-radius:10px;background:var(--homey-background-color,#fff);color:inherit}.battery-options{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.threshold{padding:10px;border-radius:12px;background:rgba(127,127,127,.08)}.toggle{display:flex;gap:9px;align-items:center}.toggle input{width:18px;height:18px}.group{font-size:12px;font-weight:800;opacity:.55;margin:18px 0 7px;text-transform:uppercase}.row{display:grid;grid-template-columns:28px 1fr auto;gap:8px;align-items:center;padding:10px 6px;border-bottom:1px solid rgba(127,127,127,.18)}.title{font-weight:650}.meta{font-size:11px;opacity:.5;margin-top:2px;word-break:break-all}.value{font-variant-numeric:tabular-nums;opacity:.8}.selected{margin-top:14px}.selected-row{display:grid;grid-template-columns:1fr auto;gap:8px;margin-bottom:8px}.selected-row input{padding:9px;border-radius:9px;border:1px solid rgba(127,127,127,.45);background:var(--homey-background-color,#fff);color:inherit}.remove{background:rgba(127,127,127,.18);color:inherit}.picker{display:flex;flex-direction:column;gap:8px;position:relative}.picker-search{width:100%;padding:9px 10px;border:1px solid rgba(127,127,127,.45);border-radius:10px;background:var(--homey-background-color,#fff);color:inherit}.picker-results{display:flex;flex-direction:column;gap:6px;max-height:220px;overflow:auto;padding:6px;border:1px solid rgba(127,127,127,.18);border-radius:12px;background:rgba(127,127,127,.08)}.picker-option{padding:8px 10px;border-radius:9px;cursor:pointer}.picker-option:hover{background:rgba(127,127,127,.14)}.picker-selected{padding:8px 10px;border-radius:10px;background:rgba(127,127,127,.08);font-size:13px;line-height:1.35}.picker-selected.empty{opacity:.6;font-style:italic}.picker-selected-name{font-weight:650}.picker-selected-meta{font-size:11px;opacity:.65;margin-top:2px;word-break:break-word}.picker-clear{padding:7px 9px;border-radius:9px;border:1px solid rgba(127,127,127,.18);background:rgba(127,127,127,.12);cursor:pointer;align-self:flex-start}.inline-note{padding:10px 2px;font-size:13px;opacity:.68}#search{box-sizing:border-box;flex:1;min-width:220px;padding:10px 12px;border-radius:10px;border:1px solid rgba(127,127,127,.45);font-size:15px;background:var(--homey-background-color,#fff);color:inherit}.ok{font-weight:700}.savebar{position:sticky;bottom:0;padding:12px 0 0;background:linear-gradient(transparent,var(--homey-background-color,#fff) 30%);display:flex;justify-content:flex-end}.preview-note{font-size:12px;opacity:.65;margin-top:6px}.support-mini{font-size:11px;opacity:.48;text-align:center;margin:4px 0 8px}.support-mini a{color:inherit;text-decoration:none;border-bottom:1px dotted currentColor}.support-mini a:hover{opacity:.8}.custom-image-control{display:flex;flex-direction:column;gap:8px;align-items:flex-start}.custom-image-control input[type=file]{width:100%;font-size:13px}.custom-image-status{font-size:12px;opacity:.72}.custom-image-status.ok{opacity:.9;font-weight:650}.custom-image-status.error{opacity:1;font-weight:700}.flow-ok{border:1px solid rgba(46,160,67,.35);background:rgba(46,160,67,.10)}.flow-stale{border:1px solid rgba(210,153,34,.35);background:rgba(210,153,34,.10)}.flow-waiting{border:1px solid rgba(127,127,127,.22);background:rgba(127,127,127,.08)}.restart-notice{margin:12px 0 4px;padding:12px 14px;border-radius:12px;border:1px solid rgba(210,153,34,.4);background:rgba(210,153,34,.12);font-size:13px;line-height:1.4}.standby-style-note{font-size:11px;opacity:.58;margin-top:4px}@media(max-width:650px){.map-row{grid-template-columns:1fr}.battery-options,.install-grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 <h1>HomeFlux</h1>
 <div class="sub">First connect the fixed parts of the energy overview. Then add optional items below the illustration.</div>
 
-<div class="card">
-  <div class="ok">Native Homey access</div>
-  <div class="sub" style="margin:6px 0 0">No API key, OAuth or public webpage required.</div>
-  <div class="toolbar"><button id="testconn">Test Homey access</button><button id="scan">Scan Homey</button></div>
+<div class="card" id="dataModeCard">
+  <h2>Data source</h2>
+  <div class="sub" id="dataModeIntro">Choose between the integrated configurator or lower-memory Flow card input.</div>
+  <div class="map-row"><div><div class="map-label">Input mode</div><div class="hint">Changing this mode requires an app restart after saving.</div></div><select id="dataMode"><option value="integrated">Integrated configurator (easier, more memory)</option><option value="flow">Flow cards (lower memory)</option></select></div>
+  <div id="modeRuntimeStatus" class="preview-note"></div>
   <div id="status" class="status">Starting…</div>
 </div>
 
-<div class="card">
+<div class="card" id="integratedAccessCard">
+  <div class="ok">Native Homey access</div>
+  <div class="sub" style="margin:6px 0 0">No API key, OAuth or public webpage required.</div>
+  <div class="toolbar"><button id="testconn">Test Homey access</button><button id="scan">Scan Homey</button></div>
+</div>
+
+<div class="card" id="energyCard">
   <h2>Energy overview</h2>
-  <div class="sub">Select the Homey capability or Logic variable that provides the live value for each component.</div>
+  <div class="sub" id="energyIntro">Select the Homey capability or Logic variable that provides the live value for each component.</div>
   <div class="energy-grid">
     <div class="install-grid">
       <label class="threshold"><div class="map-label">Number of PV installations</div><div class="hint">Only show extra fields when you have more than one source.</div><select id="solarCount"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option></select></label>
@@ -68,7 +75,7 @@
   </div>
 </div>
 
-<div class="card">
+<div class="card" id="backgroundCard">
   <h2>Background</h2>
   <div class="sub">First choose how HomeFlux determines day and night. Realistic / automatic combines that choice with the weather source; manual can override the period and weather scene.</div>
   <div class="visual-grid">
@@ -100,7 +107,7 @@
   <div class="preview-note">Supported mapping for selected weather devices: clear/sunny → clear, cloudy/overcast → cloudy, rain/showers → rain, mist/fog → mist, snow → snow, thunder/storm → thunderstorm.</div>
 </div>
 
-<div class="card">
+<div class="card" id="extraItemsCard">
   <h2>Extra items</h2>
   <div class="sub">These appear as separate cards below the energy overview. If nothing is selected, this section stays hidden in the widget.</div>
   <div class="toolbar"><input id="search" type="search" placeholder="Search device, capability or variable…"></div>
@@ -111,6 +118,7 @@
 
 <div class="support-mini">☕ <a href="https://buymeacoffee.com/davybert" target="_blank" rel="noopener noreferrer">Buy me a coffee</a></div>
 
+<div id="restartNotice" class="restart-notice hidden-row">After changing the input mode, save these settings and restart the HomeFlux app to activate the new mode.</div>
 <div class="savebar"><button id="save" class="primary">Save dashboard</button></div>
 
 <script>
@@ -121,7 +129,7 @@ function onHomeyReady(Homey){
    ...Array.from({length:10},(_,i)=>{const s=i===0?'':String(i+1);return [`ev${s}Power`,`ev${s}Status`]}).flat(),
    'gridPower','homePower'
  ];
- const state={sources:[],selected:[],energyConfig:{},visualConfig:{}}, $=id=>document.getElementById(id), list=$('list'), selected=$('selected'), search=$('search'), status=$('status');
+ const state={sources:[],selected:[],energyConfig:{},visualConfig:{},dataMode:'integrated',activeDataMode:'integrated',flowStatus:{}}, $=id=>document.getElementById(id), list=$('list'), selected=$('selected'), search=$('search'), status=$('status');
  const pickerFields=[...energyFields,'weatherSource'];
  const pickerMap={};
  const api=(method,path,body)=>new Promise((resolve,reject)=>Homey.api(method,path,body,(err,result)=>err?reject(err):resolve(result)));
@@ -133,10 +141,11 @@ function onHomeyReady(Homey){
  function setOptionText(id,value,key){const el=$(id);if(!el)return;const option=[...el.options].find(o=>o.value===value);if(option)option.textContent=tr(key);}
  function localizeStatic(){
    const bodyIntro=document.querySelector('body > .sub'); if(bodyIntro)bodyIntro.textContent=tr('settings.page_intro');
-   const cards=document.querySelectorAll('body > .card');
-   if(cards[0]){const ok=cards[0].querySelector('.ok');const sub=cards[0].querySelector('.sub');if(ok)ok.textContent=tr('settings.native_access');if(sub)sub.textContent=tr('settings.native_access_hint');}
+   const modeCard=$('dataModeCard'); if(modeCard){const h=modeCard.querySelector('h2');if(h)h.textContent=tr('settings.data_mode_title');$('dataModeIntro').textContent=tr('settings.data_mode_intro');}
+   setFieldText('dataMode','settings.data_mode_label','settings.data_mode_hint'); setOptionText('dataMode','integrated','settings.data_mode_integrated'); setOptionText('dataMode','flow','settings.data_mode_flow');
+   const accessCard=$('integratedAccessCard'); if(accessCard){const ok=accessCard.querySelector('.ok');const sub=accessCard.querySelector('.sub');if(ok)ok.textContent=tr('settings.native_access');if(sub)sub.textContent=tr('settings.native_access_hint');}
    $('testconn').textContent=tr('settings.test_access'); $('scan').textContent=tr('settings.scan_homey'); status.textContent=tr('settings.starting');
-   if(cards[1]){const h=cards[1].querySelector('h2');const sub=cards[1].querySelector(':scope > .sub');if(h)h.textContent=tr('settings.energy_title');if(sub)sub.textContent=tr('settings.energy_intro');}
+   const energyCard=$('energyCard'); if(energyCard){const h=energyCard.querySelector('h2');if(h)h.textContent=tr('settings.energy_title');}
    setFieldText('solarCount','settings.solar_count','settings.solar_count_hint'); setFieldText('batteryCount','settings.battery_count','settings.battery_count_hint'); setFieldText('chargerCount','settings.charger_count','settings.charger_count_hint');
    for(let index=1;index<=10;index+=1){
      const suffix=index===1?'':String(index);
@@ -163,7 +172,7 @@ function onHomeyReady(Homey){
      setFieldText(`${device}StandbyLineStyle`,`settings.${device}_standby_line_style`,`settings.${device}_standby_line_style_hint`); setOptionText(`${device}StandbyLineStyle`,'blue','settings.blue'); setOptionText(`${device}StandbyLineStyle`,'green','settings.green'); setOptionText(`${device}StandbyLineStyle`,'greenblue','settings.greenblue');
    }
    setFieldText('showBattery24h','settings.show_battery_24h','settings.show_battery_24h_hint'); setOptionText('showBattery24h','true','settings.yes'); setOptionText('showBattery24h','false','settings.no');
-   if(cards[2]){const h=cards[2].querySelector('h2');const sub=cards[2].querySelector(':scope > .sub');if(h)h.textContent=tr('settings.background_title');if(sub)sub.textContent=tr('settings.background_intro');}
+   const backgroundCard=$('backgroundCard'); if(backgroundCard){const h=backgroundCard.querySelector('h2');const sub=backgroundCard.querySelector(':scope > .sub');if(h)h.textContent=tr('settings.background_title');if(sub)sub.textContent=tr('settings.background_intro');}
    setFieldText('backgroundSet','settings.scene_set','settings.scene_set_hint'); setOptionText('backgroundSet','house','settings.scene_set_house'); setOptionText('backgroundSet','garden','settings.scene_set_garden');
    setFieldText('backgroundMode','settings.mode','settings.mode_hint'); setOptionText('backgroundMode','auto','settings.mode_auto'); setOptionText('backgroundMode','manual','settings.mode_manual');
    setFieldText('weatherSource','settings.weather_source','settings.weather_source_hint'); setFieldText('scenePeriod','settings.period','settings.period_hint'); setOptionText('scenePeriod','auto','settings.period_auto');setOptionText('scenePeriod','day','settings.day');setOptionText('scenePeriod','night','settings.night');
@@ -183,14 +192,55 @@ function onHomeyReady(Homey){
    setFieldText('evPowerUnit','settings.ev_power_unit','settings.ev_power_unit_hint');
    setFieldText('labelSolar','settings.label_solar','settings.label_custom_hint'); setFieldText('labelGrid','settings.label_grid','settings.label_custom_hint'); setFieldText('labelBattery','settings.label_battery','settings.label_custom_hint'); setFieldText('labelHome','settings.label_home','settings.label_custom_hint'); setFieldText('labelEv','settings.label_ev','settings.label_custom_hint');
    $('labelSolar').placeholder=tr('widget.solar'); $('labelGrid').placeholder=tr('widget.grid'); $('labelBattery').placeholder=tr('widget.battery'); $('labelHome').placeholder=tr('widget.home'); $('labelEv').placeholder=tr('widget.ev');
-   const preview=cards[2]&&cards[2].querySelector('.preview-note');if(preview)preview.textContent=tr('settings.weather_mapping');
-   if(cards[3]){const h=cards[3].querySelector('h2');const sub=cards[3].querySelector(':scope > .sub');const selectedTitle=cards[3].querySelector('.selected h3');const selectedSub=cards[3].querySelector('.selected > .sub');if(h)h.textContent=tr('settings.extras_title');if(sub)sub.textContent=tr('settings.extras_intro');if(selectedTitle)selectedTitle.textContent=tr('settings.selected_extras');if(selectedSub)selectedSub.textContent=tr('settings.selected_extras_hint');}
+   const preview=backgroundCard&&backgroundCard.querySelector('.preview-note');if(preview)preview.textContent=tr('settings.weather_mapping');
+   const extrasCard=$('extraItemsCard');if(extrasCard){const h=extrasCard.querySelector('h2');const sub=extrasCard.querySelector(':scope > .sub');const selectedTitle=extrasCard.querySelector('.selected h3');const selectedSub=extrasCard.querySelector('.selected > .sub');if(h)h.textContent=tr('settings.extras_title');if(sub)sub.textContent=tr('settings.extras_intro');if(selectedTitle)selectedTitle.textContent=tr('settings.selected_extras');if(selectedSub)selectedSub.textContent=tr('settings.selected_extras_hint');}
+   $('restartNotice').textContent=tr('settings.restart_notice');
    search.placeholder=tr('settings.extras_search_placeholder'); $('save').textContent=tr('settings.save');
  }
 
  function showRow(id,visible){const el=$(id);if(!el)return;el.classList.toggle('hidden-row',!visible);}
  function sourceText(s){return `${s.label}${s.value!==undefined?'  ·  '+(s.value??'—')+(s.unit?' '+s.unit:''):''}`}
  function weatherScore(s){const t=`${s.name||''} ${s.label||''} ${s.key||''}`.toLowerCase();let score=0;if(/weather|weer|condition/.test(t))score+=100;if(/rain|regen|precip|neerslag/.test(t))score+=80;if(/cloud|bewolk|overcast/.test(t))score+=50;if(/status|state/.test(t))score+=20;return score;}
+ function uiDataMode(){return $('dataMode').value||state.dataMode||'integrated';}
+ function formatAge(ms){if(ms===null||ms===undefined)return '';const sec=Math.max(0,Math.floor(ms/1000));if(sec<60)return `${sec}s`;const min=Math.floor(sec/60);if(min<60)return `${min}m`;return `${Math.floor(min/60)}h`;}
+ function renderFlowStatus(field){
+   const picker=pickerMap[field]; if(!picker)return;
+   const info=state.flowStatus[field]||{received:false,state:'waiting'};
+   picker.search.classList.add('hidden-row'); picker.results.classList.add('hidden-row'); picker.clear.classList.add('hidden-row');
+   picker.selected.className='picker-selected flow-waiting';
+   if(!info.received){picker.selected.textContent=tr('settings.flow_waiting');return;}
+   const value=`${info.valueFormatted??info.value??'—'}${info.unit?' '+info.unit:''}`;
+   const age=formatAge(info.ageMs);
+   if(info.state==='stale'){picker.selected.className='picker-selected flow-stale';picker.selected.textContent=tr('settings.flow_stale',{value,age});return;}
+   picker.selected.className='picker-selected flow-ok';picker.selected.textContent=tr('settings.flow_received',{value,age});
+ }
+ function renderAllFlowStatuses(){for(const field of pickerFields)renderFlowStatus(field);}
+ let flowStatusTimer=null;
+ async function refreshFlowStatus(){
+   if(uiDataMode()!=='flow')return;
+   try{const result=await api('GET','/flow-status');state.flowStatus=result.inputs||{};state.activeDataMode=result.activeDataMode||state.activeDataMode;renderAllFlowStatuses();updateModeRuntimeStatus();}catch(_){ }
+ }
+ function startFlowStatusPolling(){if(flowStatusTimer)return;refreshFlowStatus();flowStatusTimer=setInterval(refreshFlowStatus,2000);}
+ function stopFlowStatusPolling(){if(!flowStatusTimer)return;clearInterval(flowStatusTimer);flowStatusTimer=null;}
+ function updateModeRuntimeStatus(){
+   const selectedMode=uiDataMode();
+   const restart=selectedMode!==state.activeDataMode;
+   $('restartNotice').classList.toggle('hidden-row',!restart);
+   $('modeRuntimeStatus').textContent=restart?tr('settings.mode_pending_restart',{active:state.activeDataMode==='flow'?tr('settings.data_mode_flow_short'):tr('settings.data_mode_integrated_short')}):tr('settings.mode_active',{mode:state.activeDataMode==='flow'?tr('settings.data_mode_flow_short'):tr('settings.data_mode_integrated_short')});
+ }
+ function updateDataModeVisibility(){
+   const flow=uiDataMode()==='flow';
+   $('integratedAccessCard').classList.toggle('hidden-row',flow);
+   $('extraItemsCard').classList.toggle('hidden-row',flow);
+   $('energyIntro').textContent=flow?tr('settings.energy_intro_flow'):tr('settings.energy_intro');
+   for(const field of pickerFields){
+     const picker=pickerMap[field];if(!picker)continue;
+     if(flow){renderFlowStatus(field);}else{picker.search.classList.remove('hidden-row');updatePickerSelected(field);}
+   }
+   if(flow)startFlowStatusPolling();else stopFlowStatusPolling();
+   updateModeRuntimeStatus();
+ }
+
  function updateStandbyOptionsVisibility(){
    const solarPresent=Number($('solarCount').value)>0,batteryPresent=Number($('batteryCount').value)>0;
    const solarEnabled=$('solarStandbyLineEnabled').value==='true',batteryEnabled=$('batteryStandbyLineEnabled').value==='true',gridEnabled=$('gridStandbyLineEnabled').value==='true';
@@ -213,7 +263,7 @@ function onHomeyReady(Homey){
      showRow(`rowEvStatus${index}`,chargerCount>=index);
    }
    showRow('batteryThresholdWrap',batteryCount>0);
-   showRow('battery24hWrap',batteryCount>0);
+   showRow('battery24hWrap',batteryCount>0&&uiDataMode()!=='flow');
    updateStandbyOptionsVisibility();
  }
  function createAdditionalFields(){
@@ -241,6 +291,7 @@ function onHomeyReady(Homey){
  }
  function updatePickerSelected(field){
    const picker=pickerMap[field]; if(!picker) return;
+   if(uiDataMode()==='flow'){renderFlowStatus(field);return;}
    const value=$(field).value||'';
    const selectedOption=pickerOptions(field).find(opt=>opt.value===value);
    if(!selectedOption){picker.selected.className='picker-selected empty';picker.selected.innerHTML=field==='weatherSource'?tr('settings.no_weather'):tr('settings.not_connected');picker.clear.classList.add('hidden-row');return;}
@@ -275,6 +326,7 @@ function onHomeyReady(Homey){
    select.parentNode.insertBefore(picker, select); select.style.display='none';
    pickerMap[field]={search:searchInput,results,selected:selectedView,clear:clearBtn};
    const openPicker=async()=>{
+     if(uiDataMode()==='flow')return;
      await ensureSourcesLoaded();
      renderPickerResults(field);
    };
@@ -304,6 +356,7 @@ function onHomeyReady(Homey){
  }
 
  function fillEnergySelects(){
+   $('dataMode').value=state.dataMode||'integrated';
    for(const field of energyFields){
      const select=$(field); const current=state.energyConfig[field]||''; select.innerHTML='';
      const none=document.createElement('option'); none.value=''; none.textContent=tr('settings.not_connected'); select.appendChild(none);
@@ -363,6 +416,7 @@ function onHomeyReady(Homey){
    $('labelSolar').value=labels.solar||''; $('labelGrid').value=labels.grid||''; $('labelBattery').value=labels.battery||''; $('labelHome').value=labels.home||''; $('labelEv').value=labels.ev||'';
    updateBackgroundMode();
    updateInstallCountsVisibility();
+   updateDataModeVisibility();
  }
 
  function renderSources(){
@@ -409,6 +463,7 @@ function onHomeyReady(Homey){
  }
 
  async function ensureSourcesLoaded(force=false){
+   if(uiDataMode()==='flow')return state.sources;
    if(sourcesLoaded&&!force)return state.sources;
    if(sourcesLoadPromise&&!force)return sourcesLoadPromise;
    status.textContent=tr('settings.scanning');
@@ -438,12 +493,13 @@ function onHomeyReady(Homey){
  createAdditionalFields();
  localizeStatic();
  setupPickers();
- $('testconn').onclick=testConnection;$('scan').onclick=scan;
+ $('testconn').onclick=testConnection;$('scan').onclick=scan;$('dataMode').onchange=updateDataModeVisibility;
  search.addEventListener('focus',async()=>{await ensureSourcesLoaded();renderSources();});
  search.addEventListener('input',async()=>{if(search.value.trim())await ensureSourcesLoaded();renderSources();});
  $('backgroundMode').onchange=updateBackgroundMode;$('scenePeriod').onchange=updateDayNightVisibility;$('dayNightMode').onchange=updateDayNightVisibility;$('solarCount').onchange=updateInstallCountsVisibility;$('batteryCount').onchange=updateInstallCountsVisibility;$('chargerCount').onchange=updateInstallCountsVisibility;$('solarStandbyLineEnabled').onchange=updateStandbyOptionsVisibility;$('batteryStandbyLineEnabled').onchange=updateStandbyOptionsVisibility;$('gridStandbyLineEnabled').onchange=updateStandbyOptionsVisibility;
  $('save').onclick=async()=>{
-   const energyConfig={}; for(const field of energyFields) energyConfig[field]=$(field).value||'';
+   const selectedDataMode=uiDataMode();
+   const energyConfig={}; for(const field of energyFields) energyConfig[field]=selectedDataMode==='flow'?(state.energyConfig[field]||''):($(field).value||'');
    energyConfig.batteryThresholdKw=Number($('batteryThresholdKw').value||0.2);
    energyConfig.gridThresholdW=Math.max(0,Number($('gridThresholdW').value||50));
    energyConfig.solarCount=Math.max(0,Math.min(10,Number($('solarCount').value)));
@@ -466,11 +522,11 @@ function onHomeyReady(Homey){
      if(index<=energyConfig.batteryCount && energyConfig[`${batteryPrefix}Soc`]) configuredBatterySoc.push(batteryPrefix);
    }
    if(configuredBatterySoc.length>1 && configuredBatterySoc.some(prefix=>!(energyConfig[`${prefix}CapacityKwh`]>0))){Homey.alert(tr('settings.capacity_required'));return;}
-   const visualConfig={backgroundSet:$('backgroundSet').value||'house',backgroundMode:$('backgroundMode').value||'auto',weatherSource:$('weatherSource').value||'',periodMode:$('scenePeriod').value||'auto',dayNightMode:$('dayNightMode').value||'hours',dayStartTime:$('dayStartTime').value||'07:00',nightStartTime:$('nightStartTime').value||'20:00',weather:$('sceneWeather').value||'clear',panelTransparency:Number($('panelTransparency').value||30),overlayTheme:$('overlayTheme').value||'auto',lineBlinkTempo:Number($('lineBlinkTempo').value||2.4),solarStandbyLineEnabled:$('solarStandbyLineEnabled').value==='true',solarStandbyLineBlink:$('solarStandbyLineBlink').value==='true',solarStandbyLineStyle:$('solarStandbyLineStyle').value||'green',batteryStandbyLineEnabled:$('batteryStandbyLineEnabled').value==='true',batteryStandbyLineBlink:$('batteryStandbyLineBlink').value==='true',batteryStandbyLineStyle:$('batteryStandbyLineStyle').value||'blue',gridStandbyLineEnabled:$('gridStandbyLineEnabled').value==='true',gridStandbyLineBlink:$('gridStandbyLineBlink').value==='true',gridStandbyLineStyle:$('gridStandbyLineStyle').value||'blue',showBattery24h:$('showBattery24h').value!=='false',refreshSeconds:Number($('refreshSeconds').value||30),widgetTextScale:Number($('widgetTextScale').value||90),widgetTitleScale:Number($('widgetTitleScale').value||100),powerUnits:{solar:$('solarPowerUnit').value||'kw',battery:$('batteryPowerUnit').value||'kw',home:$('homePowerUnit').value||'w',grid:$('gridPowerUnit').value||'w',ev:$('evPowerUnit').value||'kw'},labels:{solar:$('labelSolar').value.trim(),grid:$('labelGrid').value.trim(),battery:$('labelBattery').value.trim(),home:$('labelHome').value.trim(),ev:$('labelEv').value.trim()}};
+   const visualConfig={backgroundSet:$('backgroundSet').value||'house',backgroundMode:$('backgroundMode').value||'auto',weatherSource:selectedDataMode==='flow'?(state.visualConfig.weatherSource||''):($('weatherSource').value||''),periodMode:$('scenePeriod').value||'auto',dayNightMode:$('dayNightMode').value||'hours',dayStartTime:$('dayStartTime').value||'07:00',nightStartTime:$('nightStartTime').value||'20:00',weather:$('sceneWeather').value||'clear',panelTransparency:Number($('panelTransparency').value||30),overlayTheme:$('overlayTheme').value||'auto',lineBlinkTempo:Number($('lineBlinkTempo').value||2.4),solarStandbyLineEnabled:$('solarStandbyLineEnabled').value==='true',solarStandbyLineBlink:$('solarStandbyLineBlink').value==='true',solarStandbyLineStyle:$('solarStandbyLineStyle').value||'green',batteryStandbyLineEnabled:$('batteryStandbyLineEnabled').value==='true',batteryStandbyLineBlink:$('batteryStandbyLineBlink').value==='true',batteryStandbyLineStyle:$('batteryStandbyLineStyle').value||'blue',gridStandbyLineEnabled:$('gridStandbyLineEnabled').value==='true',gridStandbyLineBlink:$('gridStandbyLineBlink').value==='true',gridStandbyLineStyle:$('gridStandbyLineStyle').value||'blue',showBattery24h:$('showBattery24h').value!=='false',refreshSeconds:Number($('refreshSeconds').value||30),widgetTextScale:Number($('widgetTextScale').value||90),widgetTitleScale:Number($('widgetTitleScale').value||100),powerUnits:{solar:$('solarPowerUnit').value||'kw',battery:$('batteryPowerUnit').value||'kw',home:$('homePowerUnit').value||'w',grid:$('gridPowerUnit').value||'w',ev:$('evPowerUnit').value||'kw'},labels:{solar:$('labelSolar').value.trim(),grid:$('labelGrid').value.trim(),battery:$('labelBattery').value.trim(),home:$('labelHome').value.trim(),ev:$('labelEv').value.trim()}};
    status.textContent=tr('settings.saving');
    try{
-     const payload={energyConfig,visualConfig,selection:state.selected};
-     const saved=await api('PUT','/config',payload);state.energyConfig=saved.energyConfig||energyConfig;state.visualConfig=saved.visualConfig||visualConfig;status.textContent=tr('settings.saved');
+     const payload={energyConfig,visualConfig,selection:state.selected,dataMode:selectedDataMode};
+     const saved=await api('PUT','/config',payload);state.energyConfig=saved.energyConfig||energyConfig;state.visualConfig=saved.visualConfig||visualConfig;state.dataMode=saved.dataMode||selectedDataMode;state.activeDataMode=saved.activeDataMode||state.activeDataMode;state.flowStatus=saved.flowStatus||state.flowStatus;status.textContent=tr('settings.saved');updateDataModeVisibility();if(saved.restartRequired)Homey.alert(tr('settings.restart_after_save'));
    }catch(e){status.textContent=tr('settings.save_failed',{error:msg(e)});Homey.alert(status.textContent);}
  };
 
@@ -479,6 +535,9 @@ function onHomeyReady(Homey){
    state.selected=cfg.selection||[];
    state.energyConfig=cfg.energyConfig||{};
    state.visualConfig=cfg.visualConfig||{};
+   state.dataMode=cfg.dataMode||'integrated';
+   state.activeDataMode=cfg.activeDataMode||state.dataMode;
+   state.flowStatus=cfg.flowStatus||{};
    state.sources=cfg.configuredSources||[];
    renderSelected();
    fillEnergySelects();

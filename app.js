@@ -1,7 +1,6 @@
 'use strict';
 
 const Homey = require('homey');
-const { HomeyAPI } = require('homey-api');
 
 const ENERGY_FIELDS = [
   ...Array.from({ length: 10 }, (_, index) => index === 0 ? 'solar' : `solar${index + 1}`),
@@ -17,6 +16,31 @@ const ENERGY_FIELDS = [
 ];
 
 const INSIGHTS_REFRESH_MS = 6 * 60 * 60 * 1000;
+const FLOW_STALE_MS = 10 * 60 * 1000;
+const FLOW_NUMERIC_FIELDS = [
+  ...Array.from({ length: 10 }, (_, index) => index === 0 ? 'solar' : `solar${index + 1}`),
+  ...Array.from({ length: 10 }, (_, index) => {
+    const suffix = index === 0 ? '' : String(index + 1);
+    return [`battery${suffix}Soc`, `battery${suffix}Power`];
+  }).flat(),
+  ...Array.from({ length: 10 }, (_, index) => {
+    const suffix = index === 0 ? '' : String(index + 1);
+    return `ev${suffix}Power`;
+  }),
+  'gridPower', 'homePower'
+];
+const FLOW_TEXT_FIELDS = [
+  ...Array.from({ length: 10 }, (_, index) => {
+    const suffix = index === 0 ? '' : String(index + 1);
+    return `battery${suffix}Status`;
+  }),
+  ...Array.from({ length: 10 }, (_, index) => {
+    const suffix = index === 0 ? '' : String(index + 1);
+    return `ev${suffix}Status`;
+  }),
+  'weatherSource'
+];
+const FLOW_ALL_FIELDS = new Set([...FLOW_NUMERIC_FIELDS, ...FLOW_TEXT_FIELDS]);
 const EMPTY_SET = new Set();
 
 class DashboardBridgeApp extends Homey.App {
@@ -24,11 +48,16 @@ class DashboardBridgeApp extends Homey.App {
     this.selection = this.homey.settings.get('selection') || [];
     this.energyConfig = this._normalizeEnergyConfig(this.homey.settings.get('energyConfig') || {});
     this.visualConfig = this._normalizeVisualConfig(this.homey.settings.get('visualConfig') || {});
+    this.dataMode = this._normalizeDataMode(this.homey.settings.get('dataMode'));
+    // The active mode is fixed for the lifetime of this process. A mode switch
+    // is saved immediately, but becomes active only after an app restart.
+    this._activeDataMode = this.dataMode;
     this.revision = Number(this.homey.settings.get('revision') || 1);
     this.sourceCache = new Map();
     this._ownerToken = null;
     this._localUrl = null;
     this._homeyApi = null;
+    this._HomeyAPIClass = null;
     this._realtimeDevices = new Map();
     this._capabilityInstances = new Map();
     this._logicChangeHandler = null;
@@ -52,6 +81,8 @@ class DashboardBridgeApp extends Homey.App {
     this._timezoneRefreshTimer = null;
     this._dayNightSwitchTimer = null;
 
+    this._registerFlowInputCards();
+
     await this._refreshHomeyTimezone().catch(err => {
       this.error('Unable to read Homey timezone, temporarily using UTC:', err);
     });
@@ -63,14 +94,158 @@ class DashboardBridgeApp extends Homey.App {
     this._scheduleDayNightSwitch();
 
     this._rebuildRuntimeConfigIndex();
-    await this._ensureOwnerSession();
-    await this._setupTruePushSources();
-    await this._migrateLegacyDeviceLabels().catch(err => this.error('Label migration failed:', err));
-    this._startInsightsRefreshLoop();
-    this._refreshBattery24hFromInsights()
-      .then(result => { if (result) this._markDashboardDirty('insights-initial'); })
-      .catch(err => this.error('Battery Insights refresh failed:', err));
-    this.log(`HomeFlux v${this.homey.manifest.version} initialized`);
+    if (this._isIntegratedMode()) {
+      await this._ensureOwnerSession();
+      await this._setupTruePushSources();
+      await this._migrateLegacyDeviceLabels().catch(err => this.error('Label migration failed:', err));
+      this._startInsightsRefreshLoop();
+      this._refreshBattery24hFromInsights()
+        .then(result => { if (result) this._markDashboardDirty('insights-initial'); })
+        .catch(err => this.error('Battery Insights refresh failed:', err));
+    } else {
+      // Flow-card mode deliberately does not initialise the local Homey API,
+      // homey-api, device subscriptions or Insights polling.
+      this._dashboardSnapshot = this.getDashboard();
+      this._lastPublishedDashboardSignature = this._dashboardSignature(this._dashboardSnapshot);
+      this._lastDashboardPushAt = Date.now();
+    }
+    this.log(`HomeFlux v${this.homey.manifest.version} initialized (${this._activeDataMode})`);
+  }
+
+  _normalizeDataMode(value) {
+    return value === 'flow' ? 'flow' : 'integrated';
+  }
+
+  _isIntegratedMode() {
+    return this._activeDataMode === 'integrated';
+  }
+
+  _isFlowMode() {
+    return this._activeDataMode === 'flow';
+  }
+
+  _flowKey(field) {
+    return `flow:${field}`;
+  }
+
+  _fieldSourceKey(field) {
+    if (this._isFlowMode()) return this._flowKey(field);
+    return this.energyConfig[field] || '';
+  }
+
+  _weatherSourceKey() {
+    if (this._isFlowMode()) return this._flowKey('weatherSource');
+    return this.visualConfig.weatherSource || '';
+  }
+
+  _activeFlowFieldNames() {
+    const fields = ['gridPower', 'homePower'];
+    const solarCount = Math.max(0, Math.min(10, Number(this.energyConfig.solarCount) || 0));
+    const batteryCount = Math.max(0, Math.min(10, Number(this.energyConfig.batteryCount) || 0));
+    const chargerCount = Math.max(0, Math.min(10, Number(this.energyConfig.chargerCount) || 0));
+    for (let index = 1; index <= solarCount; index += 1) fields.push(index === 1 ? 'solar' : `solar${index}`);
+    for (let index = 1; index <= batteryCount; index += 1) {
+      const suffix = index === 1 ? '' : String(index);
+      fields.push(`battery${suffix}Soc`, `battery${suffix}Power`, `battery${suffix}Status`);
+    }
+    for (let index = 1; index <= chargerCount; index += 1) {
+      const suffix = index === 1 ? '' : String(index);
+      fields.push(`ev${suffix}Power`, `ev${suffix}Status`);
+    }
+    if (this.visualConfig.backgroundMode === 'auto') fields.push('weatherSource');
+    return [...new Set(fields)];
+  }
+
+  _flowUnit(field) {
+    if (/Soc$/.test(field)) return '%';
+    if (/Power$/.test(field) || /^solar\d*$/.test(field)) return 'W';
+    return '';
+  }
+
+  _flowLabel(field) {
+    if (field === 'gridPower') return 'Grid power';
+    if (field === 'homePower') return 'Home consumption';
+    if (field === 'weatherSource') return 'Weather';
+    const solar = field.match(/^solar(\d+)?$/);
+    if (solar) return `Solar ${solar[1] || '1'}`;
+    const battery = field.match(/^battery(\d+)?(Soc|Power|Status)$/);
+    if (battery) return `Battery ${battery[1] || '1'} ${battery[2]}`;
+    const ev = field.match(/^ev(\d+)?(Power|Status)$/);
+    if (ev) return `EV charger ${ev[1] || '1'} ${ev[2]}`;
+    return field;
+  }
+
+  _flowTargetId(value) {
+    if (value && typeof value === 'object') return String(value.id || value.value || '');
+    return String(value || '');
+  }
+
+  _registerFlowInputCards() {
+    const input = this.homey.flow.getActionCard('set_flow_input');
+    input.registerRunListener(async args => {
+      if (!this._isFlowMode()) throw new Error('Flow card input mode is not active. Change the data source mode, save, and restart HomeFlux.');
+      const field = this._flowTargetId(args.target);
+
+      if (FLOW_NUMERIC_FIELDS.includes(field)) {
+        const value = Number(args.value);
+        if (!Number.isFinite(value)) throw new Error('The HomeFlux input value must be a number.');
+        this._setFlowInput(field, value);
+        return true;
+      }
+
+      if (FLOW_TEXT_FIELDS.includes(field)) {
+        this._setFlowInput(field, args.value === undefined || args.value === null ? '' : String(args.value));
+        return true;
+      }
+
+      throw new Error('Unsupported HomeFlux input.');
+    });
+  }
+
+  _setFlowInput(field, value) {
+    if (!FLOW_ALL_FIELDS.has(field)) return false;
+    const key = this._flowKey(field);
+    const previous = this.sourceCache.get(key);
+    const source = {
+      key,
+      type: 'flow',
+      deviceName: 'Flow',
+      label: this._flowLabel(field),
+      name: this._flowLabel(field),
+      value,
+      displayValue: typeof value === 'string' ? value : '',
+      unit: this._flowUnit(field),
+      valueType: typeof value,
+      receivedAt: Date.now()
+    };
+    this.sourceCache.set(key, source);
+    if (!previous || !Object.is(previous.value, value)) this._markDashboardDirty(`flow:${field}`);
+    this.homey.api.realtime('flow-input.updated', { field, ...this._flowStatusForField(field) });
+    return true;
+  }
+
+  _flowStatusForField(field) {
+    const source = this.sourceCache.get(this._flowKey(field));
+    if (!source || !Number.isFinite(Number(source.receivedAt))) {
+      return { field, received: false, state: 'waiting', value: null, valueFormatted: '—', unit: this._flowUnit(field), receivedAt: null, ageMs: null };
+    }
+    const ageMs = Math.max(0, Date.now() - Number(source.receivedAt));
+    return {
+      field,
+      received: true,
+      state: ageMs > FLOW_STALE_MS ? 'stale' : 'ok',
+      value: source.value,
+      valueFormatted: this._formatValue(source.value),
+      unit: source.unit || '',
+      receivedAt: new Date(Number(source.receivedAt)).toISOString(),
+      ageMs
+    };
+  }
+
+  getFlowStatus() {
+    const inputs = {};
+    for (const field of [...FLOW_NUMERIC_FIELDS, ...FLOW_TEXT_FIELDS]) inputs[field] = this._flowStatusForField(field);
+    return { dataMode: this.dataMode, activeDataMode: this._activeDataMode, restartRequired: this.dataMode !== this._activeDataMode, inputs };
   }
 
   _normalizeEnergyConfig(config) {
@@ -216,6 +391,7 @@ class DashboardBridgeApp extends Homey.App {
   }
 
   async testConnection() {
+    if (!this._isIntegratedMode()) throw new Error('Integrated configurator is not active. Save Integrated configurator mode and restart HomeFlux first.');
     const devices = await this._apiGet('/api/manager/devices/device');
     let variables = [];
     try { variables = await this._apiGet('/api/manager/logic/variable'); } catch (err) { this.error('Logic test failed:', err); }
@@ -328,7 +504,16 @@ class DashboardBridgeApp extends Homey.App {
     // Homey device discovery just to render the sources that are already linked.
     const selectedByKey = new Map(this.selection.map(item => [item.key, item]));
     const sources = [];
-    for (const key of this._configuredKeyList) {
+    const configuredKeys = this._isFlowMode() ? (() => {
+      const keys = new Set(this.selection.map(item => item.key).filter(Boolean));
+      for (const field of ENERGY_FIELDS) {
+        const key = this.energyConfig[field];
+        if (key) keys.add(key);
+      }
+      if (this.visualConfig.weatherSource) keys.add(this.visualConfig.weatherSource);
+      return [...keys];
+    })() : this._configuredKeyList;
+    for (const key of configuredKeys) {
       const cached = this._settingsSourceView(this.sourceCache.get(key));
       if (cached) {
         sources.push(cached);
@@ -379,6 +564,7 @@ class DashboardBridgeApp extends Homey.App {
   }
 
   async listSources() {
+    if (!this._isIntegratedMode()) throw new Error('Integrated configurator is not active. Save Integrated configurator mode and restart HomeFlux first.');
     // Full discovery is deliberately lazy: Settings calls this only when the
     // user wants to choose/add a source (or explicitly presses Scan Homey).
     // Return only the fields the settings UI needs and release the large Homey
@@ -403,6 +589,10 @@ class DashboardBridgeApp extends Homey.App {
       energyConfig: this.energyConfig,
       selection: this.selection,
       visualConfig: this.visualConfig,
+      dataMode: this.dataMode,
+      activeDataMode: this._activeDataMode,
+      restartRequired: this.dataMode !== this._activeDataMode,
+      flowStatus: this.getFlowStatus().inputs,
       configuredSources: this._configuredSettingsSources()
     };
   }
@@ -411,9 +601,11 @@ class DashboardBridgeApp extends Homey.App {
     const energyConfig = this._normalizeEnergyConfig(config.energyConfig || {});
     const selection = Array.isArray(config.selection) ? config.selection : [];
     const visualConfig = this._normalizeVisualConfig(config.visualConfig || {});
+    const dataMode = this._normalizeDataMode(config.dataMode !== undefined ? config.dataMode : this.dataMode);
 
     this.energyConfig = energyConfig;
     this.visualConfig = visualConfig;
+    this.dataMode = dataMode;
     this.selection = selection.slice(0, 60).map((item, index) => ({
       key: String(item.key),
       label: String(item.label || item.name || `Item ${index + 1}`),
@@ -432,9 +624,10 @@ class DashboardBridgeApp extends Homey.App {
     await this.homey.settings.set('energyConfig', this.energyConfig);
     await this.homey.settings.set('selection', this.selection);
     await this.homey.settings.set('visualConfig', this.visualConfig);
+    await this.homey.settings.set('dataMode', this.dataMode);
     await this.homey.settings.set('revision', this.revision);
     this._clearDashboardPushTimer();
-    await this._setupTruePushSources();
+    if (this._isIntegratedMode()) await this._setupTruePushSources();
     this._scheduleDayNightSwitch();
     this._markDashboardDirty('config-save', true);
     return this.getConfig();
@@ -454,13 +647,18 @@ class DashboardBridgeApp extends Homey.App {
   }
 
   _rebuildRuntimeConfigIndex() {
-    const keys = new Set(this.selection.map(item => item.key).filter(Boolean));
-    for (const field of ENERGY_FIELDS) {
-      const key = this.energyConfig[field];
-      if (key) keys.add(key);
-    }
-    if (this.visualConfig.backgroundMode === 'auto' && this.visualConfig.weatherSource) {
-      keys.add(this.visualConfig.weatherSource);
+    let keys;
+    if (this._isFlowMode()) {
+      keys = new Set(this._activeFlowFieldNames().map(field => this._flowKey(field)));
+    } else {
+      keys = new Set(this.selection.map(item => item.key).filter(Boolean));
+      for (const field of ENERGY_FIELDS) {
+        const key = this.energyConfig[field];
+        if (key) keys.add(key);
+      }
+      if (this.visualConfig.backgroundMode === 'auto' && this.visualConfig.weatherSource) {
+        keys.add(this.visualConfig.weatherSource);
+      }
     }
 
     this._configuredKeyList = [...keys];
@@ -514,8 +712,15 @@ class DashboardBridgeApp extends Homey.App {
 
 
   async _ensureHomeyApi() {
+    if (!this._isIntegratedMode()) throw new Error('homey-api is disabled in Flow card mode.');
     if (this._homeyApi) return this._homeyApi;
-    this._homeyApi = await HomeyAPI.createAppAPI({ homey: this.homey });
+    if (!this._HomeyAPIClass) {
+      // Lazy load is intentional: in Flow card mode the relatively heavy
+      // homey-api dependency is never required into the Node.js process.
+      const { HomeyAPI } = require('homey-api');
+      this._HomeyAPIClass = HomeyAPI;
+    }
+    this._homeyApi = await this._HomeyAPIClass.createAppAPI({ homey: this.homey });
     return this._homeyApi;
   }
 
@@ -628,6 +833,7 @@ class DashboardBridgeApp extends Homey.App {
   }
 
   async _setupTruePushSources() {
+    if (!this._isIntegratedMode()) return;
     await this._destroyTruePushSources();
     this._pruneSourceCache();
     const api = await this._ensureHomeyApi();
@@ -703,6 +909,7 @@ class DashboardBridgeApp extends Homey.App {
   }
 
   _startInsightsRefreshLoop() {
+    if (!this._isIntegratedMode()) return;
     if (this._insightsRefreshTimer) this.homey.clearInterval(this._insightsRefreshTimer);
     this._insightsRefreshTimer = this.homey.setInterval(() => {
       this._refreshBattery24hFromInsights()
@@ -769,6 +976,7 @@ class DashboardBridgeApp extends Homey.App {
   }
 
   async _refreshBattery24hFromInsights(force = false) {
+    if (!this._isIntegratedMode()) { this._batteryInsights24h = null; return null; }
     if (this.energyConfig.batteryCount <= 0 || this.visualConfig.showBattery24h === false) { this._batteryInsights24h = null; return null; }
     if (!force && Date.now() - this._lastInsightsRefreshAt < INSIGHTS_REFRESH_MS) return this._batteryInsights24h;
     this._lastInsightsRefreshAt = Date.now();
@@ -776,7 +984,7 @@ class DashboardBridgeApp extends Homey.App {
     const batteries = [];
     for (let index = 1; index <= this.energyConfig.batteryCount; index += 1) {
       const suffix = index === 1 ? '' : String(index);
-      const key = this.energyConfig[`battery${suffix}Soc`];
+      const key = this._fieldSourceKey(`battery${suffix}Soc`);
       if (!key) continue;
       batteries.push({
         key,
@@ -907,7 +1115,7 @@ class DashboardBridgeApp extends Homey.App {
   _combinedSolarData() {
     const count = Math.max(0, Math.min(10, Number(this.energyConfig.solarCount) || 0));
     if (!count) return null;
-    const keys = Array.from({ length: count }, (_, index) => index === 0 ? this.energyConfig.solar : this.energyConfig[`solar${index + 1}`]);
+    const keys = Array.from({ length: count }, (_, index) => this._fieldSourceKey(index === 0 ? 'solar' : `solar${index + 1}`));
     return this._sumPowerSources(keys, 'Zonnepanelen totaal');
   }
 
@@ -916,7 +1124,7 @@ class DashboardBridgeApp extends Homey.App {
     let count = 0;
     for (let index = 1; index <= this.energyConfig.batteryCount; index += 1) {
       const suffix = index === 1 ? '' : String(index);
-      const key = this.energyConfig[`battery${suffix}Power`];
+      const key = this._fieldSourceKey(`battery${suffix}Power`);
       if (!key) continue;
       const direction = this.energyConfig[`battery${suffix}Direction`]
         || (this.energyConfig[`battery${suffix}Invert`] ? 'positive_discharge' : 'positive_discharge');
@@ -934,7 +1142,7 @@ class DashboardBridgeApp extends Homey.App {
     let count = 0;
     for (let index = 1; index <= this.energyConfig.batteryCount; index += 1) {
       const suffix = index === 1 ? '' : String(index);
-      const key = this.energyConfig[`battery${suffix}Power`];
+      const key = this._fieldSourceKey(`battery${suffix}Power`);
       if (!key) continue;
       const powerDirection = this.energyConfig[`battery${suffix}Direction`]
         || (this.energyConfig[`battery${suffix}Invert`] ? 'positive_discharge' : 'positive_discharge');
@@ -956,7 +1164,7 @@ class DashboardBridgeApp extends Homey.App {
     for (let index = 1; index <= this.energyConfig.batteryCount; index += 1) {
       const suffix = index === 1 ? '' : String(index);
       const prefix = `battery${suffix}`;
-      const key = this.energyConfig[`${prefix}Power`];
+      const key = this._fieldSourceKey(`${prefix}Power`);
       if (!key) continue;
       const powerDirection = this.energyConfig[`${prefix}Direction`] || 'positive_discharge';
       const lineDirection = this.energyConfig[`${prefix}LineDirection`] || 'follow_power';
@@ -982,7 +1190,7 @@ class DashboardBridgeApp extends Homey.App {
     const entries = [];
     for (let index = 1; index <= this.energyConfig.batteryCount; index += 1) {
       const suffix = index === 1 ? '' : String(index);
-      const key = this.energyConfig[`battery${suffix}Soc`];
+      const key = this._fieldSourceKey(`battery${suffix}Soc`);
       if (!key) continue;
       entries.push({ key, capacity: Number(this.energyConfig[`battery${suffix}CapacityKwh`]) || 0 });
     }
@@ -1026,7 +1234,7 @@ class DashboardBridgeApp extends Homey.App {
     if (!count) return null;
     const keys = Array.from({ length: count }, (_, index) => {
       const suffix = index === 0 ? '' : String(index + 1);
-      return this.energyConfig[`ev${suffix}Power`];
+      return this._fieldSourceKey(`ev${suffix}Power`);
     });
     return this._sumPowerSources(keys, 'Autoladers totaal');
   }
@@ -1050,7 +1258,7 @@ class DashboardBridgeApp extends Homey.App {
   }
 
   _gridFlowState() {
-    const grid = this._sourceData(this.energyConfig.gridPower);
+    const grid = this._sourceData(this._fieldSourceKey('gridPower'));
     const watts = this._powerToWatts(grid);
     if (watts === null) return 'idle';
     const thresholdW = Math.max(0, Number(this.energyConfig.gridThresholdW) || 50);
@@ -1061,7 +1269,7 @@ class DashboardBridgeApp extends Homey.App {
 
   _derivedHomePower() {
     const solar = this._combinedSolarData();
-    const grid = this._sourceData(this.energyConfig.gridPower);
+    const grid = this._sourceData(this._fieldSourceKey('gridPower'));
 
     const solarW = this.energyConfig.solarCount === 0 ? 0 : this._powerToWatts(solar);
     const gridW = this._powerToWatts(grid);
@@ -1090,7 +1298,7 @@ class DashboardBridgeApp extends Homey.App {
   }
 
   _homePowerData() {
-    const direct = this._sourceData(this.energyConfig.homePower);
+    const direct = this._sourceData(this._fieldSourceKey('homePower'));
     if (direct && direct.online && typeof direct.rawValue === 'number') return { ...direct, derived: false };
     return this._derivedHomePower();
   }
@@ -1100,9 +1308,9 @@ class DashboardBridgeApp extends Homey.App {
     if (flow === 'charge') return { text: 'Laden', source: 'derived', flow };
     if (flow === 'discharge') return { text: 'Ontladen', source: 'derived', flow };
 
-    const hasSecondBattery = this.energyConfig.batteryCount > 1 && Array.from({ length: this.energyConfig.batteryCount - 1 }, (_, index) => index + 2).some(index => this.energyConfig[`battery${index}Power`] || this.energyConfig[`battery${index}Soc`] || this.energyConfig[`battery${index}Status`]);
+    const hasSecondBattery = this.energyConfig.batteryCount > 1 && (this._isFlowMode() || Array.from({ length: this.energyConfig.batteryCount - 1 }, (_, index) => index + 2).some(index => this.energyConfig[`battery${index}Power`] || this.energyConfig[`battery${index}Soc`] || this.energyConfig[`battery${index}Status`]));
     if (!hasSecondBattery) {
-      const explicit = this._sourceData(this.energyConfig.batteryStatus);
+      const explicit = this._sourceData(this._fieldSourceKey('batteryStatus'));
       if (explicit && explicit.online && explicit.rawValue !== null && explicit.rawValue !== '') {
         let status = String(explicit.rawValue).trim();
         if (typeof explicit.rawValue === 'boolean') status = explicit.rawValue ? 'Laden' : 'Stand-by';
@@ -1272,7 +1480,7 @@ class DashboardBridgeApp extends Homey.App {
   }
 
   _mapWeatherSource() {
-    const key = this.visualConfig.weatherSource;
+    const key = this._weatherSourceKey();
     if (!key) return { weather: this.visualConfig.weather || 'clear', raw: null, label: '', mapped: false };
     const source = this.sourceCache.get(key);
     if (!source) return { weather: this.visualConfig.weather || 'clear', raw: null, label: '', mapped: false };
@@ -1385,16 +1593,19 @@ class DashboardBridgeApp extends Homey.App {
       batteryCount: this.energyConfig.batteryCount,
       evPower: this._combinedEvPowerData(),
       evChargerCount: this.energyConfig.chargerCount,
-      evStatus: this.energyConfig.chargerCount > 1 ? { value: String(this.energyConfig.chargerCount), rawValue: this.energyConfig.chargerCount, unit: '', online: true, synthetic: true } : this.energyConfig.chargerCount === 1 ? this._sourceData(this.energyConfig.evStatus) : null,
-      gridPower: this._sourceData(this.energyConfig.gridPower),
+      evStatus: this.energyConfig.chargerCount > 1 ? { value: String(this.energyConfig.chargerCount), rawValue: this.energyConfig.chargerCount, unit: '', online: true, synthetic: true } : this.energyConfig.chargerCount === 1 ? this._sourceData(this._fieldSourceKey('evStatus')) : null,
+      gridPower: this._sourceData(this._fieldSourceKey('gridPower')),
       gridFlow: this._gridFlowState(),
       homePower: this._homePowerData()
     };
-    const tiles = this.selection.map((saved, index) => this._tile(saved, index));
-    const configured = ENERGY_FIELDS.some(field => Boolean(this.energyConfig[field])) || this.selection.length > 0;
+    const tiles = this._isFlowMode() ? [] : this.selection.map((saved, index) => this._tile(saved, index));
+    const configured = this._isFlowMode()
+      ? (this.energyConfig.solarCount > 0 || this.energyConfig.batteryCount > 0 || this.energyConfig.chargerCount > 0 || this.sourceCache.has(this._flowKey('gridPower')) || this.sourceCache.has(this._flowKey('homePower')))
+      : (ENERGY_FIELDS.some(field => Boolean(this.energyConfig[field])) || this.selection.length > 0);
     return {
       revision: this.revision,
       updatedAt: new Date().toISOString(),
+      dataMode: this._activeDataMode,
       configured,
       energy,
       tiles,
@@ -1422,6 +1633,8 @@ class DashboardBridgeApp extends Homey.App {
     }
     this._clearDashboardPushTimer();
     await this._destroyTruePushSources();
+    this._homeyApi = null;
+    this._HomeyAPIClass = null;
     this._dashboardSnapshot = null;
     this._lastPublishedDashboardSignature = '';
     this.sourceCache.clear();
