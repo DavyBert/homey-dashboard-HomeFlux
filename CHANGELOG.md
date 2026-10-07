@@ -1,3 +1,6 @@
+## v0.9.1
+- Added Input, Settings and Mapping tabs with custom weather mapping. EV flow turns green when PV exceeds home consumption; PV-based night switching now waits 10 minutes.
+
 ## v0.8.66
 - Added a global data-source mode selector: Integrated configurator or lower-memory Flow cards.
 - Flow-card mode does not load `homey-api`, create realtime device/capability subscriptions, use the local owner API, or poll Insights after restart.

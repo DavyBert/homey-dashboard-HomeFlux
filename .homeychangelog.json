@@ -86,5 +86,9 @@
   "0.8.66": {
     "en": "Added selectable Integrated or lower-memory Flow-card input mode with per-input status and restart activation.",
     "nl": "Keuze toegevoegd tussen geïntegreerde invoer en een geheugenzuinige Flow-kaartmodus, met status per invoer en activatie na herstart."
+  },
+  "0.9.1": {
+    "en": "Added Input, Settings and Mapping tabs with custom weather mapping. EV flow turns green when PV exceeds home consumption; PV-based night switching now waits 10 minutes.",
+    "nl": "Tabbladen Input, Instellingen en Mapping toegevoegd met eigen weermapping. De laadlijn wordt groen bij PV boven het huisverbruik; omschakelen naar nacht via PV wacht nu 10 minuten."
   }
 }

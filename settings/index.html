@@ -6,12 +6,26 @@
 <script type="text/javascript" src="/homey.js" data-origin="settings"></script>
 <style>
 :root{color-scheme:light dark}*{box-sizing:border-box}body{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;margin:0;padding:18px;max-width:1050px;color:var(--homey-text-color,#111);background:var(--homey-background-color,#fff)}h1{margin:0 0 4px;font-size:28px}h2{margin:0 0 10px;font-size:18px}h3{margin:0 0 6px;font-size:15px}.sub{opacity:.72;line-height:1.45}.card{background:rgba(127,127,127,.08);border:1px solid rgba(127,127,127,.18);border-radius:16px;padding:16px;margin:14px 0}.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}button{cursor:pointer;border:0;border-radius:10px;padding:10px 14px;font-weight:700;background:#1677ff;color:#fff}button.primary{background:#0a63ff}.status{margin-top:10px;font-size:14px;padding:10px 12px;border-radius:10px;background:rgba(127,127,127,.12)}.energy-grid,.visual-grid{display:grid;grid-template-columns:1fr;gap:12px}.install-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:10px}.hidden-row{display:none !important}.map-row{display:grid;grid-template-columns:minmax(180px,260px) 1fr;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid rgba(127,127,127,.14)}.map-label{font-weight:720}.hint{font-size:11px;opacity:.52;margin-top:3px}.map-row select,.map-row input[type=number],.map-row input[type=text],.map-row input[type=time],.threshold input,.threshold select,.visual-grid select{width:100%;box-sizing:border-box;padding:9px 10px;border:1px solid rgba(127,127,127,.45);border-radius:10px;background:var(--homey-background-color,#fff);color:inherit}.battery-options{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.threshold{padding:10px;border-radius:12px;background:rgba(127,127,127,.08)}.toggle{display:flex;gap:9px;align-items:center}.toggle input{width:18px;height:18px}.group{font-size:12px;font-weight:800;opacity:.55;margin:18px 0 7px;text-transform:uppercase}.row{display:grid;grid-template-columns:28px 1fr auto;gap:8px;align-items:center;padding:10px 6px;border-bottom:1px solid rgba(127,127,127,.18)}.title{font-weight:650}.meta{font-size:11px;opacity:.5;margin-top:2px;word-break:break-all}.value{font-variant-numeric:tabular-nums;opacity:.8}.selected{margin-top:14px}.selected-row{display:grid;grid-template-columns:1fr auto;gap:8px;margin-bottom:8px}.selected-row input{padding:9px;border-radius:9px;border:1px solid rgba(127,127,127,.45);background:var(--homey-background-color,#fff);color:inherit}.remove{background:rgba(127,127,127,.18);color:inherit}.picker{display:flex;flex-direction:column;gap:8px;position:relative}.picker-search{width:100%;padding:9px 10px;border:1px solid rgba(127,127,127,.45);border-radius:10px;background:var(--homey-background-color,#fff);color:inherit}.picker-results{display:flex;flex-direction:column;gap:6px;max-height:220px;overflow:auto;padding:6px;border:1px solid rgba(127,127,127,.18);border-radius:12px;background:rgba(127,127,127,.08)}.picker-option{padding:8px 10px;border-radius:9px;cursor:pointer}.picker-option:hover{background:rgba(127,127,127,.14)}.picker-selected{padding:8px 10px;border-radius:10px;background:rgba(127,127,127,.08);font-size:13px;line-height:1.35}.picker-selected.empty{opacity:.6;font-style:italic}.picker-selected-name{font-weight:650}.picker-selected-meta{font-size:11px;opacity:.65;margin-top:2px;word-break:break-word}.picker-clear{padding:7px 9px;border-radius:9px;border:1px solid rgba(127,127,127,.18);background:rgba(127,127,127,.12);cursor:pointer;align-self:flex-start}.inline-note{padding:10px 2px;font-size:13px;opacity:.68}#search{box-sizing:border-box;flex:1;min-width:220px;padding:10px 12px;border-radius:10px;border:1px solid rgba(127,127,127,.45);font-size:15px;background:var(--homey-background-color,#fff);color:inherit}.ok{font-weight:700}.savebar{position:sticky;bottom:0;padding:12px 0 0;background:linear-gradient(transparent,var(--homey-background-color,#fff) 30%);display:flex;justify-content:flex-end}.preview-note{font-size:12px;opacity:.65;margin-top:6px}.support-mini{font-size:11px;opacity:.48;text-align:center;margin:4px 0 8px}.support-mini a{color:inherit;text-decoration:none;border-bottom:1px dotted currentColor}.support-mini a:hover{opacity:.8}.custom-image-control{display:flex;flex-direction:column;gap:8px;align-items:flex-start}.custom-image-control input[type=file]{width:100%;font-size:13px}.custom-image-status{font-size:12px;opacity:.72}.custom-image-status.ok{opacity:.9;font-weight:650}.custom-image-status.error{opacity:1;font-weight:700}.flow-ok{border:1px solid rgba(46,160,67,.35);background:rgba(46,160,67,.10)}.flow-stale{border:1px solid rgba(210,153,34,.35);background:rgba(210,153,34,.10)}.flow-waiting{border:1px solid rgba(127,127,127,.22);background:rgba(127,127,127,.08)}.restart-notice{margin:12px 0 4px;padding:12px 14px;border-radius:12px;border:1px solid rgba(210,153,34,.4);background:rgba(210,153,34,.12);font-size:13px;line-height:1.4}.standby-style-note{font-size:11px;opacity:.58;margin-top:4px}@media(max-width:650px){.map-row{grid-template-columns:1fr}.battery-options,.install-grid{grid-template-columns:1fr}}
+.battery-options>.map-row{grid-template-columns:1fr;padding:10px;border-radius:12px;background:rgba(127,127,127,.08)}.tabs{display:flex;gap:8px;margin-top:16px;border-bottom:1px solid rgba(127,127,127,.22);padding-bottom:8px}.tab{background:rgba(127,127,127,.12);color:inherit}.tab[aria-selected=true]{background:#0a63ff;color:#fff}.weather-map-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(140px,200px) auto;gap:10px;align-items:center;padding:12px 0;border-bottom:1px solid rgba(127,127,127,.18)}.weather-map-row select{padding:9px;border-radius:10px;color:inherit;background:var(--homey-background-color,#fff);border:1px solid rgba(127,127,127,.45)}.weather-map-row .title,.weather-map-row .meta{overflow-wrap:anywhere}@media(max-width:650px){.weather-map-row{grid-template-columns:1fr auto}.weather-map-row>div{grid-column:1/-1}.tabs{gap:6px}.tab{flex:1;padding:10px 6px}}
 </style>
 </head>
 <body>
 <h1>HomeFlux</h1>
 <div class="sub">First connect the fixed parts of the energy overview. Then add optional items below the illustration.</div>
 
+<div class="tabs" role="tablist" aria-label="HomeFlux">
+  <button type="button" class="tab" id="tabInput" role="tab" aria-controls="inputPanel" aria-selected="true">Input</button>
+  <button type="button" class="tab" id="tabSettings" role="tab" aria-controls="settingsPanel" aria-selected="false" tabindex="-1">Settings</button>
+  <button type="button" class="tab" id="tabMapping" role="tab" aria-controls="mappingPanel" aria-selected="false" tabindex="-1">Mapping</button>
+</div>
+<section id="inputPanel" role="tabpanel" aria-labelledby="tabInput"></section>
+<section id="settingsPanel" role="tabpanel" aria-labelledby="tabSettings" class="hidden-row"></section>
+<section id="mappingPanel" role="tabpanel" aria-labelledby="tabMapping" class="hidden-row">
+  <div class="card"><h2 id="mappingTitle">Weather mapping</h2><div class="sub" id="mappingIntro"></div>
+    <div class="toolbar"><button type="button" id="refreshMapping">Refresh</button><button type="button" class="remove" id="clearMapping">Remove all</button></div>
+    <div id="mappingStatus" class="preview-note" aria-live="polite"></div><div id="weatherMappingList"></div>
+  </div>
+</section>
 <div class="card" id="dataModeCard">
   <h2>Data source</h2>
   <div class="sub" id="dataModeIntro">Choose between the integrated configurator or lower-memory Flow card input.</div>
@@ -130,6 +144,7 @@ function onHomeyReady(Homey){
    'gridPower','homePower'
  ];
  const state={sources:[],selected:[],energyConfig:{},visualConfig:{},dataMode:'integrated',activeDataMode:'integrated',flowStatus:{}}, $=id=>document.getElementById(id), list=$('list'), selected=$('selected'), search=$('search'), status=$('status');
+ state.weatherMappings=[];
  const pickerFields=[...energyFields,'weatherSource'];
  const pickerMap={};
  const api=(method,path,body)=>new Promise((resolve,reject)=>Homey.api(method,path,body,(err,result)=>err?reject(err):resolve(result)));
@@ -196,6 +211,80 @@ function onHomeyReady(Homey){
    const extrasCard=$('extraItemsCard');if(extrasCard){const h=extrasCard.querySelector('h2');const sub=extrasCard.querySelector(':scope > .sub');const selectedTitle=extrasCard.querySelector('.selected h3');const selectedSub=extrasCard.querySelector('.selected > .sub');if(h)h.textContent=tr('settings.extras_title');if(sub)sub.textContent=tr('settings.extras_intro');if(selectedTitle)selectedTitle.textContent=tr('settings.selected_extras');if(selectedSub)selectedSub.textContent=tr('settings.selected_extras_hint');}
    $('restartNotice').textContent=tr('settings.restart_notice');
    search.placeholder=tr('settings.extras_search_placeholder'); $('save').textContent=tr('settings.save');
+ }
+
+ let activeTab='Input';
+ function initializeTabs(){
+   for(const id of ['dataModeCard','integratedAccessCard','energyCard','extraItemsCard'])$('inputPanel').appendChild($(id));
+   $('settingsPanel').appendChild($('backgroundCard'));
+   const optionCard=document.createElement('div');optionCard.className='card';
+   const title=document.createElement('h2');title.textContent=tr('settings.values_lines');optionCard.appendChild(title);
+   optionCard.appendChild($('batteryOptions'));$('settingsPanel').prepend(optionCard);
+   const capacityRows=[];
+   for(let i=1;i<=10;i++){
+     const suffix=i===1?'':String(i);
+     const capacity=$(`battery${suffix}CapacityKwh`);if(capacity)capacityRows.push(capacity.closest('.map-row'));
+   }
+   $('batteryOptions').prepend(...capacityRows);
+   const sceneCard=document.createElement('div');sceneCard.className='card';sceneCard.id='sceneInputCard';
+   const sceneTitle=document.createElement('h2');sceneTitle.textContent=tr('settings.scene_input');sceneCard.appendChild(sceneTitle);
+   for(const field of ['dayNightMode','dayStartTime','nightStartTime','backgroundMode','weatherSource','scenePeriod','sceneWeather'])sceneCard.appendChild($(field).closest('.map-row'));
+   $('settingsPanel').insertBefore(sceneCard,$('backgroundCard'));
+   // Keep save/scan feedback visible on every tab.
+   document.querySelector('.tabs').before(status);
+   for(const name of ['Input','Settings','Mapping']){
+     const tab=$('tab'+name);tab.textContent=tr('settings.tab_'+name.toLowerCase());
+     tab.onclick=()=>selectTab(name);
+     tab.onkeydown=e=>{
+       const names=['Input','Settings','Mapping'];let index=names.indexOf(name);
+       if(e.key==='ArrowRight')index=(index+1)%3;
+       else if(e.key==='ArrowLeft')index=(index+2)%3;
+       else if(e.key==='Home')index=0;else if(e.key==='End')index=2;else return;
+       e.preventDefault();selectTab(names[index]);$('tab'+names[index]).focus();
+     };
+   }
+   for(const [id,key] of [['mappingTitle','mapping_title'],['mappingIntro','mapping_intro'],['refreshMapping','mapping_refresh'],['clearMapping','mapping_clear']])$(id).textContent=tr('settings.'+key);
+ }
+ function selectTab(name){
+   activeTab=name;
+   for(const item of ['Input','Settings','Mapping']){
+     const current=item===name;
+     $(item.toLowerCase()+'Panel').classList.toggle('hidden-row',!current);
+     $('tab'+item).setAttribute('aria-selected',String(current));$('tab'+item).tabIndex=current?0:-1;
+   }
+   if(name==='Mapping')refreshWeatherMappings();
+ }
+ function renderWeatherMappings(){
+   const container=$('weatherMappingList');container.textContent='';
+   const entries=[...state.weatherMappings].sort((a,b)=>a.sourceLabel.localeCompare(b.sourceLabel)||a.title.localeCompare(b.title));
+   $('clearMapping').disabled=entries.length===0;
+   if(!entries.length){const note=document.createElement('div');note.className='inline-note';note.textContent=tr('settings.mapping_empty');container.appendChild(note);return;}
+   for(const entry of entries){
+     const row=document.createElement('div');row.className='weather-map-row';
+     const details=document.createElement('div'),title=document.createElement('div'),meta=document.createElement('div');
+     title.className='title';title.textContent=entry.title;meta.className='meta';
+     meta.textContent=entry.sourceLabel+(String(entry.raw)!==entry.title?' · '+String(entry.raw):'');details.append(title,meta);
+     const select=document.createElement('select');select.setAttribute('aria-label',tr('settings.mapping_choice',{value:entry.title}));
+     for(const value of ['auto','clear','cloudy','rain','mist','snow','thunder']){
+       const option=document.createElement('option');option.value=value;option.textContent=tr('settings.'+(value==='auto'?'mapping_auto':value==='clear'?'mapping_clear_scene':value));select.appendChild(option);
+     }
+     select.value=entry.mapping||'auto';
+     select.onchange=()=>changeWeatherMapping({id:entry.id,mapping:select.value},select);
+     const remove=document.createElement('button');remove.type='button';remove.className='remove';remove.textContent=tr('settings.remove');
+     remove.setAttribute('aria-label',tr('settings.mapping_remove_value',{value:entry.title}));
+     remove.onclick=()=>changeWeatherMapping({id:entry.id,remove:true},remove);
+     row.append(details,select,remove);container.appendChild(row);
+   }
+ }
+ async function refreshWeatherMappings(){
+   try{const result=await api('GET','/weather-mapping');state.weatherMappings=result.entries||[];renderWeatherMappings();}
+   catch(e){$('mappingStatus').textContent=tr('settings.mapping_failed',{error:msg(e)});}
+ }
+ async function changeWeatherMapping(payload,control){
+   control.disabled=true;$('mappingStatus').textContent=tr('settings.saving');
+   try{const result=await api('PUT','/weather-mapping',payload);state.weatherMappings=result.entries||[];renderWeatherMappings();$('mappingStatus').textContent=tr('settings.mapping_saved');}
+   catch(e){$('mappingStatus').textContent=tr('settings.mapping_failed',{error:msg(e)});await refreshWeatherMappings();}
+   finally{control.disabled=false;}
  }
 
  function showRow(id,visible){const el=$(id);if(!el)return;el.classList.toggle('hidden-row',!visible);}
@@ -492,7 +581,11 @@ function onHomeyReady(Homey){
 
  createAdditionalFields();
  localizeStatic();
+ initializeTabs();
  setupPickers();
+ $('refreshMapping').onclick=refreshWeatherMappings;
+ $('clearMapping').onclick=()=>Homey.confirm(tr('settings.mapping_clear_confirm'),'warning',(err,confirmed)=>{if(!err&&confirmed)changeWeatherMapping({clear:true},$('clearMapping'));});
+ Homey.on('weather-mapping.updated',result=>{state.weatherMappings=result.entries||[];if(activeTab==='Mapping')renderWeatherMappings();});
  $('testconn').onclick=testConnection;$('scan').onclick=scan;$('dataMode').onchange=updateDataModeVisibility;
  search.addEventListener('focus',async()=>{await ensureSourcesLoaded();renderSources();});
  search.addEventListener('input',async()=>{if(search.value.trim())await ensureSourcesLoaded();renderSources();});

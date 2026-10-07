@@ -8,7 +8,9 @@ HomeFlux visualizes live household energy flows on Homey.
 - Up to 10 PV sources, 10 batteries and 10 EV chargers
 - Components disappear automatically when their configured count is 0
 - Animated energy lines with configurable standby lines for PV, battery and grid
-- Day/night backgrounds controlled by user-defined local hours or total PV production
+- Day/night backgrounds controlled by local hours or total PV production, with a 10-minute delay before night
+- Custom mapping for detected weather values, with Auto fallback
+- EV flow turns green when PV exceeds home consumption
 - Manual period and weather selection for testing
 - Overlay colour: Automatic, Light or Dark
 - Optional battery value from approximately 24 hours ago
@@ -22,7 +24,7 @@ Day scenes are bright and use no house lighting. Evening scenes use an early-eve
 
 ## Configuration
 
-Open the HomeFlux app settings in Homey and map the capabilities for your installation.
+Open HomeFlux settings: use **Input** to choose Integrated configurator or Flow cards and connect your sources. Use **Settings** for colours, values, units and labels. Use **Mapping** to choose a scene for each detected weather value; **Auto** keeps automatic mapping. Mapping changes save immediately, and removed values return as Auto when received again.
 
 ## Support HomeFlux
 
@@ -33,6 +35,10 @@ If HomeFlux is useful to you and you would like to support its development, you 
 HomeFlux is an Energy app that visualizes values from energy-related devices already installed in Homey, such as solar inverters, home batteries, grid meters and EV chargers. Because these sources can come from many different Homey apps and expose different capabilities, HomeFlux cannot declare one fixed set of devices in advance.
 
 The `homey:manager:api` permission is used locally to discover available devices/capabilities and Logic variables when the user opens source selection, read the initial value of configured sources, and create realtime subscriptions for only those configured sources. During normal runtime HomeFlux keeps a compact cache updated by those realtime events. HomeFlux does not use this permission to control devices or send Homey data to an external HomeFlux service.
+
+## What's new in v0.9.1
+
+- Added Input, Settings and Mapping tabs with custom weather mapping. EV flow turns green when PV exceeds home consumption; PV-based night switching now waits 10 minutes.
 
 ## What's new in v0.8.62
 

@@ -42,6 +42,8 @@ const FLOW_TEXT_FIELDS = [
 ];
 const FLOW_ALL_FIELDS = new Set([...FLOW_NUMERIC_FIELDS, ...FLOW_TEXT_FIELDS]);
 const EMPTY_SET = new Set();
+const PV_NIGHT_DELAY_MS = 10 * 60 * 1000;
+const WEATHER_SCENES = new Set(['clear', 'cloudy', 'rain', 'mist', 'snow', 'thunder']);
 
 class DashboardBridgeApp extends Homey.App {
   async onInit() {
@@ -80,6 +82,20 @@ class DashboardBridgeApp extends Homey.App {
     this._homeyTimezone = 'UTC';
     this._timezoneRefreshTimer = null;
     this._dayNightSwitchTimer = null;
+    this._pvNightTimer = null;
+    this._pvZeroSince = null;
+    this._pvPeriod = null;
+    this._weatherSaveTimer = null;
+    const savedWeather = this.homey.settings.get('weatherMappings');
+    this._weatherMappings = new Map();
+    for (const entry of Array.isArray(savedWeather) ? savedWeather : []) {
+      if (!entry || typeof entry.sourceKey !== 'string') continue;
+      const id = this._weatherValueId(entry.sourceKey, entry.raw);
+      if (!id) continue;
+      this._weatherMappings.set(id, { id, sourceKey: entry.sourceKey, raw: entry.raw,
+        title: String(entry.title || entry.raw), sourceLabel: String(entry.sourceLabel || ''),
+        mapping: WEATHER_SCENES.has(entry.mapping) ? entry.mapping : 'auto' });
+    }
 
     this._registerFlowInputCards();
 
@@ -219,6 +235,7 @@ class DashboardBridgeApp extends Homey.App {
       receivedAt: Date.now()
     };
     this.sourceCache.set(key, source);
+    this._observeSource(key);
     if (!previous || !Object.is(previous.value, value)) this._markDashboardDirty(`flow:${field}`);
     this.homey.api.realtime('flow-input.updated', { field, ...this._flowStatusForField(field) });
     return true;
@@ -603,6 +620,11 @@ class DashboardBridgeApp extends Homey.App {
     const visualConfig = this._normalizeVisualConfig(config.visualConfig || {});
     const dataMode = this._normalizeDataMode(config.dataMode !== undefined ? config.dataMode : this.dataMode);
 
+    const previousPv = JSON.stringify([this.visualConfig.dayNightMode, this.energyConfig.solarCount,
+      ...Array.from({ length: 10 }, (_, i) => this.energyConfig[i === 0 ? 'solar' : `solar${i + 1}`])]);
+    const nextPv = JSON.stringify([visualConfig.dayNightMode, energyConfig.solarCount,
+      ...Array.from({ length: 10 }, (_, i) => energyConfig[i === 0 ? 'solar' : `solar${i + 1}`])]);
+    if (previousPv !== nextPv) this._resetPvPeriod();
     this.energyConfig = energyConfig;
     this.visualConfig = visualConfig;
     this.dataMode = dataMode;
@@ -786,10 +808,14 @@ class DashboardBridgeApp extends Homey.App {
     if (!this._configuredKeySet.has(key)) return false;
     const source = this.sourceCache.get(key);
     if (!source) return false;
-    if (Object.is(source.value, value)) return false;
+    if (Object.is(source.value, value)) {
+      this._observeSource(key);
+      return false;
+    }
     source.value = value;
     source.displayValue = source.valueTitles?.[String(value)] || '';
     this.sourceCache.set(key, source);
+    this._observeSource(key);
     this._markDashboardDirty(`${origin}:${capabilityId}`);
     return true;
   }
@@ -803,6 +829,7 @@ class DashboardBridgeApp extends Homey.App {
     const previous = this.sourceCache.get(key);
     const next = this._variableSource(candidate);
     this.sourceCache.set(key, next);
+    this._observeSource(key);
     if (previous && Object.is(previous.value, next.value)) return false;
     this._markDashboardDirty(`${origin}:logic`);
     return true;
@@ -858,6 +885,7 @@ class DashboardBridgeApp extends Homey.App {
         // cache is updated by makeCapabilityInstance() events only.
         for (const capabilityId of wantedCapabilities) {
           this.sourceCache.set(`device:${deviceId}:${capabilityId}`, this._deviceSource(device, capabilityId));
+          this._observeSource(`device:${deviceId}:${capabilityId}`);
         }
 
         await device.connect();
@@ -876,6 +904,7 @@ class DashboardBridgeApp extends Homey.App {
               source.value = instance.value;
               source.displayValue = source.valueTitles?.[String(instance.value)] || '';
               this.sourceCache.set(key, source);
+              this._observeSource(key);
             }
           }
         }
@@ -889,6 +918,7 @@ class DashboardBridgeApp extends Homey.App {
         for (const variableId of this._configuredVariableIds) {
           const variable = await api.logic.getVariable({ id: variableId });
           this.sourceCache.set(`variable:${variableId}`, this._variableSource(variable));
+          this._observeSource(`variable:${variableId}`);
         }
         await api.logic.connect();
 
@@ -1381,14 +1411,49 @@ class DashboardBridgeApp extends Homey.App {
     return 'day';
   }
 
+  _clearPvNightTimer() {
+    if (this._pvNightTimer !== null) this.homey.clearTimeout(this._pvNightTimer);
+    this._pvNightTimer = null;
+  }
+
+  _resetPvPeriod() {
+    this._clearPvNightTimer();
+    this._pvZeroSince = null;
+    this._pvPeriod = null;
+  }
+
   _periodFromPv(now = new Date()) {
-    if (Number(this.energyConfig.solarCount) > 0) {
-      const solarW = this._powerToWatts(this._combinedSolarData());
-      if (Number.isFinite(solarW)) return solarW > 0 ? 'day' : 'night';
+    const solarW = Number(this.energyConfig.solarCount) > 0
+      ? this._powerToWatts(this._combinedSolarData()) : null;
+    if (solarW === null || !Number.isFinite(solarW)) {
+      this._resetPvPeriod();
+      return this._periodFromHours(now);
     }
-    // When no usable PV value is available, keep the dashboard predictable by
-    // falling back to the user's configured hours.
-    return this._periodFromHours(now);
+    if (solarW > 0) {
+      this._clearPvNightTimer();
+      this._pvZeroSince = null;
+      this._pvPeriod = 'day';
+      return 'day';
+    }
+    // At startup, use configured hours until the first positive PV value or
+    // a complete ten-minute zero-production window has been observed.
+    if (this._pvPeriod === null) this._pvPeriod = this._periodFromHours(now);
+    if (this._pvPeriod === 'night') return 'night';
+    if (this._pvZeroSince === null) this._pvZeroSince = now.getTime();
+    const remaining = PV_NIGHT_DELAY_MS - (now.getTime() - this._pvZeroSince);
+    if (remaining <= 0) {
+      this._clearPvNightTimer();
+      this._pvPeriod = 'night';
+      return 'night';
+    }
+    if (this._pvNightTimer === null) {
+      this._pvNightTimer = this.homey.setTimeout(() => {
+        this._pvNightTimer = null;
+        this._periodFromPv();
+        this._markDashboardDirty('pv-night-delay', true);
+      }, remaining);
+    }
+    return 'day';
   }
 
   _automaticPeriod(now = new Date()) {
@@ -1465,6 +1530,73 @@ class DashboardBridgeApp extends Homey.App {
     }, delayMs);
   }
 
+  _weatherValueId(key, raw) {
+    if (!['string', 'number', 'boolean'].includes(typeof raw)) return null;
+    if (typeof raw === 'number' && !Number.isFinite(raw)) return null;
+    if (typeof raw === 'string' && !raw.trim()) return null;
+    return JSON.stringify([key, typeof raw, raw]);
+  }
+
+  _observeSource(key) {
+    if (key === this._weatherSourceKey()) this._recordWeatherSource(key);
+    if (this.visualConfig.dayNightMode === 'pv') {
+      for (let i = 0; i < this.energyConfig.solarCount; i += 1) {
+        if (key === this._fieldSourceKey(i === 0 ? 'solar' : `solar${i + 1}`)) {
+          this._periodFromPv();
+          break;
+        }
+      }
+    }
+  }
+
+  _recordWeatherSource(key) {
+    const source = this.sourceCache.get(key);
+    if (!source) return;
+    const id = this._weatherValueId(key, source.value);
+    if (!id) return;
+    const title = String(source.displayValue || source.value);
+    const existing = this._weatherMappings.get(id);
+    if (existing && existing.title === title && existing.sourceLabel === (source.label || '')) return;
+    this._weatherMappings.set(id, { id, sourceKey: key, raw: source.value, title,
+      sourceLabel: source.label || '', mapping: existing?.mapping || 'auto' });
+    this.homey.api.realtime('weather-mapping.updated', this.getWeatherMappings());
+    // Batch new detections; no polling or writes for unchanged values.
+    if (this._weatherSaveTimer === null) {
+      this._weatherSaveTimer = this.homey.setTimeout(() => {
+        this._weatherSaveTimer = null;
+        this._persistWeatherMappings().catch(err => this.error('Weather mapping save failed:', err));
+      }, 500);
+    }
+  }
+
+  getWeatherMappings() {
+    return { entries: [...this._weatherMappings.values()].map(entry => ({ ...entry })) };
+  }
+
+  async _persistWeatherMappings() {
+    await this.homey.settings.set('weatherMappings', this.getWeatherMappings().entries);
+  }
+
+  async saveWeatherMapping(body = {}) {
+    if (body.clear === true) {
+      this._weatherMappings.clear();
+    } else {
+      const entry = this._weatherMappings.get(body.id);
+      if (!entry) throw new Error('This weather value is no longer in the detected list.');
+      if (body.remove === true) this._weatherMappings.delete(body.id);
+      else {
+        if (body.mapping !== 'auto' && !WEATHER_SCENES.has(body.mapping)) throw new Error('Unsupported weather mapping.');
+        entry.mapping = body.mapping;
+      }
+    }
+    if (this._weatherSaveTimer !== null) this.homey.clearTimeout(this._weatherSaveTimer);
+    this._weatherSaveTimer = null;
+    await this._persistWeatherMappings();
+    this.homey.api.realtime('weather-mapping.updated', this.getWeatherMappings());
+    this._markDashboardDirty('weather-mapping', true);
+    return this.getWeatherMappings();
+  }
+
   _weatherFromText(value) {
     const text = String(value ?? '').trim().toLowerCase();
     if (!text) return null;
@@ -1485,6 +1617,10 @@ class DashboardBridgeApp extends Homey.App {
     const source = this.sourceCache.get(key);
     if (!source) return { weather: this.visualConfig.weather || 'clear', raw: null, label: '', mapped: false };
     const raw = source.value;
+    const custom = this._weatherMappings.get(this._weatherValueId(key, raw));
+    if (custom && WEATHER_SCENES.has(custom.mapping)) {
+      return { weather: custom.mapping, raw, label: source.label, mapped: true };
+    }
     const context = `${source.name || ''} ${source.label || ''} ${source.capabilityId || ''}`.toLowerCase();
 
     // Homey's UI can show a translated enum title while the capability value
@@ -1627,6 +1763,12 @@ class DashboardBridgeApp extends Homey.App {
       this._timezoneRefreshTimer = null;
     }
     this._clearDayNightSwitchTimer();
+    this._clearPvNightTimer();
+    if (this._weatherSaveTimer !== null) {
+      this.homey.clearTimeout(this._weatherSaveTimer);
+      this._weatherSaveTimer = null;
+      await this._persistWeatherMappings();
+    }
     if (this._insightsRefreshTimer) {
       this.homey.clearInterval(this._insightsRefreshTimer);
       this._insightsRefreshTimer = null;
