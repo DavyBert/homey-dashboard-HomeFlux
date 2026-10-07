@@ -1,3 +1,6 @@
+## v0.9.2
+- Added widget and widgets search tags.
+
 ## v0.9.1
 - Added Input, Settings and Mapping tabs with custom weather mapping. EV flow turns green when PV exceeds home consumption; PV-based night switching now waits 10 minutes.
 
