@@ -1,3 +1,6 @@
+## v0.9.3
+- Added partly cloudy backgrounds for house and garden, day and night, with Dutch and English weather mapping.
+
 ## v0.9.2
 - Added widget and widgets search tags.
 

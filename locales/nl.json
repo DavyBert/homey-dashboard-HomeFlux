@@ -82,7 +82,7 @@
     "seconds": "__count__ seconden",
     "minute": "1 minuut",
     "minutes": "__count__ minuten",
-    "weather_mapping": "Ondersteunde mapping voor gekozen weerdevices: helder/zonnig/onbewolkt → helder, bewolkt/overcast → bewolkt, regen/buien → regen, mist/fog/nevel → mist, sneeuw/snow → sneeuw, onweer/thunder/storm → onweer.",
+    "weather_mapping": "Ondersteunde weermapping: helder/zonnig/onbewolkt → helder; licht/half bewolkt en partly cloudy/mostly sunny/few clouds/scattered clouds → licht bewolkt; bewolkt/overcast → bewolkt; regen/buien → regen; mist/nevel → mist; sneeuw → sneeuw; onweer/storm → onweer.",
     "extras_title": "Extra items",
     "extras_intro": "Deze verschijnen als losse kaarten onder het energie-overzicht. Als je niets selecteert, blijft dit deel in de widget automatisch verborgen.",
     "extras_search_placeholder": "Zoek device, capability of variabele…",
@@ -233,7 +233,8 @@
     "mapping_saved": "Weermapping opgeslagen.",
     "mapping_failed": "Weermapping bijwerken mislukt: __error__",
     "mapping_clear_confirm": "Alle gedetecteerde weerwaardes en hun eigen mappings verwijderen? Ze verschijnen opnieuw met Auto zodra ze weer binnenkomen.",
-    "mapping_clear_scene": "Zonnig / helder"
+    "mapping_clear_scene": "Zonnig / helder",
+    "partly-cloudy": "Licht bewolkt"
   },
   "widget": {
     "aria_energy": "Live energie-overzicht",

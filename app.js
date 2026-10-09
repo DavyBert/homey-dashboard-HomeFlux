@@ -43,7 +43,7 @@ const FLOW_TEXT_FIELDS = [
 const FLOW_ALL_FIELDS = new Set([...FLOW_NUMERIC_FIELDS, ...FLOW_TEXT_FIELDS]);
 const EMPTY_SET = new Set();
 const PV_NIGHT_DELAY_MS = 10 * 60 * 1000;
-const WEATHER_SCENES = new Set(['clear', 'cloudy', 'rain', 'mist', 'snow', 'thunder']);
+const WEATHER_SCENES = new Set(['clear', 'partly-cloudy', 'cloudy', 'rain', 'mist', 'snow', 'thunder']);
 
 class DashboardBridgeApp extends Homey.App {
   async onInit() {
@@ -325,7 +325,7 @@ class DashboardBridgeApp extends Homey.App {
       dayStartTime = '07:00';
       nightStartTime = '20:00';
     }
-    const weather = ['clear', 'cloudy', 'rain', 'mist', 'snow', 'thunder'].includes(c.weather) ? c.weather : 'clear';
+    const weather = WEATHER_SCENES.has(c.weather) ? c.weather : 'clear';
     const weatherSource = typeof c.weatherSource === 'string' ? c.weatherSource : '';
     const panelTransparency = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100].includes(Number(c.panelTransparency)) ? Number(c.panelTransparency) : 30;
     const overlayTheme = ['auto', 'light', 'dark'].includes(c.overlayTheme) ? c.overlayTheme : 'auto';
@@ -1598,12 +1598,15 @@ class DashboardBridgeApp extends Homey.App {
   }
 
   _weatherFromText(value) {
-    const text = String(value ?? '').trim().toLowerCase();
+    const text = String(value ?? '').trim().toLowerCase().replace(/[_-]+/g, ' ');
     if (!text) return null;
     if (/(thunder|thunderstorm|storm|onweer|lightning|bliksem)/.test(text)) return 'thunder';
     if (/(snow|sneeuw|blizzard|winter|ice pellets|ijzel)/.test(text)) return 'snow';
     if (/(mist|fog|mistig|nevel|haze)/.test(text)) return 'mist';
     if (/(rain|regen|drizzle|motregen|shower|bui|hail|hagel|sleet)/.test(text)) return 'rain';
+    // Match light/partial cloud cover before generic "sunny", "clear" and
+    // "cloudy" descriptions, including common English enum spellings.
+    if (/(licht\s*bewolk|half\s*bewolk|gedeeltelijk\s*bewolk|deels\s*bewolk|weinig\s*wolken|enkele\s*wolken|part(?:ly|ial(?:ly)?)\s*cloud|(?:light(?:ly)?|slight(?:ly)?)\s*cloud|(?:few|scattered|intermittent)\s*cloud|(?:mostly|mainly)\s*(?:sunny|clear)|partly\s*(?:sunny|clear)|sunny\s*(?:intervals|spells))/.test(text)) return 'partly-cloudy';
     // Specific clear descriptions must precede generic cloud matching because
     // words such as "onbewolkt" contain the substring "bewolk".
     if (/(onbewolkt|onbewolkte|wolkenloos|heldere lucht|heldere hemel|helder|zonnig|clear sky|clear|sunny|sun|fair)/.test(text)) return 'clear';
@@ -1644,7 +1647,7 @@ class DashboardBridgeApp extends Homey.App {
         return { weather: raw > 0.01 ? 'snow' : 'clear', raw, label: source.label, mapped: true };
       }
       if (/(cloud|bewolk|overcast)/.test(context)) {
-        return { weather: raw >= 25 ? 'cloudy' : 'clear', raw, label: source.label, mapped: true };
+        return { weather: raw > 50 ? 'cloudy' : raw > 10 ? 'partly-cloudy' : 'clear', raw, label: source.label, mapped: true };
       }
       if (/(weather|weer|condition|code)/.test(context)) {
         // Only interpret 0-99 as WMO when the source explicitly identifies
@@ -1654,7 +1657,8 @@ class DashboardBridgeApp extends Homey.App {
         const explicitWmo = /(wmo|weather[_ .-]?code|weercode)/.test(context);
         if (explicitWmo && raw >= 0 && raw <= 99) {
           if (raw === 0) return { weather: 'clear', raw, label: source.label, mapped: true };
-          if (raw >= 1 && raw <= 3) return { weather: 'cloudy', raw, label: source.label, mapped: true };
+          if (raw === 1 || raw === 2) return { weather: 'partly-cloudy', raw, label: source.label, mapped: true };
+          if (raw === 3) return { weather: 'cloudy', raw, label: source.label, mapped: true };
           if (raw === 45 || raw === 48) return { weather: 'mist', raw, label: source.label, mapped: true };
           if ((raw >= 51 && raw <= 67) || (raw >= 80 && raw <= 82)) return { weather: 'rain', raw, label: source.label, mapped: true };
           if ((raw >= 71 && raw <= 77) || (raw >= 85 && raw <= 86)) return { weather: 'snow', raw, label: source.label, mapped: true };
@@ -1668,7 +1672,8 @@ class DashboardBridgeApp extends Homey.App {
         if (raw >= 600 && raw <= 622) return { weather: 'snow', raw, label: source.label, mapped: true };
         if (raw >= 701 && raw <= 781) return { weather: 'mist', raw, label: source.label, mapped: true };
         if (raw === 800) return { weather: 'clear', raw, label: source.label, mapped: true };
-        if (raw >= 801 && raw <= 804) return { weather: 'cloudy', raw, label: source.label, mapped: true };
+        if (raw === 801 || raw === 802) return { weather: 'partly-cloudy', raw, label: source.label, mapped: true };
+        if (raw === 803 || raw === 804) return { weather: 'cloudy', raw, label: source.label, mapped: true };
       }
     }
 

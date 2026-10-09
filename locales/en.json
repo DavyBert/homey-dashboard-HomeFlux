@@ -82,7 +82,7 @@
     "seconds": "__count__ seconds",
     "minute": "1 minute",
     "minutes": "__count__ minutes",
-    "weather_mapping": "Supported mapping for selected weather devices: clear/sunny → clear, cloudy/overcast → cloudy, rain/showers → rain, mist/fog → mist, snow → snow, thunder/storm → thunderstorm.",
+    "weather_mapping": "Supported weather mapping: clear/sunny → clear; partly cloudy/mostly sunny/few clouds/scattered clouds → partly cloudy; cloudy/overcast → cloudy; rain/showers → rain; mist/fog → mist; snow → snow; thunder/storm → thunderstorm.",
     "extras_title": "Extra items",
     "extras_intro": "These appear as separate cards below the energy overview. If nothing is selected, this section stays hidden in the widget.",
     "extras_search_placeholder": "Search device, capability or variable…",
@@ -233,7 +233,8 @@
     "mapping_saved": "Weather mapping saved.",
     "mapping_failed": "Could not update weather mapping: __error__",
     "mapping_clear_confirm": "Remove all detected weather values and their custom mappings? They return as Auto when received again.",
-    "mapping_clear_scene": "Sunny / clear"
+    "mapping_clear_scene": "Sunny / clear",
+    "partly-cloudy": "Partly cloudy"
   },
   "widget": {
     "aria_energy": "Live energy overview",
