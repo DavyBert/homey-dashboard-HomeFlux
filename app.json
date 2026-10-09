@@ -89,9 +89,26 @@
   },
   "source": "https://github.com/DavyBert/homey-dashboard-HomeFlux",
   "homepage": "https://github.com/DavyBert/homey-dashboard-HomeFlux",
+  "widgets": {
+    "dashboard": {
+      "name": {
+        "en": "HomeFlux",
+        "nl": "HomeFlux"
+      },
+      "settings": [],
+      "api": {
+        "getDashboard": {
+          "method": "GET",
+          "path": "/dashboard"
+        }
+      },
+      "id": "dashboard"
+    }
+  },
   "flow": {
     "actions": [
       {
+        "id": "set_flow_input",
         "title": {
           "en": "Set HomeFlux input",
           "nl": "Stel HomeFlux-invoer in"
@@ -564,25 +581,8 @@
               "nl": "Waarde"
             }
           }
-        ],
-        "id": "set_flow_input"
+        ]
       }
     ]
-  },
-  "widgets": {
-    "dashboard": {
-      "name": {
-        "en": "HomeFlux",
-        "nl": "HomeFlux"
-      },
-      "settings": [],
-      "api": {
-        "getDashboard": {
-          "method": "GET",
-          "path": "/dashboard"
-        }
-      },
-      "id": "dashboard"
-    }
   }
 }
