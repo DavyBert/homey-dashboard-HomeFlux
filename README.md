@@ -4,6 +4,11 @@ HomeFlux visualizes live household energy flows on Homey.
 
 ## Key features
 
+- Swap Solar, Grid, Battery and Charger information panels between four corners, with matching flow lines
+- Choose whether the house-to-battery line ends at the illustrated battery or at the battery information panel
+
+- Optional Homey Gallery photos per weather scene, with automatic fallback to built-in images
+
 - Live PV, battery, grid, home-consumption and EV charging flows
 - Up to 10 PV sources, 10 batteries and 10 EV chargers
 - Components disappear automatically when their configured count is 0
@@ -35,6 +40,10 @@ If HomeFlux is useful to you and you would like to support its development, you 
 HomeFlux is an Energy app that visualizes values from energy-related devices already installed in Homey, such as solar inverters, home batteries, grid meters and EV chargers. Because these sources can come from many different Homey apps and expose different capabilities, HomeFlux cannot declare one fixed set of devices in advance.
 
 The `homey:manager:api` permission is used locally to discover available devices/capabilities and Logic variables when the user opens source selection, read the initial value of configured sources, and create realtime subscriptions for only those configured sources. During normal runtime HomeFlux keeps a compact cache updated by those realtime events. HomeFlux does not use this permission to control devices or send Homey data to an external HomeFlux service.
+
+## What's new in v0.9.4
+
+- Added optional Gallery photos, swappable information panels with matching flow lines, and a selectable battery line endpoint.
 
 ## What's new in v0.9.3
 

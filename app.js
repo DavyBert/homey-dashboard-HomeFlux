@@ -1,6 +1,7 @@
 'use strict';
 
 const Homey = require('homey');
+const { normalize: normalizePositions } = require('./widgets/dashboard/public/layout');
 
 const ENERGY_FIELDS = [
   ...Array.from({ length: 10 }, (_, index) => index === 0 ? 'solar' : `solar${index + 1}`),
@@ -44,12 +45,16 @@ const FLOW_ALL_FIELDS = new Set([...FLOW_NUMERIC_FIELDS, ...FLOW_TEXT_FIELDS]);
 const EMPTY_SET = new Set();
 const PV_NIGHT_DELAY_MS = 10 * 60 * 1000;
 const WEATHER_SCENES = new Set(['clear', 'partly-cloudy', 'cloudy', 'rain', 'mist', 'snow', 'thunder']);
+const PHOTO_SCENES = ['day', 'night'].flatMap(period => [...WEATHER_SCENES].map(weather => `${period}-${weather}`));
 
 class DashboardBridgeApp extends Homey.App {
   async onInit() {
     this.selection = this.homey.settings.get('selection') || [];
     this.energyConfig = this._normalizeEnergyConfig(this.homey.settings.get('energyConfig') || {});
     this.visualConfig = this._normalizeVisualConfig(this.homey.settings.get('visualConfig') || {});
+    this._photoMappings = this._normalizePhotoMappings(this.homey.settings.get('photoMappings'));
+    this._galleryService = null;
+    this._galleryTimer = null;
     this.dataMode = this._normalizeDataMode(this.homey.settings.get('dataMode'));
     // The active mode is fixed for the lifetime of this process. A mode switch
     // is saved immediately, but becomes active only after an app restart.
@@ -125,6 +130,7 @@ class DashboardBridgeApp extends Homey.App {
       this._lastPublishedDashboardSignature = this._dashboardSignature(this._dashboardSnapshot);
       this._lastDashboardPushAt = Date.now();
     }
+    this._syncGalleryRuntime();
     this.log(`HomeFlux v${this.homey.manifest.version} initialized (${this._activeDataMode})`);
   }
 
@@ -315,7 +321,7 @@ class DashboardBridgeApp extends Homey.App {
   _normalizeVisualConfig(config) {
     const c = config || {};
     const backgroundMode = ['auto', 'manual'].includes(c.backgroundMode) ? c.backgroundMode : 'auto';
-    const backgroundSet = ['house', 'garden'].includes(c.backgroundSet) ? c.backgroundSet : 'house';
+    const backgroundSet = ['house', 'garden', 'custom'].includes(c.backgroundSet) ? c.backgroundSet : 'house';
     const periodMode = ['auto', 'day', 'night'].includes(c.periodMode) ? c.periodMode : 'auto';
     const dayNightMode = ['hours', 'pv'].includes(c.dayNightMode) ? c.dayNightMode : 'hours';
     const validTime = value => /^([01]\d|2[0-3]):[0-5]\d$/.test(String(value || '')) ? String(value) : null;
@@ -360,7 +366,9 @@ class DashboardBridgeApp extends Homey.App {
       grid: unitChoice(c.powerUnits && c.powerUnits.grid) || 'w',
       ev: unitChoice(c.powerUnits && c.powerUnits.ev) || 'kw'
     };
-    return { backgroundMode, backgroundSet, periodMode, dayNightMode, dayStartTime, nightStartTime, weather, weatherSource, panelTransparency, overlayTheme, lineBlinkTempo, solarStandbyLineEnabled, solarStandbyLineBlink, solarStandbyLineStyle, batteryStandbyLineEnabled, batteryStandbyLineBlink, batteryStandbyLineStyle, gridStandbyLineEnabled, gridStandbyLineBlink, gridStandbyLineStyle, showBattery24h, refreshSeconds, widgetTextScale, widgetTitleScale, labels, powerUnits };
+    const componentPositions = normalizePositions(c.componentPositions);
+    const batteryLineEnd = c.batteryLineEnd === 'card' ? 'card' : 'device';
+    return { backgroundMode, backgroundSet, periodMode, dayNightMode, dayStartTime, nightStartTime, weather, weatherSource, panelTransparency, overlayTheme, lineBlinkTempo, solarStandbyLineEnabled, solarStandbyLineBlink, solarStandbyLineStyle, batteryStandbyLineEnabled, batteryStandbyLineBlink, batteryStandbyLineStyle, gridStandbyLineEnabled, gridStandbyLineBlink, gridStandbyLineStyle, showBattery24h, refreshSeconds, widgetTextScale, widgetTitleScale, labels, powerUnits, componentPositions, batteryLineEnd };
   }
 
 
@@ -651,12 +659,84 @@ class DashboardBridgeApp extends Homey.App {
     this._clearDashboardPushTimer();
     if (this._isIntegratedMode()) await this._setupTruePushSources();
     this._scheduleDayNightSwitch();
+    this._syncGalleryRuntime();
     this._markDashboardDirty('config-save', true);
     return this.getConfig();
   }
 
   getSelection() { return this.selection; }
   async saveSelection(selection) { return this.saveConfig({ energyConfig: this.energyConfig, selection, visualConfig: this.visualConfig }); }
+
+  _normalizePhotoMappings(input) {
+    const result = {};
+    for (const key of PHOTO_SCENES) {
+      const entry = input && input[key];
+      if (entry && typeof entry.id === 'string' && /^[a-zA-Z0-9-]{1,128}$/.test(entry.id)) {
+        result[key] = { id: entry.id, name: String(entry.name || entry.id).slice(0, 256) };
+      }
+    }
+    return result;
+  }
+
+  _gallery() {
+    if (!this._galleryService) {
+      const { Gallery } = require('./lib/gallery');
+      this._galleryService = new Gallery(this.homey, () => {
+        this.homey.api.realtime('photos.updated', {});
+        if (this.visualConfig.backgroundSet === 'custom') this._markDashboardDirty('gallery', true);
+      }, () => {
+        if (this.visualConfig.backgroundSet === 'custom') void this._galleryService.list(true);
+        else this.homey.api.realtime('photos.updated', {});
+      });
+    }
+    return this._galleryService;
+  }
+
+  _syncGalleryRuntime() {
+    if (this._galleryTimer) this.homey.clearInterval(this._galleryTimer);
+    this._galleryTimer = null;
+    if (this.visualConfig.backgroundSet !== 'custom' || !Object.keys(this._photoMappings || {}).length) return;
+    void this._gallery().list();
+    // Reconcile after a Gallery restart/missed event, only while custom photos
+    // are selected. Energy updates never request Gallery metadata or bytes.
+    this._galleryTimer = this.homey.setInterval(() => { void this._gallery().list(true); }, 5 * 60 * 1000);
+  }
+
+  _activeGalleryPhoto(sceneKey) {
+    const selected = this._photoMappings?.[sceneKey];
+    if (!selected || this._galleryService?.state.status !== 'ready') return null;
+    const image = this._galleryService.byId.get(selected.id);
+    return image ? { id: image.id, url: image.url } : null;
+  }
+
+  async getOwnPhotos(force = false) {
+    const gallery = await this._gallery().list(force);
+    return { scenes: PHOTO_SCENES, mappings: this._photoMappings, gallery };
+  }
+
+  saveOwnPhoto(payload) {
+    const pending = (this._photoSaveQueue || Promise.resolve()).then(() => this._saveOwnPhoto(payload));
+    this._photoSaveQueue = pending.catch(() => {});
+    return pending;
+  }
+
+  async _saveOwnPhoto({ scene, id } = {}) {
+    if (!PHOTO_SCENES.includes(scene)) throw new Error('Unknown weather scene');
+    const next = { ...this._photoMappings };
+    if (id === '' || id === null) delete next[scene];
+    else {
+      const gallery = await this._gallery().list();
+      const image = gallery.images.find(item => item.id === id);
+      if (!image || gallery.status !== 'ready') throw new Error('Selected Gallery photo is unavailable');
+      next[scene] = { id: image.id, name: image.name };
+    }
+    await this.homey.settings.set('photoMappings', next);
+    this._photoMappings = next;
+    this._syncGalleryRuntime();
+    this.homey.api.realtime('photos.updated', {});
+    this._markDashboardDirty('photo-mapping', true);
+    return { scenes: PHOTO_SCENES, mappings: this._photoMappings, gallery: this._gallery().state };
+  }
 
   _parseKey(key) {
     if (!key || typeof key !== 'string') return { type: 'unknown' };
@@ -763,7 +843,8 @@ class DashboardBridgeApp extends Homey.App {
       energy: dashboard.energy,
       tiles: dashboard.tiles,
       scene: dashboard.scene,
-      visualConfig: dashboard.visualConfig
+      visualConfig: dashboard.visualConfig,
+      galleryPhoto: dashboard.galleryPhoto
     });
   }
 
@@ -1719,6 +1800,7 @@ class DashboardBridgeApp extends Homey.App {
   }
 
   getDashboard() {
+    const scene = this._sceneState();
     const batteryStatus = this._batteryStatus();
     const energy = {
       solar: this._combinedSolarData(),
@@ -1750,8 +1832,9 @@ class DashboardBridgeApp extends Homey.App {
       configured,
       energy,
       tiles,
-      scene: this._sceneState(),
-      visualConfig: this.visualConfig
+      scene,
+      visualConfig: this.visualConfig,
+      ...(this.visualConfig.backgroundSet === 'custom' ? { galleryPhoto: this._activeGalleryPhoto(scene.key) } : {})
     };
   }
 
@@ -1763,6 +1846,9 @@ class DashboardBridgeApp extends Homey.App {
   }
 
   async onUninit() {
+    if (this._galleryTimer) this.homey.clearInterval(this._galleryTimer);
+    this._galleryTimer = null;
+    if (this._galleryService) this._galleryService.close();
     if (this._timezoneRefreshTimer) {
       this.homey.clearInterval(this._timezoneRefreshTimer);
       this._timezoneRefreshTimer = null;

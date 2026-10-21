@@ -98,5 +98,9 @@
   "0.9.3": {
     "en": "Added partly cloudy backgrounds for house and garden, day and night, with Dutch and English weather mapping.",
     "nl": "Licht bewolkte achtergronden toegevoegd voor huis en tuin, dag en nacht, met Nederlandse en Engelse weermapping."
+  },
+  "0.9.4": {
+    "en": "Added optional Gallery photos, swappable information panels with matching flow lines, and a selectable battery line endpoint.",
+    "nl": "Optionele Gallery-foto's, verwisselbare infovensters met meebewegende lijnen en een instelbaar eindpunt voor de batterijlijn toegevoegd."
   }
 }

@@ -1,6 +1,6 @@
 {
   "id": "com.dashboard.homeflux",
-  "version": "0.9.3",
+  "version": "0.9.4",
   "compatibility": ">=12.3.0",
   "sdk": 3,
   "name": {
@@ -12,7 +12,8 @@
     "nl": "Zie waar je energie naartoe gaat."
   },
   "permissions": [
-    "homey:manager:api"
+    "homey:manager:api",
+    "homey:app:com.athom.gallery"
   ],
   "api": {
     "listSources": {
@@ -50,6 +51,14 @@
     "saveWeatherMapping": {
       "method": "PUT",
       "path": "/weather-mapping"
+    },
+    "getOwnPhotos": {
+      "method": "GET",
+      "path": "/photos"
+    },
+    "saveOwnPhoto": {
+      "method": "PUT",
+      "path": "/photo-mapping"
     }
   },
   "author": {
