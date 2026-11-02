@@ -1,0 +1,3 @@
+HomeFlux bietet dir in Homey einen klaren Live-Überblick über die Energieflüsse in und um dein Zuhause. Solarmodule, Heimbatterien, Stromnetz, Ladestationen und Hausverbrauch kommen in einem visuellen Dashboard-Widget zusammen – mit dynamischen Energieflusslinien und automatischer Tag-/Nachtanzeige.
+
+Du wählst selbst, welche Homey-Geräte, Gerätefunktionen und Logic-Variablen HomeFlux verwendet. Die App läuft lokal auf Homey, kann den Hausverbrauch automatisch berechnen, wenn kein separater Verbrauchszähler vorhanden ist, und bietet Einstellungen für Beschriftungen, Einheiten, Aktualisierungsintervall und zusätzliche Dashboard-Elemente.

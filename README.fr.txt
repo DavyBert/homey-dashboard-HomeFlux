@@ -1,0 +1,3 @@
+HomeFlux vous offre dans Homey une vue claire et en direct des flux d’énergie dans et autour de votre logement. Panneaux solaires, batteries domestiques, réseau électrique, bornes de recharge et consommation du logement sont réunis dans un seul widget visuel, avec des lignes de flux d’énergie dynamiques et un affichage jour/nuit automatique.
+
+Vous choisissez les appareils Homey, les capacités et les variables Logic utilisés par HomeFlux. L’application fonctionne localement sur Homey, peut calculer automatiquement la consommation du logement en l’absence de compteur dédié et propose des réglages pour les libellés, les unités, l’intervalle d’actualisation et les éléments supplémentaires du tableau de bord.
