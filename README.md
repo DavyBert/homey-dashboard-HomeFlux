@@ -117,3 +117,7 @@ The `homey:manager:api` permission is used locally to discover available devices
 
 The HomeFlux app version follows the version that is actually published to Athom/Homey. During normal development the version in `.homeycompose/app.json` stays unchanged. Only bump the version when a new build is intentionally prepared for `homey app publish`; after publishing, commit/tag that exact version. GitHub release notes can be maintained here in `README.md` (and/or `CHANGELOG.md`), while `README.txt` remains a short App Store description without version history.
 
+
+## What’s new in v0.9.6
+
+- Added German, French and Spanish translations for settings, Flow cards, widgets and messages, plus App Store descriptions in these three languages.

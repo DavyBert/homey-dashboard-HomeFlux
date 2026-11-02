@@ -75,3 +75,7 @@
 - Refined the solar and grid energy-flow line geometry and aligned their connection height at the home card.
 - Added App Store source, issue-tracker and homepage metadata.
 - Shortened the Homey App Store README.
+
+## What’s new in v0.9.6
+
+- Added German, French and Spanish translations for settings, Flow cards, widgets and messages, plus App Store descriptions in these three languages.
