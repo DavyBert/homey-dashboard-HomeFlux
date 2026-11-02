@@ -264,7 +264,8 @@
     "battery_line_end": "Eindpunt huis–batterijlijn",
     "battery_line_end_hint": "Kies of de lijn bij de batterij op de foto stopt of doorloopt tot aan het batterijvenster. De huidige weergave blijft standaard.",
     "battery_line_device": "Batterij op de foto (huidige weergave)",
-    "battery_line_card": "Doorlopen tot batterijvenster"
+    "battery_line_card": "Doorlopen tot batterijvenster",
+    "support_coffee": "Trakteer me op een koffie"
   },
   "widget": {
     "aria_energy": "Live energie-overzicht",
@@ -288,5 +289,17 @@
     "value": "Waarde",
     "item": "Item",
     "chargers": "__count__ laders"
+  },
+  "errors": {
+    "flow_inactive": "De Flow-kaartinvoermodus is niet actief. Wijzig de gegevensbronmodus, sla op en herstart HomeFlux.",
+    "number_required": "De HomeFlux-invoerwaarde moet een getal zijn.",
+    "unsupported_input": "Niet-ondersteunde HomeFlux-invoer.",
+    "integrated_inactive": "De geïntegreerde configurator is niet actief. Sla die modus op en herstart eerst HomeFlux.",
+    "unknown_scene": "Onbekende weerscène",
+    "photo_unavailable": "De gekozen Gallery-foto is niet beschikbaar",
+    "api_disabled": "homey-api is uitgeschakeld in Flow-kaartmodus.",
+    "invalid_timezone": "Geen geldige Homey tijdzone",
+    "weather_value_missing": "Deze weerwaarde staat niet meer in de gedetecteerde lijst.",
+    "unsupported_mapping": "Niet-ondersteunde weermapping."
   }
 }

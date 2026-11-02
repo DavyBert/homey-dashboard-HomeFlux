@@ -1,16 +1,22 @@
 {
   "_comment": "This file is generated. Please edit .homeycompose/app.json instead.",
   "id": "com.dashboard.homeflux",
-  "version": "0.9.4",
+  "version": "0.9.5",
   "compatibility": ">=12.3.0",
   "sdk": 3,
   "name": {
     "en": "HomeFlux",
-    "nl": "HomeFlux"
+    "nl": "HomeFlux",
+    "de": "HomeFlux",
+    "fr": "HomeFlux",
+    "es": "HomeFlux"
   },
   "description": {
     "en": "See where your energy goes.",
-    "nl": "Zie waar je energie naartoe gaat."
+    "nl": "Zie waar je energie naartoe gaat.",
+    "de": "Sieh, wohin deine Energie fließt.",
+    "fr": "Voyez où va votre énergie.",
+    "es": "Descubre adónde va tu energía."
   },
   "permissions": [
     "homey:manager:api",
@@ -85,6 +91,33 @@
       "autolader",
       "widget",
       "widgets"
+    ],
+    "de": [
+      "Energie",
+      "Dashboard",
+      "Solar",
+      "Batterie",
+      "Elektroauto",
+      "Widget",
+      "Widgets"
+    ],
+    "fr": [
+      "énergie",
+      "tableau de bord",
+      "solaire",
+      "batterie",
+      "véhicule électrique",
+      "widget",
+      "widgets"
+    ],
+    "es": [
+      "energía",
+      "panel",
+      "solar",
+      "batería",
+      "vehículo eléctrico",
+      "widget",
+      "widgets"
     ]
   },
   "images": {
@@ -103,15 +136,24 @@
       {
         "title": {
           "en": "Set HomeFlux input",
-          "nl": "Stel HomeFlux-invoer in"
+          "nl": "Stel HomeFlux-invoer in",
+          "de": "HomeFlux-Eingang setzen",
+          "fr": "Définir une entrée HomeFlux",
+          "es": "Establecer entrada de HomeFlux"
         },
         "titleFormatted": {
           "en": "Set [[target]] to [[value]]",
-          "nl": "Stel [[target]] in op [[value]]"
+          "nl": "Stel [[target]] in op [[value]]",
+          "de": "[[target]] auf [[value]] setzen",
+          "fr": "Définir [[target]] sur [[value]]",
+          "es": "Establecer [[target]] en [[value]]"
         },
         "hint": {
           "en": "Power values are expected in watts and battery SOC in percent. Status and weather inputs accept text.",
-          "nl": "Vermogens worden verwacht in watt en batterij-SOC in procent. Status- en weerinputs aanvaarden tekst."
+          "nl": "Vermogens worden verwacht in watt en batterij-SOC in procent. Status- en weerinputs aanvaarden tekst.",
+          "de": "Leistungswerte werden in Watt und der Batterieladezustand in Prozent erwartet. Status- und Wettereingaben akzeptieren Text.",
+          "fr": "Les puissances sont attendues en watts et le SOC des batteries en pourcentage. Les entrées d’état et de météo acceptent du texte.",
+          "es": "Los valores de potencia se esperan en vatios y el SOC de batería en porcentaje. Las entradas de estado y meteorología aceptan texto."
         },
         "args": [
           {
@@ -119,448 +161,640 @@
             "name": "target",
             "title": {
               "en": "Input",
-              "nl": "Invoer"
+              "nl": "Invoer",
+              "de": "Eingang",
+              "fr": "Entrée",
+              "es": "Entrada"
             },
             "values": [
               {
                 "id": "solar",
                 "title": {
                   "en": "Solar 1 power",
-                  "nl": "Zonnepanelen 1 vermogen"
+                  "nl": "Zonnepanelen 1 vermogen",
+                  "de": "PV-Anlage 1 Leistung",
+                  "fr": "Installation solaire 1 : puissance",
+                  "es": "Instalación solar 1: potencia"
                 }
               },
               {
                 "id": "solar2",
                 "title": {
                   "en": "Solar 2 power",
-                  "nl": "Zonnepanelen 2 vermogen"
+                  "nl": "Zonnepanelen 2 vermogen",
+                  "de": "PV-Anlage 2 Leistung",
+                  "fr": "Installation solaire 2 : puissance",
+                  "es": "Instalación solar 2: potencia"
                 }
               },
               {
                 "id": "solar3",
                 "title": {
                   "en": "Solar 3 power",
-                  "nl": "Zonnepanelen 3 vermogen"
+                  "nl": "Zonnepanelen 3 vermogen",
+                  "de": "PV-Anlage 3 Leistung",
+                  "fr": "Installation solaire 3 : puissance",
+                  "es": "Instalación solar 3: potencia"
                 }
               },
               {
                 "id": "solar4",
                 "title": {
                   "en": "Solar 4 power",
-                  "nl": "Zonnepanelen 4 vermogen"
+                  "nl": "Zonnepanelen 4 vermogen",
+                  "de": "PV-Anlage 4 Leistung",
+                  "fr": "Installation solaire 4 : puissance",
+                  "es": "Instalación solar 4: potencia"
                 }
               },
               {
                 "id": "solar5",
                 "title": {
                   "en": "Solar 5 power",
-                  "nl": "Zonnepanelen 5 vermogen"
+                  "nl": "Zonnepanelen 5 vermogen",
+                  "de": "PV-Anlage 5 Leistung",
+                  "fr": "Installation solaire 5 : puissance",
+                  "es": "Instalación solar 5: potencia"
                 }
               },
               {
                 "id": "solar6",
                 "title": {
                   "en": "Solar 6 power",
-                  "nl": "Zonnepanelen 6 vermogen"
+                  "nl": "Zonnepanelen 6 vermogen",
+                  "de": "PV-Anlage 6 Leistung",
+                  "fr": "Installation solaire 6 : puissance",
+                  "es": "Instalación solar 6: potencia"
                 }
               },
               {
                 "id": "solar7",
                 "title": {
                   "en": "Solar 7 power",
-                  "nl": "Zonnepanelen 7 vermogen"
+                  "nl": "Zonnepanelen 7 vermogen",
+                  "de": "PV-Anlage 7 Leistung",
+                  "fr": "Installation solaire 7 : puissance",
+                  "es": "Instalación solar 7: potencia"
                 }
               },
               {
                 "id": "solar8",
                 "title": {
                   "en": "Solar 8 power",
-                  "nl": "Zonnepanelen 8 vermogen"
+                  "nl": "Zonnepanelen 8 vermogen",
+                  "de": "PV-Anlage 8 Leistung",
+                  "fr": "Installation solaire 8 : puissance",
+                  "es": "Instalación solar 8: potencia"
                 }
               },
               {
                 "id": "solar9",
                 "title": {
                   "en": "Solar 9 power",
-                  "nl": "Zonnepanelen 9 vermogen"
+                  "nl": "Zonnepanelen 9 vermogen",
+                  "de": "PV-Anlage 9 Leistung",
+                  "fr": "Installation solaire 9 : puissance",
+                  "es": "Instalación solar 9: potencia"
                 }
               },
               {
                 "id": "solar10",
                 "title": {
                   "en": "Solar 10 power",
-                  "nl": "Zonnepanelen 10 vermogen"
+                  "nl": "Zonnepanelen 10 vermogen",
+                  "de": "PV-Anlage 10 Leistung",
+                  "fr": "Installation solaire 10 : puissance",
+                  "es": "Instalación solar 10: potencia"
                 }
               },
               {
                 "id": "batterySoc",
                 "title": {
                   "en": "Battery 1 SOC",
-                  "nl": "Batterij 1 SOC"
+                  "nl": "Batterij 1 SOC",
+                  "de": "Batterie 1 Ladezustand",
+                  "fr": "Batterie 1 : SOC",
+                  "es": "Batería 1: SOC"
                 }
               },
               {
                 "id": "batteryPower",
                 "title": {
                   "en": "Battery 1 power",
-                  "nl": "Batterij 1 vermogen"
+                  "nl": "Batterij 1 vermogen",
+                  "de": "Batterie 1 Leistung",
+                  "fr": "Batterie 1 : puissance",
+                  "es": "Batería 1: potencia"
                 }
               },
               {
                 "id": "battery2Soc",
                 "title": {
                   "en": "Battery 2 SOC",
-                  "nl": "Batterij 2 SOC"
+                  "nl": "Batterij 2 SOC",
+                  "de": "Batterie 2 Ladezustand",
+                  "fr": "Batterie 2 : SOC",
+                  "es": "Batería 2: SOC"
                 }
               },
               {
                 "id": "battery2Power",
                 "title": {
                   "en": "Battery 2 power",
-                  "nl": "Batterij 2 vermogen"
+                  "nl": "Batterij 2 vermogen",
+                  "de": "Batterie 2 Leistung",
+                  "fr": "Batterie 2 : puissance",
+                  "es": "Batería 2: potencia"
                 }
               },
               {
                 "id": "battery3Soc",
                 "title": {
                   "en": "Battery 3 SOC",
-                  "nl": "Batterij 3 SOC"
+                  "nl": "Batterij 3 SOC",
+                  "de": "Batterie 3 Ladezustand",
+                  "fr": "Batterie 3 : SOC",
+                  "es": "Batería 3: SOC"
                 }
               },
               {
                 "id": "battery3Power",
                 "title": {
                   "en": "Battery 3 power",
-                  "nl": "Batterij 3 vermogen"
+                  "nl": "Batterij 3 vermogen",
+                  "de": "Batterie 3 Leistung",
+                  "fr": "Batterie 3 : puissance",
+                  "es": "Batería 3: potencia"
                 }
               },
               {
                 "id": "battery4Soc",
                 "title": {
                   "en": "Battery 4 SOC",
-                  "nl": "Batterij 4 SOC"
+                  "nl": "Batterij 4 SOC",
+                  "de": "Batterie 4 Ladezustand",
+                  "fr": "Batterie 4 : SOC",
+                  "es": "Batería 4: SOC"
                 }
               },
               {
                 "id": "battery4Power",
                 "title": {
                   "en": "Battery 4 power",
-                  "nl": "Batterij 4 vermogen"
+                  "nl": "Batterij 4 vermogen",
+                  "de": "Batterie 4 Leistung",
+                  "fr": "Batterie 4 : puissance",
+                  "es": "Batería 4: potencia"
                 }
               },
               {
                 "id": "battery5Soc",
                 "title": {
                   "en": "Battery 5 SOC",
-                  "nl": "Batterij 5 SOC"
+                  "nl": "Batterij 5 SOC",
+                  "de": "Batterie 5 Ladezustand",
+                  "fr": "Batterie 5 : SOC",
+                  "es": "Batería 5: SOC"
                 }
               },
               {
                 "id": "battery5Power",
                 "title": {
                   "en": "Battery 5 power",
-                  "nl": "Batterij 5 vermogen"
+                  "nl": "Batterij 5 vermogen",
+                  "de": "Batterie 5 Leistung",
+                  "fr": "Batterie 5 : puissance",
+                  "es": "Batería 5: potencia"
                 }
               },
               {
                 "id": "battery6Soc",
                 "title": {
                   "en": "Battery 6 SOC",
-                  "nl": "Batterij 6 SOC"
+                  "nl": "Batterij 6 SOC",
+                  "de": "Batterie 6 Ladezustand",
+                  "fr": "Batterie 6 : SOC",
+                  "es": "Batería 6: SOC"
                 }
               },
               {
                 "id": "battery6Power",
                 "title": {
                   "en": "Battery 6 power",
-                  "nl": "Batterij 6 vermogen"
+                  "nl": "Batterij 6 vermogen",
+                  "de": "Batterie 6 Leistung",
+                  "fr": "Batterie 6 : puissance",
+                  "es": "Batería 6: potencia"
                 }
               },
               {
                 "id": "battery7Soc",
                 "title": {
                   "en": "Battery 7 SOC",
-                  "nl": "Batterij 7 SOC"
+                  "nl": "Batterij 7 SOC",
+                  "de": "Batterie 7 Ladezustand",
+                  "fr": "Batterie 7 : SOC",
+                  "es": "Batería 7: SOC"
                 }
               },
               {
                 "id": "battery7Power",
                 "title": {
                   "en": "Battery 7 power",
-                  "nl": "Batterij 7 vermogen"
+                  "nl": "Batterij 7 vermogen",
+                  "de": "Batterie 7 Leistung",
+                  "fr": "Batterie 7 : puissance",
+                  "es": "Batería 7: potencia"
                 }
               },
               {
                 "id": "battery8Soc",
                 "title": {
                   "en": "Battery 8 SOC",
-                  "nl": "Batterij 8 SOC"
+                  "nl": "Batterij 8 SOC",
+                  "de": "Batterie 8 Ladezustand",
+                  "fr": "Batterie 8 : SOC",
+                  "es": "Batería 8: SOC"
                 }
               },
               {
                 "id": "battery8Power",
                 "title": {
                   "en": "Battery 8 power",
-                  "nl": "Batterij 8 vermogen"
+                  "nl": "Batterij 8 vermogen",
+                  "de": "Batterie 8 Leistung",
+                  "fr": "Batterie 8 : puissance",
+                  "es": "Batería 8: potencia"
                 }
               },
               {
                 "id": "battery9Soc",
                 "title": {
                   "en": "Battery 9 SOC",
-                  "nl": "Batterij 9 SOC"
+                  "nl": "Batterij 9 SOC",
+                  "de": "Batterie 9 Ladezustand",
+                  "fr": "Batterie 9 : SOC",
+                  "es": "Batería 9: SOC"
                 }
               },
               {
                 "id": "battery9Power",
                 "title": {
                   "en": "Battery 9 power",
-                  "nl": "Batterij 9 vermogen"
+                  "nl": "Batterij 9 vermogen",
+                  "de": "Batterie 9 Leistung",
+                  "fr": "Batterie 9 : puissance",
+                  "es": "Batería 9: potencia"
                 }
               },
               {
                 "id": "battery10Soc",
                 "title": {
                   "en": "Battery 10 SOC",
-                  "nl": "Batterij 10 SOC"
+                  "nl": "Batterij 10 SOC",
+                  "de": "Batterie 10 Ladezustand",
+                  "fr": "Batterie 10 : SOC",
+                  "es": "Batería 10: SOC"
                 }
               },
               {
                 "id": "battery10Power",
                 "title": {
                   "en": "Battery 10 power",
-                  "nl": "Batterij 10 vermogen"
+                  "nl": "Batterij 10 vermogen",
+                  "de": "Batterie 10 Leistung",
+                  "fr": "Batterie 10 : puissance",
+                  "es": "Batería 10: potencia"
                 }
               },
               {
                 "id": "evPower",
                 "title": {
                   "en": "EV charger 1 power",
-                  "nl": "Autolader 1 vermogen"
+                  "nl": "Autolader 1 vermogen",
+                  "de": "Ladestation 1 Leistung",
+                  "fr": "Borne 1 : puissance",
+                  "es": "Cargador 1: potencia"
                 }
               },
               {
                 "id": "ev2Power",
                 "title": {
                   "en": "EV charger 2 power",
-                  "nl": "Autolader 2 vermogen"
+                  "nl": "Autolader 2 vermogen",
+                  "de": "Ladestation 2 Leistung",
+                  "fr": "Borne 2 : puissance",
+                  "es": "Cargador 2: potencia"
                 }
               },
               {
                 "id": "ev3Power",
                 "title": {
                   "en": "EV charger 3 power",
-                  "nl": "Autolader 3 vermogen"
+                  "nl": "Autolader 3 vermogen",
+                  "de": "Ladestation 3 Leistung",
+                  "fr": "Borne 3 : puissance",
+                  "es": "Cargador 3: potencia"
                 }
               },
               {
                 "id": "ev4Power",
                 "title": {
                   "en": "EV charger 4 power",
-                  "nl": "Autolader 4 vermogen"
+                  "nl": "Autolader 4 vermogen",
+                  "de": "Ladestation 4 Leistung",
+                  "fr": "Borne 4 : puissance",
+                  "es": "Cargador 4: potencia"
                 }
               },
               {
                 "id": "ev5Power",
                 "title": {
                   "en": "EV charger 5 power",
-                  "nl": "Autolader 5 vermogen"
+                  "nl": "Autolader 5 vermogen",
+                  "de": "Ladestation 5 Leistung",
+                  "fr": "Borne 5 : puissance",
+                  "es": "Cargador 5: potencia"
                 }
               },
               {
                 "id": "ev6Power",
                 "title": {
                   "en": "EV charger 6 power",
-                  "nl": "Autolader 6 vermogen"
+                  "nl": "Autolader 6 vermogen",
+                  "de": "Ladestation 6 Leistung",
+                  "fr": "Borne 6 : puissance",
+                  "es": "Cargador 6: potencia"
                 }
               },
               {
                 "id": "ev7Power",
                 "title": {
                   "en": "EV charger 7 power",
-                  "nl": "Autolader 7 vermogen"
+                  "nl": "Autolader 7 vermogen",
+                  "de": "Ladestation 7 Leistung",
+                  "fr": "Borne 7 : puissance",
+                  "es": "Cargador 7: potencia"
                 }
               },
               {
                 "id": "ev8Power",
                 "title": {
                   "en": "EV charger 8 power",
-                  "nl": "Autolader 8 vermogen"
+                  "nl": "Autolader 8 vermogen",
+                  "de": "Ladestation 8 Leistung",
+                  "fr": "Borne 8 : puissance",
+                  "es": "Cargador 8: potencia"
                 }
               },
               {
                 "id": "ev9Power",
                 "title": {
                   "en": "EV charger 9 power",
-                  "nl": "Autolader 9 vermogen"
+                  "nl": "Autolader 9 vermogen",
+                  "de": "Ladestation 9 Leistung",
+                  "fr": "Borne 9 : puissance",
+                  "es": "Cargador 9: potencia"
                 }
               },
               {
                 "id": "ev10Power",
                 "title": {
                   "en": "EV charger 10 power",
-                  "nl": "Autolader 10 vermogen"
+                  "nl": "Autolader 10 vermogen",
+                  "de": "Ladestation 10 Leistung",
+                  "fr": "Borne 10 : puissance",
+                  "es": "Cargador 10: potencia"
                 }
               },
               {
                 "id": "gridPower",
                 "title": {
                   "en": "Grid power",
-                  "nl": "Netvermogen"
+                  "nl": "Netvermogen",
+                  "de": "Netzleistung",
+                  "fr": "Puissance du réseau",
+                  "es": "Potencia de red"
                 }
               },
               {
                 "id": "homePower",
                 "title": {
                   "en": "Home consumption",
-                  "nl": "Huisverbruik"
+                  "nl": "Huisverbruik",
+                  "de": "Hausverbrauch",
+                  "fr": "Consommation du logement",
+                  "es": "Consumo del hogar"
                 }
               },
               {
                 "id": "batteryStatus",
                 "title": {
                   "en": "Battery 1 status",
-                  "nl": "Batterij 1 status"
+                  "nl": "Batterij 1 status",
+                  "de": "Batterie 1 Status",
+                  "fr": "Batterie 1 : état",
+                  "es": "Batería 1: estado"
                 }
               },
               {
                 "id": "battery2Status",
                 "title": {
                   "en": "Battery 2 status",
-                  "nl": "Batterij 2 status"
+                  "nl": "Batterij 2 status",
+                  "de": "Batterie 2 Status",
+                  "fr": "Batterie 2 : état",
+                  "es": "Batería 2: estado"
                 }
               },
               {
                 "id": "battery3Status",
                 "title": {
                   "en": "Battery 3 status",
-                  "nl": "Batterij 3 status"
+                  "nl": "Batterij 3 status",
+                  "de": "Batterie 3 Status",
+                  "fr": "Batterie 3 : état",
+                  "es": "Batería 3: estado"
                 }
               },
               {
                 "id": "battery4Status",
                 "title": {
                   "en": "Battery 4 status",
-                  "nl": "Batterij 4 status"
+                  "nl": "Batterij 4 status",
+                  "de": "Batterie 4 Status",
+                  "fr": "Batterie 4 : état",
+                  "es": "Batería 4: estado"
                 }
               },
               {
                 "id": "battery5Status",
                 "title": {
                   "en": "Battery 5 status",
-                  "nl": "Batterij 5 status"
+                  "nl": "Batterij 5 status",
+                  "de": "Batterie 5 Status",
+                  "fr": "Batterie 5 : état",
+                  "es": "Batería 5: estado"
                 }
               },
               {
                 "id": "battery6Status",
                 "title": {
                   "en": "Battery 6 status",
-                  "nl": "Batterij 6 status"
+                  "nl": "Batterij 6 status",
+                  "de": "Batterie 6 Status",
+                  "fr": "Batterie 6 : état",
+                  "es": "Batería 6: estado"
                 }
               },
               {
                 "id": "battery7Status",
                 "title": {
                   "en": "Battery 7 status",
-                  "nl": "Batterij 7 status"
+                  "nl": "Batterij 7 status",
+                  "de": "Batterie 7 Status",
+                  "fr": "Batterie 7 : état",
+                  "es": "Batería 7: estado"
                 }
               },
               {
                 "id": "battery8Status",
                 "title": {
                   "en": "Battery 8 status",
-                  "nl": "Batterij 8 status"
+                  "nl": "Batterij 8 status",
+                  "de": "Batterie 8 Status",
+                  "fr": "Batterie 8 : état",
+                  "es": "Batería 8: estado"
                 }
               },
               {
                 "id": "battery9Status",
                 "title": {
                   "en": "Battery 9 status",
-                  "nl": "Batterij 9 status"
+                  "nl": "Batterij 9 status",
+                  "de": "Batterie 9 Status",
+                  "fr": "Batterie 9 : état",
+                  "es": "Batería 9: estado"
                 }
               },
               {
                 "id": "battery10Status",
                 "title": {
                   "en": "Battery 10 status",
-                  "nl": "Batterij 10 status"
+                  "nl": "Batterij 10 status",
+                  "de": "Batterie 10 Status",
+                  "fr": "Batterie 10 : état",
+                  "es": "Batería 10: estado"
                 }
               },
               {
                 "id": "evStatus",
                 "title": {
                   "en": "EV charger 1 status",
-                  "nl": "Autolader 1 status"
+                  "nl": "Autolader 1 status",
+                  "de": "Ladestation 1 Status",
+                  "fr": "Borne 1 : état",
+                  "es": "Cargador 1: estado"
                 }
               },
               {
                 "id": "ev2Status",
                 "title": {
                   "en": "EV charger 2 status",
-                  "nl": "Autolader 2 status"
+                  "nl": "Autolader 2 status",
+                  "de": "Ladestation 2 Status",
+                  "fr": "Borne 2 : état",
+                  "es": "Cargador 2: estado"
                 }
               },
               {
                 "id": "ev3Status",
                 "title": {
                   "en": "EV charger 3 status",
-                  "nl": "Autolader 3 status"
+                  "nl": "Autolader 3 status",
+                  "de": "Ladestation 3 Status",
+                  "fr": "Borne 3 : état",
+                  "es": "Cargador 3: estado"
                 }
               },
               {
                 "id": "ev4Status",
                 "title": {
                   "en": "EV charger 4 status",
-                  "nl": "Autolader 4 status"
+                  "nl": "Autolader 4 status",
+                  "de": "Ladestation 4 Status",
+                  "fr": "Borne 4 : état",
+                  "es": "Cargador 4: estado"
                 }
               },
               {
                 "id": "ev5Status",
                 "title": {
                   "en": "EV charger 5 status",
-                  "nl": "Autolader 5 status"
+                  "nl": "Autolader 5 status",
+                  "de": "Ladestation 5 Status",
+                  "fr": "Borne 5 : état",
+                  "es": "Cargador 5: estado"
                 }
               },
               {
                 "id": "ev6Status",
                 "title": {
                   "en": "EV charger 6 status",
-                  "nl": "Autolader 6 status"
+                  "nl": "Autolader 6 status",
+                  "de": "Ladestation 6 Status",
+                  "fr": "Borne 6 : état",
+                  "es": "Cargador 6: estado"
                 }
               },
               {
                 "id": "ev7Status",
                 "title": {
                   "en": "EV charger 7 status",
-                  "nl": "Autolader 7 status"
+                  "nl": "Autolader 7 status",
+                  "de": "Ladestation 7 Status",
+                  "fr": "Borne 7 : état",
+                  "es": "Cargador 7: estado"
                 }
               },
               {
                 "id": "ev8Status",
                 "title": {
                   "en": "EV charger 8 status",
-                  "nl": "Autolader 8 status"
+                  "nl": "Autolader 8 status",
+                  "de": "Ladestation 8 Status",
+                  "fr": "Borne 8 : état",
+                  "es": "Cargador 8: estado"
                 }
               },
               {
                 "id": "ev9Status",
                 "title": {
                   "en": "EV charger 9 status",
-                  "nl": "Autolader 9 status"
+                  "nl": "Autolader 9 status",
+                  "de": "Ladestation 9 Status",
+                  "fr": "Borne 9 : état",
+                  "es": "Cargador 9: estado"
                 }
               },
               {
                 "id": "ev10Status",
                 "title": {
                   "en": "EV charger 10 status",
-                  "nl": "Autolader 10 status"
+                  "nl": "Autolader 10 status",
+                  "de": "Ladestation 10 Status",
+                  "fr": "Borne 10 : état",
+                  "es": "Cargador 10: estado"
                 }
               },
               {
                 "id": "weatherSource",
                 "title": {
                   "en": "Weather",
-                  "nl": "Weer"
+                  "nl": "Weer",
+                  "de": "Wetter",
+                  "fr": "Météo",
+                  "es": "Tiempo"
                 }
               }
             ]
@@ -570,7 +804,10 @@
             "name": "value",
             "title": {
               "en": "Value",
-              "nl": "Waarde"
+              "nl": "Waarde",
+              "de": "Wert",
+              "fr": "Valeur",
+              "es": "Valor"
             }
           }
         ],
@@ -582,7 +819,10 @@
     "dashboard": {
       "name": {
         "en": "HomeFlux",
-        "nl": "HomeFlux"
+        "nl": "HomeFlux",
+        "de": "HomeFlux",
+        "fr": "HomeFlux",
+        "es": "HomeFlux"
       },
       "settings": [],
       "api": {

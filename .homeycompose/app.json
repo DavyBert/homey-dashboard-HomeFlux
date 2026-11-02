@@ -1,15 +1,21 @@
 {
   "id": "com.dashboard.homeflux",
-  "version": "0.9.4",
+  "version": "0.9.5",
   "compatibility": ">=12.3.0",
   "sdk": 3,
   "name": {
     "en": "HomeFlux",
-    "nl": "HomeFlux"
+    "nl": "HomeFlux",
+    "de": "HomeFlux",
+    "fr": "HomeFlux",
+    "es": "HomeFlux"
   },
   "description": {
     "en": "See where your energy goes.",
-    "nl": "Zie waar je energie naartoe gaat."
+    "nl": "Zie waar je energie naartoe gaat.",
+    "de": "Sieh, wohin deine Energie fließt.",
+    "fr": "Voyez où va votre énergie.",
+    "es": "Descubre adónde va tu energía."
   },
   "permissions": [
     "homey:manager:api",
@@ -82,6 +88,33 @@
       "zonnepanelen",
       "batterij",
       "autolader",
+      "widget",
+      "widgets"
+    ],
+    "de": [
+      "Energie",
+      "Dashboard",
+      "Solar",
+      "Batterie",
+      "Elektroauto",
+      "Widget",
+      "Widgets"
+    ],
+    "fr": [
+      "énergie",
+      "tableau de bord",
+      "solaire",
+      "batterie",
+      "véhicule électrique",
+      "widget",
+      "widgets"
+    ],
+    "es": [
+      "energía",
+      "panel",
+      "solar",
+      "batería",
+      "vehículo eléctrico",
       "widget",
       "widgets"
     ]

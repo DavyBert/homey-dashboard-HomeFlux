@@ -1,7 +1,10 @@
 {
   "name": {
     "en": "HomeFlux",
-    "nl": "HomeFlux"
+    "nl": "HomeFlux",
+    "de": "HomeFlux",
+    "fr": "HomeFlux",
+    "es": "HomeFlux"
   },
   "settings": [],
   "api": {

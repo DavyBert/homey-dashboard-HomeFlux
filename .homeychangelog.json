@@ -102,5 +102,12 @@
   "0.9.4": {
     "en": "Added optional Gallery photos, swappable information panels with matching flow lines, and a selectable battery line endpoint.",
     "nl": "Optionele Gallery-foto's, verwisselbare infovensters met meebewegende lijnen en een instelbaar eindpunt voor de batterijlijn toegevoegd."
+  },
+  "0.9.5": {
+    "en": "Added German, French and Spanish translations for settings, Flow cards, widgets and messages.",
+    "nl": "Duitse, Franse en Spaanse vertalingen toegevoegd voor instellingen, Flow-kaarten, widgets en meldingen.",
+    "de": "Deutsche, französische und spanische Übersetzungen für Einstellungen, Flow-Karten, Widgets und Meldungen hinzugefügt.",
+    "fr": "Ajout des traductions allemandes, françaises et espagnoles des paramètres, cartes Flow, widgets et messages.",
+    "es": "Añadidas traducciones al alemán, francés y español para ajustes, tarjetas Flow, widgets y mensajes."
   }
 }

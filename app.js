@@ -205,12 +205,12 @@ class DashboardBridgeApp extends Homey.App {
   _registerFlowInputCards() {
     const input = this.homey.flow.getActionCard('set_flow_input');
     input.registerRunListener(async args => {
-      if (!this._isFlowMode()) throw new Error('Flow card input mode is not active. Change the data source mode, save, and restart HomeFlux.');
+      if (!this._isFlowMode()) throw new Error(this.homey.__?.('errors.flow_inactive') || 'Flow card input mode is not active. Change the data source mode, save, and restart HomeFlux.');
       const field = this._flowTargetId(args.target);
 
       if (FLOW_NUMERIC_FIELDS.includes(field)) {
         const value = Number(args.value);
-        if (!Number.isFinite(value)) throw new Error('The HomeFlux input value must be a number.');
+        if (!Number.isFinite(value)) throw new Error(this.homey.__?.('errors.number_required') || 'The HomeFlux input value must be a number.');
         this._setFlowInput(field, value);
         return true;
       }
@@ -220,7 +220,7 @@ class DashboardBridgeApp extends Homey.App {
         return true;
       }
 
-      throw new Error('Unsupported HomeFlux input.');
+      throw new Error(this.homey.__?.('errors.unsupported_input') || 'Unsupported HomeFlux input.');
     });
   }
 
@@ -416,7 +416,7 @@ class DashboardBridgeApp extends Homey.App {
   }
 
   async testConnection() {
-    if (!this._isIntegratedMode()) throw new Error('Integrated configurator is not active. Save Integrated configurator mode and restart HomeFlux first.');
+    if (!this._isIntegratedMode()) throw new Error(this.homey.__?.('errors.integrated_inactive') || 'Integrated configurator is not active. Save Integrated configurator mode and restart HomeFlux first.');
     const devices = await this._apiGet('/api/manager/devices/device');
     let variables = [];
     try { variables = await this._apiGet('/api/manager/logic/variable'); } catch (err) { this.error('Logic test failed:', err); }
@@ -589,7 +589,7 @@ class DashboardBridgeApp extends Homey.App {
   }
 
   async listSources() {
-    if (!this._isIntegratedMode()) throw new Error('Integrated configurator is not active. Save Integrated configurator mode and restart HomeFlux first.');
+    if (!this._isIntegratedMode()) throw new Error(this.homey.__?.('errors.integrated_inactive') || 'Integrated configurator is not active. Save Integrated configurator mode and restart HomeFlux first.');
     // Full discovery is deliberately lazy: Settings calls this only when the
     // user wants to choose/add a source (or explicitly presses Scan Homey).
     // Return only the fields the settings UI needs and release the large Homey
@@ -721,13 +721,13 @@ class DashboardBridgeApp extends Homey.App {
   }
 
   async _saveOwnPhoto({ scene, id } = {}) {
-    if (!PHOTO_SCENES.includes(scene)) throw new Error('Unknown weather scene');
+    if (!PHOTO_SCENES.includes(scene)) throw new Error(this.homey.__?.('errors.unknown_scene') || 'Unknown weather scene');
     const next = { ...this._photoMappings };
     if (id === '' || id === null) delete next[scene];
     else {
       const gallery = await this._gallery().list();
       const image = gallery.images.find(item => item.id === id);
-      if (!image || gallery.status !== 'ready') throw new Error('Selected Gallery photo is unavailable');
+      if (!image || gallery.status !== 'ready') throw new Error(this.homey.__?.('errors.photo_unavailable') || 'Selected Gallery photo is unavailable');
       next[scene] = { id: image.id, name: image.name };
     }
     await this.homey.settings.set('photoMappings', next);
@@ -814,7 +814,7 @@ class DashboardBridgeApp extends Homey.App {
 
 
   async _ensureHomeyApi() {
-    if (!this._isIntegratedMode()) throw new Error('homey-api is disabled in Flow card mode.');
+    if (!this._isIntegratedMode()) throw new Error(this.homey.__?.('errors.api_disabled') || 'homey-api is disabled in Flow card mode.');
     if (this._homeyApi) return this._homeyApi;
     if (!this._HomeyAPIClass) {
       // Lazy load is intentional: in Flow card mode the relatively heavy
@@ -1160,7 +1160,7 @@ class DashboardBridgeApp extends Homey.App {
   }
 
   _formatValue(value) {
-    if (typeof value === 'boolean') return value ? 'ON' : 'OFF';
+    if (typeof value === 'boolean') return value ? (this.homey.__?.('settings.on') || 'ON') : (this.homey.__?.('settings.off') || 'OFF');
     if (typeof value === 'number') return Number.isInteger(value) ? String(value) : String(Math.round(value * 100) / 100);
     if (value === null || value === undefined || value === '') return '—';
     return String(value);
@@ -1452,7 +1452,7 @@ class DashboardBridgeApp extends Homey.App {
 
   async _refreshHomeyTimezone() {
     const timezone = await this.homey.clock.getTimezone();
-    if (typeof timezone !== 'string' || !timezone.trim()) throw new Error('Geen geldige Homey tijdzone');
+    if (typeof timezone !== 'string' || !timezone.trim()) throw new Error(this.homey.__?.('errors.invalid_timezone') || 'Geen geldige Homey tijdzone');
     // Validate the IANA timezone before storing it.
     new Intl.DateTimeFormat('en-US', { timeZone: timezone }).format(new Date());
     this._homeyTimezone = timezone;
@@ -1663,10 +1663,10 @@ class DashboardBridgeApp extends Homey.App {
       this._weatherMappings.clear();
     } else {
       const entry = this._weatherMappings.get(body.id);
-      if (!entry) throw new Error('This weather value is no longer in the detected list.');
+      if (!entry) throw new Error(this.homey.__?.('errors.weather_value_missing') || 'This weather value is no longer in the detected list.');
       if (body.remove === true) this._weatherMappings.delete(body.id);
       else {
-        if (body.mapping !== 'auto' && !WEATHER_SCENES.has(body.mapping)) throw new Error('Unsupported weather mapping.');
+        if (body.mapping !== 'auto' && !WEATHER_SCENES.has(body.mapping)) throw new Error(this.homey.__?.('errors.unsupported_mapping') || 'Unsupported weather mapping.');
         entry.mapping = body.mapping;
       }
     }

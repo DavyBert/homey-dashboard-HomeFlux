@@ -264,7 +264,8 @@
     "battery_line_end": "House–battery line endpoint",
     "battery_line_end_hint": "Stop the line at the battery in the photo, or extend it to the battery information panel. The current appearance remains the default.",
     "battery_line_device": "Battery in the photo (current view)",
-    "battery_line_card": "Extend to battery information panel"
+    "battery_line_card": "Extend to battery information panel",
+    "support_coffee": "Buy me a coffee"
   },
   "widget": {
     "aria_energy": "Live energy overview",
@@ -288,5 +289,17 @@
     "value": "Value",
     "item": "Item",
     "chargers": "__count__ chargers"
+  },
+  "errors": {
+    "flow_inactive": "Flow card input mode is not active. Change the data source mode, save, and restart HomeFlux.",
+    "number_required": "The HomeFlux input value must be a number.",
+    "unsupported_input": "Unsupported HomeFlux input.",
+    "integrated_inactive": "Integrated configurator is not active. Save Integrated configurator mode and restart HomeFlux first.",
+    "unknown_scene": "Unknown weather scene",
+    "photo_unavailable": "Selected Gallery photo is unavailable",
+    "api_disabled": "homey-api is disabled in Flow card mode.",
+    "invalid_timezone": "Invalid Homey timezone",
+    "weather_value_missing": "This weather value is no longer in the detected list.",
+    "unsupported_mapping": "Unsupported weather mapping."
   }
 }

@@ -229,6 +229,7 @@ function onHomeyReady(Homey){
    $('labelSolar').placeholder=tr('widget.solar'); $('labelGrid').placeholder=tr('widget.grid'); $('labelBattery').placeholder=tr('widget.battery'); $('labelHome').placeholder=tr('widget.home'); $('labelEv').placeholder=tr('widget.ev');
    const preview=backgroundCard&&backgroundCard.querySelector('.preview-note');if(preview)preview.textContent=tr('settings.weather_mapping');
    const extrasCard=$('extraItemsCard');if(extrasCard){const h=extrasCard.querySelector('h2');const sub=extrasCard.querySelector(':scope > .sub');const selectedTitle=extrasCard.querySelector('.selected h3');const selectedSub=extrasCard.querySelector('.selected > .sub');if(h)h.textContent=tr('settings.extras_title');if(sub)sub.textContent=tr('settings.extras_intro');if(selectedTitle)selectedTitle.textContent=tr('settings.selected_extras');if(selectedSub)selectedSub.textContent=tr('settings.selected_extras_hint');}
+   document.querySelector('.support-mini a').textContent=tr('settings.support_coffee');
    $('restartNotice').textContent=tr('settings.restart_notice');
    search.placeholder=tr('settings.extras_search_placeholder'); $('save').textContent=tr('settings.save');
  }
