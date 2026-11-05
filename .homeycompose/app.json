@@ -1,6 +1,6 @@
 {
   "id": "com.dashboard.homeflux",
-  "version": "0.9.6",
+  "version": "1.0.0",
   "compatibility": ">=12.3.0",
   "sdk": 3,
   "name": {
@@ -129,5 +129,6 @@
     "url": "https://github.com/DavyBert/homey-dashboard-HomeFlux/issues"
   },
   "source": "https://github.com/DavyBert/homey-dashboard-HomeFlux",
-  "homepage": "https://github.com/DavyBert/homey-dashboard-HomeFlux"
+  "homepage": "https://github.com/DavyBert/homey-dashboard-HomeFlux",
+  "homeyCommunityTopicId": 161252
 }
