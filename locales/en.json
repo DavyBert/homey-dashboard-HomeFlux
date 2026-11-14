@@ -265,7 +265,18 @@
     "battery_line_end_hint": "Stop the line at the battery in the photo, or extend it to the battery information panel. The current appearance remains the default.",
     "battery_line_device": "Battery in the photo (current view)",
     "battery_line_card": "Extend to battery information panel",
-    "support_coffee": "Buy me a coffee"
+    "support_coffee": "Buy me a coffee",
+    "ev_display": "Charger display",
+    "ev_display_hint": "Choose whether configured chargers are hidden at zero power or always shown.",
+    "ev_hide_zero": "Hide at 0",
+    "ev_always": "Always show",
+    "number_title": "Number interpretation",
+    "number_hint": "Choose how ambiguous text values should be read. The previous valid value is retained until confirmation. Your choice is remembered per input and separator.",
+    "number_decimal": "Decimal separator",
+    "number_grouped": "Thousands separator",
+    "number_suggested": "Suggested",
+    "number_confirm": "Confirm and apply",
+    "number_reset": "Ask again"
   },
   "widget": {
     "aria_energy": "Live energy overview",
@@ -300,6 +311,8 @@
     "api_disabled": "homey-api is disabled in Flow card mode.",
     "invalid_timezone": "Invalid Homey timezone",
     "weather_value_missing": "This weather value is no longer in the detected list.",
-    "unsupported_mapping": "Unsupported weather mapping."
+    "unsupported_mapping": "Unsupported weather mapping.",
+    "number_ambiguous": "Choose the number interpretation in HomeFlux settings.",
+    "number_changed": "The input has changed. Refresh and confirm the latest value."
   }
 }

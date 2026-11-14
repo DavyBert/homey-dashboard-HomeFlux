@@ -123,5 +123,12 @@
     "de": "Deutsche, französische und spanische Übersetzungen für Einstellungen, Flow-Karten, Widgets und Meldungen sowie App-Store-Beschreibungen in diesen drei Sprachen hinzugefügt.",
     "fr": "Ajout des traductions allemandes, françaises et espagnoles des paramètres, cartes Flow, widgets et messages, ainsi que des descriptions App Store dans ces trois langues.",
     "es": "Añadidas traducciones al alemán, francés y español para ajustes, tarjetas Flow, widgets y mensajes, además de descripciones de la App Store en estos tres idiomas."
+  },
+  "1.0.1": {
+    "en": "Added a charger display option: hide at zero power or always show. Added locale-aware numeric text input with confirmation dropdowns for ambiguous values. Updated the Homey API dependency for Node.js 22 compatibility.",
+    "nl": "Weergaveoptie voor laders toegevoegd: verbergen bij nul vermogen of altijd tonen. Taalbewuste numerieke tekstinvoer toegevoegd met bevestigingsdropdowns voor dubbelzinnige waarden. Homey API-afhankelijkheid bijgewerkt voor compatibiliteit met Node.js 22.",
+    "de": "Anzeigeoption für Ladegeräte hinzugefügt: bei null Leistung ausblenden oder immer anzeigen. Sprachabhängige Zahleneingaben mit Bestätigungsauswahl für mehrdeutige Werte hinzugefügt. Homey-API-Abhängigkeit für die Kompatibilität mit Node.js 22 aktualisiert.",
+    "fr": "Ajout du choix d’affichage des bornes : masquer à puissance nulle ou toujours afficher. Ajout des entrées numériques selon la langue avec listes de confirmation pour les valeurs ambiguës. Mise à jour de la dépendance Homey API pour la compatibilité avec Node.js 22.",
+    "es": "Añadida una opción para ocultar los cargadores con potencia cero o mostrarlos siempre. Añadidas entradas numéricas según el idioma con listas de confirmación para valores ambiguos. Actualizada la dependencia Homey API para la compatibilidad con Node.js 22."
   }
 }

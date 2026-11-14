@@ -121,3 +121,23 @@ The HomeFlux app version follows the version that is actually published to Athom
 ## What’s new in v0.9.6
 
 - Added German, French and Spanish translations for settings, Flow cards, widgets and messages, plus App Store descriptions in these three languages.
+
+## 1.0.1
+
+- EN: Added a charger display option: hide at zero power or always show.
+- NL: Weergaveoptie voor laders toegevoegd: verbergen bij nul vermogen of altijd tonen.
+- DE: Anzeigeoption für Ladegeräte hinzugefügt: bei null Leistung ausblenden oder immer anzeigen.
+- FR: Ajout du choix d’affichage des bornes : masquer à puissance nulle ou toujours afficher.
+- ES: Añadida una opción para ocultar los cargadores con potencia cero o mostrarlos siempre.
+
+- EN: Added locale-aware numeric text input with confirmation dropdowns for ambiguous values.
+- NL: Taalbewuste numerieke tekstinvoer toegevoegd met bevestigingsdropdowns voor dubbelzinnige waarden.
+- DE: Sprachabhängige Zahleneingaben mit Bestätigungsauswahl für mehrdeutige Werte hinzugefügt.
+- FR: Ajout des entrées numériques selon la langue avec listes de confirmation pour les valeurs ambiguës.
+- ES: Añadidas entradas numéricas según el idioma con listas de confirmación para valores ambiguos.
+
+- EN: Updated the Homey API dependency for Node.js 22 compatibility.
+- NL: Homey API-afhankelijkheid bijgewerkt voor compatibiliteit met Node.js 22.
+- DE: Homey-API-Abhängigkeit für die Kompatibilität mit Node.js 22 aktualisiert.
+- FR: Mise à jour de la dépendance Homey API pour la compatibilité avec Node.js 22.
+- ES: Actualizada la dependencia Homey API para la compatibilidad con Node.js 22.

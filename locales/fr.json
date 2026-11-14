@@ -265,7 +265,18 @@
     "battery_line_end_hint": "Arrêtez la ligne à la batterie sur la photo ou prolongez-la jusqu’au panneau d’information de la batterie. L’apparence actuelle reste celle par défaut.",
     "battery_line_device": "Batterie sur la photo (vue actuelle)",
     "battery_line_card": "Prolonger jusqu’au panneau de batterie",
-    "support_coffee": "Offrez-moi un café"
+    "support_coffee": "Offrez-moi un café",
+    "ev_display": "Affichage des bornes",
+    "ev_display_hint": "Masquer les bornes configurées à puissance nulle ou toujours les afficher.",
+    "ev_hide_zero": "Masquer à 0",
+    "ev_always": "Toujours afficher",
+    "number_title": "Interprétation des nombres",
+    "number_hint": "Choisissez l’interprétation des textes ambigus. La dernière valeur valide est conservée jusqu’à confirmation. Le choix est mémorisé par entrée et séparateur.",
+    "number_decimal": "Séparateur décimal",
+    "number_grouped": "Séparateur de milliers",
+    "number_suggested": "Suggéré",
+    "number_confirm": "Confirmer et appliquer",
+    "number_reset": "Redemander"
   },
   "widget": {
     "aria_energy": "Vue de l’énergie en direct",
@@ -300,6 +311,8 @@
     "api_disabled": "homey-api est désactivée en mode cartes Flow.",
     "invalid_timezone": "Fuseau horaire Homey invalide",
     "weather_value_missing": "Cette valeur météo ne figure plus dans la liste détectée.",
-    "unsupported_mapping": "Correspondance météo non prise en charge."
+    "unsupported_mapping": "Correspondance météo non prise en charge.",
+    "number_ambiguous": "Choisissez l’interprétation du nombre dans les paramètres HomeFlux.",
+    "number_changed": "L’entrée a changé. Actualisez et confirmez la dernière valeur."
   }
 }

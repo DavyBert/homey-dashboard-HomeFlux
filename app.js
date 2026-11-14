@@ -1,6 +1,7 @@
 'use strict';
 
 const Homey = require('homey');
+const { parseNumericInput } = require('./lib/numeric-input');
 const { normalize: normalizePositions } = require('./widgets/dashboard/public/layout');
 
 const ENERGY_FIELDS = [
@@ -209,8 +210,24 @@ class DashboardBridgeApp extends Homey.App {
       const field = this._flowTargetId(args.target);
 
       if (FLOW_NUMERIC_FIELDS.includes(field)) {
-        const value = Number(args.value);
-        if (!Number.isFinite(value)) throw new Error(this.homey.__?.('errors.number_required') || 'The HomeFlux input value must be a number.');
+        const parsed = parseNumericInput(args.value);
+        if (parsed.invalid) {
+          if (this._numericPending) delete this._numericPending[field];
+          throw new Error(this.homey.__?.('errors.number_required') || 'The HomeFlux input value must be a number.');
+        }
+        let value = parsed.value;
+        if (parsed.choices) {
+          const rules = this.homey.settings.get('numericInputRules') || {};
+          const rule = rules[field];
+          const choice = rule && parsed.choices.find(c => c.kind === rule.kind && c.separator === rule.separator);
+          if (choice) value = choice.value;
+          else {
+            this._numericPending ||= {};
+            this._numericPending[field] = { raw: String(args.value), choices: parsed.choices };
+            throw new Error(this.homey.__?.('errors.number_ambiguous') || 'Choose the number interpretation in HomeFlux settings.');
+          }
+        }
+        if (this._numericPending) delete this._numericPending[field];
         this._setFlowInput(field, value);
         return true;
       }
@@ -268,7 +285,49 @@ class DashboardBridgeApp extends Homey.App {
   getFlowStatus() {
     const inputs = {};
     for (const field of [...FLOW_NUMERIC_FIELDS, ...FLOW_TEXT_FIELDS]) inputs[field] = this._flowStatusForField(field);
-    return { dataMode: this.dataMode, activeDataMode: this._activeDataMode, restartRequired: this.dataMode !== this._activeDataMode, inputs };
+    return { dataMode: this.dataMode, activeDataMode: this._activeDataMode, restartRequired: this.dataMode !== this._activeDataMode, inputs, numericInputs: this.getNumericInputs() };
+  }
+
+  getNumericInputs() {
+    const language = this.homey.i18n?.getLanguage?.() || 'en';
+    const decimal = new Intl.NumberFormat(language).formatToParts(1.1).find(p => p.type === 'decimal')?.value || '.';
+    return { pending: Object.entries(this._numericPending || {}).map(([field, entry]) => ({
+      field, ...entry, suggested: entry.choices.findIndex(c => c.kind === 'decimal' ? c.separator === decimal : c.separator !== decimal)
+    })), rules: this.homey.settings.get('numericInputRules') || {} };
+  }
+
+  resolveNumericInput(body = {}) {
+    const operation = (this._numericRuleQueue || Promise.resolve()).then(() => this._resolveNumericInput(body));
+    this._numericRuleQueue = operation.catch(() => {});
+    return operation;
+  }
+
+  async _resolveNumericInput({ field, raw, kind, separator, reset } = {}) {
+    if (!FLOW_NUMERIC_FIELDS.includes(field)) throw new Error(this.homey.__('errors.unsupported_input'));
+    const rules = { ...(this.homey.settings.get('numericInputRules') || {}) };
+    if (reset === true) {
+      delete rules[field];
+      await this.homey.settings.set('numericInputRules', rules);
+      return this.getNumericInputs();
+    }
+    const pending = this._numericPending?.[field];
+    // Confirmation selects a format, not a frozen measurement. A newer value
+    // in the same format can be applied; a changed format requires a fresh choice.
+    const submitted = parseNumericInput(raw);
+    const offered = submitted.choices?.some(c => c.kind === kind && c.separator === separator);
+    const choice = offered && pending?.choices.find(c => c.kind === kind && c.separator === separator);
+    if (!choice) throw new Error(this.homey.__('errors.number_changed'));
+    rules[field] = { kind: choice.kind, separator: choice.separator };
+    await this.homey.settings.set('numericInputRules', rules);
+    // Use the newest still-pending value in this format after persistence.
+    // A fresh numeric token or invalid input clears the pending entry and wins.
+    const latest = this._numericPending?.[field];
+    const currentChoice = latest?.choices.find(c => c.kind === choice.kind && c.separator === choice.separator);
+    if (currentChoice) {
+      delete this._numericPending[field];
+      this._setFlowInput(field, currentChoice.value);
+    }
+    return this.getNumericInputs();
   }
 
   _normalizeEnergyConfig(config) {
@@ -348,6 +407,7 @@ class DashboardBridgeApp extends Homey.App {
     const gridStandbyLineBlink = c.gridStandbyLineBlink !== undefined ? c.gridStandbyLineBlink === true : legacyBlink;
     const gridStandbyLineStyle = standbyStyle(c.gridStandbyLineStyle || c.gridStandbyLineColor, 'blue');
     const showBattery24h = c.showBattery24h !== false;
+    const evDisplayMode = c.evDisplayMode === 'always' ? 'always' : 'hide_zero';
     const refreshSeconds = Math.min(300, Math.max(1, Number(c.refreshSeconds) || 30));
     const widgetTextScale = [50, 60, 70, 80, 90, 100, 110].includes(Number(c.widgetTextScale)) ? Number(c.widgetTextScale) : 90;
     const widgetTitleScale = [50, 60, 70, 80, 90, 100, 110, 120, 130].includes(Number(c.widgetTitleScale)) ? Number(c.widgetTitleScale) : 100;
@@ -368,7 +428,7 @@ class DashboardBridgeApp extends Homey.App {
     };
     const componentPositions = normalizePositions(c.componentPositions);
     const batteryLineEnd = c.batteryLineEnd === 'card' ? 'card' : 'device';
-    return { backgroundMode, backgroundSet, periodMode, dayNightMode, dayStartTime, nightStartTime, weather, weatherSource, panelTransparency, overlayTheme, lineBlinkTempo, solarStandbyLineEnabled, solarStandbyLineBlink, solarStandbyLineStyle, batteryStandbyLineEnabled, batteryStandbyLineBlink, batteryStandbyLineStyle, gridStandbyLineEnabled, gridStandbyLineBlink, gridStandbyLineStyle, showBattery24h, refreshSeconds, widgetTextScale, widgetTitleScale, labels, powerUnits, componentPositions, batteryLineEnd };
+    return { backgroundMode, backgroundSet, periodMode, dayNightMode, dayStartTime, nightStartTime, weather, weatherSource, panelTransparency, overlayTheme, lineBlinkTempo, solarStandbyLineEnabled, solarStandbyLineBlink, solarStandbyLineStyle, batteryStandbyLineEnabled, batteryStandbyLineBlink, batteryStandbyLineStyle, gridStandbyLineEnabled, gridStandbyLineBlink, gridStandbyLineStyle, showBattery24h, evDisplayMode, refreshSeconds, widgetTextScale, widgetTitleScale, labels, powerUnits, componentPositions, batteryLineEnd };
   }
 
 

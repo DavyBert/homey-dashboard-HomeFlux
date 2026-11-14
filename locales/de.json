@@ -265,7 +265,18 @@
     "battery_line_end_hint": "Beende die Linie an der Batterie im Foto oder verlängere sie bis zum Batterie-Informationspanel. Die aktuelle Darstellung bleibt der Standard.",
     "battery_line_device": "Batterie im Foto (aktuelle Ansicht)",
     "battery_line_card": "Bis zum Batterie-Informationspanel verlängern",
-    "support_coffee": "Spendiere mir einen Kaffee"
+    "support_coffee": "Spendiere mir einen Kaffee",
+    "ev_display": "Ladegeräte anzeigen",
+    "ev_display_hint": "Konfigurierte Ladegeräte bei null Leistung ausblenden oder immer anzeigen.",
+    "ev_hide_zero": "Bei 0 ausblenden",
+    "ev_always": "Immer anzeigen",
+    "number_title": "Zahleninterpretation",
+    "number_hint": "Wähle die Interpretation mehrdeutiger Textwerte. Bis zur Bestätigung bleibt der letzte gültige Wert erhalten. Die Auswahl wird pro Eingang und Trennzeichen gespeichert.",
+    "number_decimal": "Dezimaltrennzeichen",
+    "number_grouped": "Tausendertrennzeichen",
+    "number_suggested": "Vorgeschlagen",
+    "number_confirm": "Bestätigen und anwenden",
+    "number_reset": "Erneut fragen"
   },
   "widget": {
     "aria_energy": "Live-Energieübersicht",
@@ -300,6 +311,8 @@
     "api_disabled": "homey-api ist im Flow-Kartenmodus deaktiviert.",
     "invalid_timezone": "Ungültige Homey-Zeitzone",
     "weather_value_missing": "Dieser Wetterwert ist nicht mehr in der erkannten Liste.",
-    "unsupported_mapping": "Nicht unterstützte Wetterzuordnung."
+    "unsupported_mapping": "Nicht unterstützte Wetterzuordnung.",
+    "number_ambiguous": "Wähle die Zahleninterpretation in den HomeFlux-Einstellungen.",
+    "number_changed": "Der Eingang hat sich geändert. Aktualisiere und bestätige den neuesten Wert."
   }
 }

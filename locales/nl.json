@@ -265,7 +265,18 @@
     "battery_line_end_hint": "Kies of de lijn bij de batterij op de foto stopt of doorloopt tot aan het batterijvenster. De huidige weergave blijft standaard.",
     "battery_line_device": "Batterij op de foto (huidige weergave)",
     "battery_line_card": "Doorlopen tot batterijvenster",
-    "support_coffee": "Trakteer me op een koffie"
+    "support_coffee": "Trakteer me op een koffie",
+    "ev_display": "Laders weergeven",
+    "ev_display_hint": "Kies of geconfigureerde laders bij nul vermogen verborgen worden of altijd zichtbaar blijven.",
+    "ev_hide_zero": "Verbergen indien 0",
+    "ev_always": "Altijd tonen",
+    "number_title": "Getalinterpretatie",
+    "number_hint": "Kies hoe dubbelzinnige tekstwaarden gelezen moeten worden. De vorige geldige waarde blijft behouden tot bevestiging. Je keuze wordt onthouden per invoer en scheidingsteken.",
+    "number_decimal": "Decimaalteken",
+    "number_grouped": "Duizendtalscheiding",
+    "number_suggested": "Voorgesteld",
+    "number_confirm": "Bevestigen en toepassen",
+    "number_reset": "Opnieuw vragen"
   },
   "widget": {
     "aria_energy": "Live energie-overzicht",
@@ -300,6 +311,8 @@
     "api_disabled": "homey-api is uitgeschakeld in Flow-kaartmodus.",
     "invalid_timezone": "Geen geldige Homey tijdzone",
     "weather_value_missing": "Deze weerwaarde staat niet meer in de gedetecteerde lijst.",
-    "unsupported_mapping": "Niet-ondersteunde weermapping."
+    "unsupported_mapping": "Niet-ondersteunde weermapping.",
+    "number_ambiguous": "Kies de getalinterpretatie in de HomeFlux-instellingen.",
+    "number_changed": "De invoer is gewijzigd. Vernieuw en bevestig de nieuwste waarde."
   }
 }

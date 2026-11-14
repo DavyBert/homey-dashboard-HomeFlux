@@ -1,8 +1,11 @@
 {
   "name": "com.dashboard.homeflux",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "dependencies": {
-    "homey-api": "3.19.2"
+    "homey-api": "3.21.3"
+  },
+  "engines": {
+    "node": ">=22 <23"
   }
 }

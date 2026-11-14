@@ -1,5 +1,6 @@
 'use strict';
 module.exports = {
+  async resolveNumericInput({ homey, body }) { return homey.app.resolveNumericInput(body || {}); },
   async getOwnPhotos({ homey, query }) { return homey.app.getOwnPhotos(query?.refresh === '1'); },
   async saveOwnPhoto({ homey, body }) { return homey.app.saveOwnPhoto(body || {}); },
   async getWeatherMappings({ homey }) { return homey.app.getWeatherMappings(); },

@@ -132,6 +132,7 @@
   <div class="map-row"><div><div class="map-label">Battery power unit</div><div class="hint">Choose W or kW for combined battery power.</div></div><select id="batteryPowerUnit"><option value="w">W</option><option value="kw">kW</option></select></div>
   <div class="map-row"><div><div class="map-label">Home consumption unit</div><div class="hint">Choose W or kW for home consumption.</div></div><select id="homePowerUnit"><option value="w">W</option><option value="kw">kW</option></select></div>
   <div class="map-row"><div><div class="map-label">Grid power unit</div><div class="hint">Choose W or kW for grid import and export.</div></div><select id="gridPowerUnit"><option value="w">W</option><option value="kw">kW</option></select></div>
+  <div class="map-row"><div><div class="map-label" data-i18n="settings.ev_display">Charger display</div><div class="hint" data-i18n="settings.ev_display_hint">Show configured chargers even at zero power.</div></div><select id="evDisplayMode"><option value="hide_zero" data-i18n="settings.ev_hide_zero">Hide at 0</option><option value="always" data-i18n="settings.ev_always">Always show</option></select></div>
   <div class="map-row"><div><div class="map-label">EV charger power unit</div><div class="hint">Choose W or kW for the combined EV charging power.</div></div><select id="evPowerUnit"><option value="w">W</option><option value="kw">kW</option></select></div>
   <div class="map-row"><div><div class="map-label">Solar label</div><div class="hint">Leave empty to use the default translated name.</div></div><input id="labelSolar" type="text" maxlength="32" placeholder="Solar panels"></div>
   <div class="map-row"><div><div class="map-label">Grid label</div><div class="hint">Leave empty to use the default translated name.</div></div><input id="labelGrid" type="text" maxlength="32" placeholder="Electricity grid"></div>
@@ -224,6 +225,7 @@ function onHomeyReady(Homey){
    setFieldText('batteryPowerUnit','settings.battery_power_unit','settings.battery_power_unit_hint');
    setFieldText('homePowerUnit','settings.home_power_unit','settings.home_power_unit_hint');
    setFieldText('gridPowerUnit','settings.grid_power_unit','settings.grid_power_unit_hint');
+   setFieldText('evDisplayMode','settings.ev_display','settings.ev_display_hint'); setOptionText('evDisplayMode','hide_zero','settings.ev_hide_zero'); setOptionText('evDisplayMode','always','settings.ev_always');
    setFieldText('evPowerUnit','settings.ev_power_unit','settings.ev_power_unit_hint');
    setFieldText('labelSolar','settings.label_solar','settings.label_custom_hint'); setFieldText('labelGrid','settings.label_grid','settings.label_custom_hint'); setFieldText('labelBattery','settings.label_battery','settings.label_custom_hint'); setFieldText('labelHome','settings.label_home','settings.label_custom_hint'); setFieldText('labelEv','settings.label_ev','settings.label_custom_hint');
    $('labelSolar').placeholder=tr('widget.solar'); $('labelGrid').placeholder=tr('widget.grid'); $('labelBattery').placeholder=tr('widget.battery'); $('labelHome').placeholder=tr('widget.home'); $('labelEv').placeholder=tr('widget.ev');
@@ -437,6 +439,45 @@ function onHomeyReady(Homey){
  function weatherScore(s){const t=`${s.name||''} ${s.label||''} ${s.key||''}`.toLowerCase();let score=0;if(/weather|weer|condition/.test(t))score+=100;if(/rain|regen|precip|neerslag/.test(t))score+=80;if(/cloud|bewolk|overcast/.test(t))score+=50;if(/status|state/.test(t))score+=20;return score;}
  function uiDataMode(){return $('dataMode').value||state.dataMode||'integrated';}
  function formatAge(ms){if(ms===null||ms===undefined)return '';const sec=Math.max(0,Math.floor(ms/1000));if(sec<60)return `${sec}s`;const min=Math.floor(sec/60);if(min<60)return `${min}m`;return `${Math.floor(min/60)}h`;}
+ let numericInputsSignature=null,numericInputsData={pending:[],rules:{}};
+ function renderNumericInputs(data){
+   numericInputsData=data||{pending:[],rules:{}};
+   const pending=numericInputsData.pending||[],rules=numericInputsData.rules||{};
+   // Keep selects mounted while measurements change, including an open dropdown.
+   const signature=JSON.stringify([pending.map(e=>[e.field,e.suggested,e.choices.map(c=>[c.kind,c.separator])]),rules]);
+   let card=$('numericInputsCard');
+   const describe=c=>tr('settings.number_'+c.kind)+' ('+c.separator+')';
+   const optionLabel=(c,i,e)=>String(c.value)+' — '+describe(c)+(i===e.suggested?' · '+tr('settings.number_suggested'):'');
+   if(card&&signature===numericInputsSignature){
+     for(const entry of pending){
+       const row=[...card.querySelectorAll('[data-numeric-field]')].find(r=>r.dataset.numericField===entry.field);
+       if(row){row.firstElementChild.textContent=entry.field+' : '+entry.raw;entry.choices.forEach((c,i)=>row.querySelector('select').options[i].textContent=optionLabel(c,i,entry));}
+     }
+     return;
+   }
+   numericInputsSignature=signature;
+   if(!card){card=document.createElement('div');card.id='numericInputsCard';card.className='card';$('inputPanel').appendChild(card);}
+   card.replaceChildren();card.classList.toggle('hidden-row',!pending.length&&!Object.keys(rules).length);
+   if(!pending.length&&!Object.keys(rules).length)return;
+   const title=document.createElement('h2');title.textContent=tr('settings.number_title');card.appendChild(title);
+   const hint=document.createElement('p');hint.textContent=tr('settings.number_hint');card.appendChild(hint);
+   const submit=async body=>{try{renderNumericInputs(await api('PUT','/numeric-input',body));await refreshFlowStatus();}catch(e){Homey.alert(msg(e));}};
+   for(const entry of pending){
+     const row=document.createElement('div');row.className='map-row';row.dataset.numericField=entry.field;
+     const label=document.createElement('div');label.textContent=entry.field+' : '+entry.raw;row.appendChild(label);
+     const controls=document.createElement('div'),select=document.createElement('select');
+     entry.choices.forEach((c,i)=>{const option=document.createElement('option');option.value=String(i);option.textContent=optionLabel(c,i,entry);select.appendChild(option);});
+     select.value=String(Math.max(0,entry.suggested));controls.appendChild(select);
+     const button=document.createElement('button');button.textContent=tr('settings.number_confirm');button.onclick=()=>{
+       const current=numericInputsData.pending.find(e=>e.field===entry.field);
+       if(current)submit({field:current.field,raw:current.raw,...current.choices[Number(select.value)]});
+     };controls.appendChild(button);row.appendChild(controls);card.appendChild(row);
+   }
+   for(const [field,rule] of Object.entries(rules)){
+     const row=document.createElement('div');row.className='map-row';const label=document.createElement('div');label.textContent=field+' — '+describe(rule);row.appendChild(label);
+     const button=document.createElement('button');button.textContent=tr('settings.number_reset');button.onclick=()=>submit({field,reset:true});row.appendChild(button);card.appendChild(row);
+   }
+ }
  function renderFlowStatus(field){
    const picker=pickerMap[field]; if(!picker)return;
    const info=state.flowStatus[field]||{received:false,state:'waiting'};
@@ -452,7 +493,7 @@ function onHomeyReady(Homey){
  let flowStatusTimer=null;
  async function refreshFlowStatus(){
    if(uiDataMode()!=='flow')return;
-   try{const result=await api('GET','/flow-status');state.flowStatus=result.inputs||{};state.activeDataMode=result.activeDataMode||state.activeDataMode;renderAllFlowStatuses();updateModeRuntimeStatus();}catch(_){ }
+   try{const result=await api('GET','/flow-status');state.flowStatus=result.inputs||{};renderNumericInputs(result.numericInputs);state.activeDataMode=result.activeDataMode||state.activeDataMode;renderAllFlowStatuses();updateModeRuntimeStatus();}catch(_){ }
  }
  function startFlowStatusPolling(){if(flowStatusTimer)return;refreshFlowStatus();flowStatusTimer=setInterval(refreshFlowStatus,2000);}
  function stopFlowStatusPolling(){if(!flowStatusTimer)return;clearInterval(flowStatusTimer);flowStatusTimer=null;}
@@ -648,6 +689,7 @@ function onHomeyReady(Homey){
    $('homePowerUnit').value=powerUnits.home||'w';
    $('gridPowerUnit').value=powerUnits.grid||'w';
    $('evPowerUnit').value=powerUnits.ev||'kw';
+   $('evDisplayMode').value=state.visualConfig.evDisplayMode||'hide_zero';
    const labels=state.visualConfig.labels||{};
    $('labelSolar').value=labels.solar||''; $('labelGrid').value=labels.grid||''; $('labelBattery').value=labels.battery||''; $('labelHome').value=labels.home||''; $('labelEv').value=labels.ev||'';
    updateBackgroundMode();
@@ -766,7 +808,7 @@ function onHomeyReady(Homey){
      if(index<=energyConfig.batteryCount && energyConfig[`${batteryPrefix}Soc`]) configuredBatterySoc.push(batteryPrefix);
    }
    if(configuredBatterySoc.length>1 && configuredBatterySoc.some(prefix=>!(energyConfig[`${prefix}CapacityKwh`]>0))){Homey.alert(tr('settings.capacity_required'));return;}
-   const visualConfig={backgroundSet:$('backgroundSet').value||'house',backgroundMode:$('backgroundMode').value||'auto',weatherSource:selectedDataMode==='flow'?(state.visualConfig.weatherSource||''):($('weatherSource').value||''),periodMode:$('scenePeriod').value||'auto',dayNightMode:$('dayNightMode').value||'hours',dayStartTime:$('dayStartTime').value||'07:00',nightStartTime:$('nightStartTime').value||'20:00',weather:$('sceneWeather').value||'clear',panelTransparency:Number($('panelTransparency').value||30),overlayTheme:$('overlayTheme').value||'auto',lineBlinkTempo:Number($('lineBlinkTempo').value||2.4),solarStandbyLineEnabled:$('solarStandbyLineEnabled').value==='true',solarStandbyLineBlink:$('solarStandbyLineBlink').value==='true',solarStandbyLineStyle:$('solarStandbyLineStyle').value||'green',batteryStandbyLineEnabled:$('batteryStandbyLineEnabled').value==='true',batteryStandbyLineBlink:$('batteryStandbyLineBlink').value==='true',batteryStandbyLineStyle:$('batteryStandbyLineStyle').value||'blue',gridStandbyLineEnabled:$('gridStandbyLineEnabled').value==='true',gridStandbyLineBlink:$('gridStandbyLineBlink').value==='true',gridStandbyLineStyle:$('gridStandbyLineStyle').value||'blue',showBattery24h:$('showBattery24h').value!=='false',refreshSeconds:Number($('refreshSeconds').value||30),widgetTextScale:Number($('widgetTextScale').value||90),widgetTitleScale:Number($('widgetTitleScale').value||100),powerUnits:{solar:$('solarPowerUnit').value||'kw',battery:$('batteryPowerUnit').value||'kw',home:$('homePowerUnit').value||'w',grid:$('gridPowerUnit').value||'w',ev:$('evPowerUnit').value||'kw'},labels:{solar:$('labelSolar').value.trim(),grid:$('labelGrid').value.trim(),battery:$('labelBattery').value.trim(),home:$('labelHome').value.trim(),ev:$('labelEv').value.trim()}};
+   const visualConfig={evDisplayMode:$('evDisplayMode').value,backgroundSet:$('backgroundSet').value||'house',backgroundMode:$('backgroundMode').value||'auto',weatherSource:selectedDataMode==='flow'?(state.visualConfig.weatherSource||''):($('weatherSource').value||''),periodMode:$('scenePeriod').value||'auto',dayNightMode:$('dayNightMode').value||'hours',dayStartTime:$('dayStartTime').value||'07:00',nightStartTime:$('nightStartTime').value||'20:00',weather:$('sceneWeather').value||'clear',panelTransparency:Number($('panelTransparency').value||30),overlayTheme:$('overlayTheme').value||'auto',lineBlinkTempo:Number($('lineBlinkTempo').value||2.4),solarStandbyLineEnabled:$('solarStandbyLineEnabled').value==='true',solarStandbyLineBlink:$('solarStandbyLineBlink').value==='true',solarStandbyLineStyle:$('solarStandbyLineStyle').value||'green',batteryStandbyLineEnabled:$('batteryStandbyLineEnabled').value==='true',batteryStandbyLineBlink:$('batteryStandbyLineBlink').value==='true',batteryStandbyLineStyle:$('batteryStandbyLineStyle').value||'blue',gridStandbyLineEnabled:$('gridStandbyLineEnabled').value==='true',gridStandbyLineBlink:$('gridStandbyLineBlink').value==='true',gridStandbyLineStyle:$('gridStandbyLineStyle').value||'blue',showBattery24h:$('showBattery24h').value!=='false',refreshSeconds:Number($('refreshSeconds').value||30),widgetTextScale:Number($('widgetTextScale').value||90),widgetTitleScale:Number($('widgetTitleScale').value||100),powerUnits:{solar:$('solarPowerUnit').value||'kw',battery:$('batteryPowerUnit').value||'kw',home:$('homePowerUnit').value||'w',grid:$('gridPowerUnit').value||'w',ev:$('evPowerUnit').value||'kw'},labels:{solar:$('labelSolar').value.trim(),grid:$('labelGrid').value.trim(),battery:$('labelBattery').value.trim(),home:$('labelHome').value.trim(),ev:$('labelEv').value.trim()}};
    status.textContent=tr('settings.saving');
    try{
      visualConfig.componentPositions=chosenPositions;

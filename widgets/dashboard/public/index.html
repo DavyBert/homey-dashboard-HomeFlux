@@ -558,7 +558,8 @@ function onHomeyReady(Homey){
      const evPower=e.evPower;
      const evWatts=powerToWatts(evPower);
      const evActive=hasEv && evWatts!==null && Math.abs(evWatts)>=50;
-     evCard.classList.toggle('ev-inactive',!evActive);
+     const evVisible=hasEv && (d.visualConfig?.evDisplayMode==='always' || (evWatts!==null && Math.abs(evWatts)>0));
+     evCard.classList.toggle('ev-inactive',!evVisible);
      const solarWatts=powerToWatts(e.solar);
      const homeWatts=powerToWatts(e.homePower);
      const pvSurplus=hasSolar && solarWatts!==null && homeWatts!==null && solarWatts>homeWatts;

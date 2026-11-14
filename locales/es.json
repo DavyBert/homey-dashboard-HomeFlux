@@ -265,7 +265,18 @@
     "battery_line_end_hint": "Termina la línea en la batería de la foto o extiéndela hasta el panel de información de la batería. El aspecto actual sigue siendo el predeterminado.",
     "battery_line_device": "Batería de la foto (vista actual)",
     "battery_line_card": "Extender hasta el panel de batería",
-    "support_coffee": "Invítame a un café"
+    "support_coffee": "Invítame a un café",
+    "ev_display": "Mostrar cargadores",
+    "ev_display_hint": "Ocultar los cargadores configurados con potencia cero o mostrarlos siempre.",
+    "ev_hide_zero": "Ocultar si es 0",
+    "ev_always": "Mostrar siempre",
+    "number_title": "Interpretación de números",
+    "number_hint": "Elige cómo interpretar textos ambiguos. Se conserva el último valor válido hasta confirmar. La elección se guarda por entrada y separador.",
+    "number_decimal": "Separador decimal",
+    "number_grouped": "Separador de miles",
+    "number_suggested": "Sugerido",
+    "number_confirm": "Confirmar y aplicar",
+    "number_reset": "Volver a preguntar"
   },
   "widget": {
     "aria_energy": "Resumen de energía en directo",
@@ -300,6 +311,8 @@
     "api_disabled": "homey-api está desactivada en modo de tarjetas Flow.",
     "invalid_timezone": "Zona horaria de Homey no válida",
     "weather_value_missing": "Este valor meteorológico ya no está en la lista detectada.",
-    "unsupported_mapping": "Correspondencia meteorológica no compatible."
+    "unsupported_mapping": "Correspondencia meteorológica no compatible.",
+    "number_ambiguous": "Elige la interpretación del número en los ajustes de HomeFlux.",
+    "number_changed": "La entrada ha cambiado. Actualiza y confirma el último valor."
   }
 }
