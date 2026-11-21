@@ -141,3 +141,35 @@ The HomeFlux app version follows the version that is actually published to Athom
 - DE: Homey-API-Abhängigkeit für die Kompatibilität mit Node.js 22 aktualisiert.
 - FR: Mise à jour de la dépendance Homey API pour la compatibilité avec Node.js 22.
 - ES: Actualizada la dependencia Homey API para la compatibilidad con Node.js 22.
+
+## 1.0.2
+
+- EN: Added a separate standby line thickness factor when using power-dependent line thickness; the default preserves the existing appearance.
+- NL: Aparte factor voor stand-bylijndikte toegevoegd bij vermogensafhankelijke lijndikte; de standaard behoudt de bestaande weergave.
+- DE: Separaten Faktor für die Standby-Liniendicke bei leistungsabhängiger Liniendicke hinzugefügt; die Standardeinstellung erhält das bisherige Aussehen.
+- FR: Ajout d’un facteur distinct pour l’épaisseur des lignes en veille avec l’épaisseur selon la puissance ; la valeur par défaut conserve l’apparence existante.
+- ES: Añadido un factor independiente para el grosor de las líneas en espera al usar el grosor según potencia; el valor por defecto conserva la apariencia existente.
+
+- EN: Made Flux Ribbon glow adjustable (0–200%, default 100%). Fixed Comet Flow animation and thin base lines, and applied corner rounding consistently to all effect layers. Standby lines now follow the selected line style while retaining their colour and blink settings.
+- NL: Flux Ribbon-gloed instelbaar gemaakt (0–200%, standaard 100%). Comet Flow-animatie en dunne basislijnen hersteld en hoekafronding consequent toegepast op alle effectlagen. Stand-bylijnen volgen nu de gekozen lijnstijl met behoud van hun kleur- en knipperinstellingen.
+- DE: Flux-Ribbon-Leuchtstärke einstellbar gemacht (0–200%, Standard 100%). Comet-Flow-Animation und dünne Grundlinien korrigiert sowie abgerundete Ecken auf alle Effektebenen angewendet. Standby-Linien folgen nun dem gewählten Linienstil und behalten ihre Farb- und Blinkoptionen.
+- FR: Intensité lumineuse de Flux Ribbon réglable (0–200 %, 100 % par défaut). Correction de l’animation Comet Flow et des lignes de base fines, avec angles arrondis sur toutes les couches. Les lignes en veille suivent désormais le style choisi tout en conservant leur couleur et leur clignotement.
+- ES: Brillo de Flux Ribbon ajustable (0–200 %, 100 % por defecto). Corregidas la animación Comet Flow y las líneas de base finas, con esquinas redondeadas en todas las capas. Las líneas en espera siguen el estilo seleccionado y conservan su color y parpadeo.
+
+- EN: Refined Flux Ribbon into a calm glowing energy pulse and added tapered, fading comet trails.
+- NL: Flux Ribbon verfijnd tot een rustige gloeiende energiepuls en kometen voorzien van een taps toelopende, vervagende lichtstaart.
+- DE: Flux Ribbon zu einem ruhigen leuchtenden Energieimpuls verfeinert und sich verjüngende, verblassende Kometenschweife hinzugefügt.
+- FR: Flux Ribbon devient une douce impulsion lumineuse et les comètes disposent d’une traînée effilée qui s’estompe.
+- ES: Flux Ribbon refinado con un suave pulso de energía luminosa y cometas con estelas que se estrechan y desvanecen.
+
+- EN: Improved text contrast throughout the configuration in light and dark mode.
+- NL: Tekstcontrast in de volledige configuratie verbeterd voor lichte en donkere weergave.
+- DE: Textkontrast in der gesamten Konfiguration im hellen und dunklen Modus verbessert.
+- FR: Amélioration du contraste des textes dans toute la configuration en mode clair et sombre.
+- ES: Mejorado el contraste del texto en toda la configuración en modo claro y oscuro.
+
+- EN: Added optional Flux Ribbon and Comet Flow lines, power-dependent speed or thickness, corner rounding and value transitions. Yellow can be selected independently for the PV line and value. Existing colours, layout and data refresh are retained.
+- NL: Optionele Flux Ribbon- en Comet Flow-lijnen, vermogensafhankelijke snelheid of dikte, afgeronde hoeken en waardeovergangen toegevoegd. Geel is afzonderlijk te kiezen voor de PV-lijn en PV-waarde. Bestaande kleuren, indeling en datavernieuwing blijven behouden.
+- DE: Optionale Flux-Ribbon- und Comet-Flow-Linien, leistungsabhängige Geschwindigkeit oder Dicke, abgerundete Ecken und Wertübergänge hinzugefügt. Gelb ist für PV-Linie und PV-Wert getrennt wählbar. Bestehende Farben, Layout und Datenaktualisierung bleiben erhalten.
+- FR: Ajout des lignes facultatives Flux Ribbon et Comet Flow, de la vitesse ou épaisseur selon la puissance, des angles arrondis et des transitions de valeurs. Le jaune est sélectionnable séparément pour la ligne et la valeur PV. Les couleurs, la disposition et l’actualisation existantes sont conservées.
+- ES: Añadidas líneas opcionales Flux Ribbon y Comet Flow, velocidad o grosor según potencia, esquinas redondeadas y transiciones de valores. El amarillo se puede seleccionar por separado para la línea y el valor FV. Se conservan los colores, la distribución y la actualización existentes.

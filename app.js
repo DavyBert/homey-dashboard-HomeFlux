@@ -1,6 +1,7 @@
 'use strict';
 
 const Homey = require('homey');
+const { normalize: normalizeEffects } = require('./widgets/dashboard/public/effects');
 const { parseNumericInput } = require('./lib/numeric-input');
 const { normalize: normalizePositions } = require('./widgets/dashboard/public/layout');
 
@@ -396,7 +397,7 @@ class DashboardBridgeApp extends Homey.App {
     const overlayTheme = ['auto', 'light', 'dark'].includes(c.overlayTheme) ? c.overlayTheme : 'auto';
     const lineBlinkTempo = [1.2, 1.8, 2.4, 3.2, 4.2].includes(Number(c.lineBlinkTempo)) ? Number(c.lineBlinkTempo) : 2.4;
     const legacyBlink = c.lineBlinkEnabled === true;
-    const standbyStyle = (value, fallback) => ['blue', 'green', 'greenblue'].includes(String(value || '').toLowerCase()) ? String(value).toLowerCase() : fallback;
+    const standbyStyle = (value, fallback) => ['blue', 'green', 'greenblue', 'yellow'].includes(String(value || '').toLowerCase()) ? String(value).toLowerCase() : fallback;
     const solarStandbyLineEnabled = c.solarStandbyLineEnabled === true;
     const solarStandbyLineBlink = c.solarStandbyLineBlink === true;
     const solarStandbyLineStyle = standbyStyle(c.solarStandbyLineStyle, 'green');
@@ -428,7 +429,7 @@ class DashboardBridgeApp extends Homey.App {
     };
     const componentPositions = normalizePositions(c.componentPositions);
     const batteryLineEnd = c.batteryLineEnd === 'card' ? 'card' : 'device';
-    return { backgroundMode, backgroundSet, periodMode, dayNightMode, dayStartTime, nightStartTime, weather, weatherSource, panelTransparency, overlayTheme, lineBlinkTempo, solarStandbyLineEnabled, solarStandbyLineBlink, solarStandbyLineStyle, batteryStandbyLineEnabled, batteryStandbyLineBlink, batteryStandbyLineStyle, gridStandbyLineEnabled, gridStandbyLineBlink, gridStandbyLineStyle, showBattery24h, evDisplayMode, refreshSeconds, widgetTextScale, widgetTitleScale, labels, powerUnits, componentPositions, batteryLineEnd };
+    return { effects: normalizeEffects(c.effects), backgroundMode, backgroundSet, periodMode, dayNightMode, dayStartTime, nightStartTime, weather, weatherSource, panelTransparency, overlayTheme, lineBlinkTempo, solarStandbyLineEnabled, solarStandbyLineBlink, solarStandbyLineStyle, batteryStandbyLineEnabled, batteryStandbyLineBlink, batteryStandbyLineStyle, gridStandbyLineEnabled, gridStandbyLineBlink, gridStandbyLineStyle, showBattery24h, evDisplayMode, refreshSeconds, widgetTextScale, widgetTitleScale, labels, powerUnits, componentPositions, batteryLineEnd };
   }
 
 

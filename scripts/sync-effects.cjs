@@ -1,0 +1,10 @@
+'use strict';
+const fs=require('node:fs'),path=require('node:path');
+const root=path.resolve(__dirname,'..');
+const source=fs.readFileSync(path.join(root,'widgets/dashboard/public/effects.js'),'utf8');
+const factory=source.slice(source.indexOf('function(){'),source.lastIndexOf('});')+1);
+const file=path.join(root,'widgets/dashboard/public/index.html');
+const html=fs.readFileSync(file,'utf8');
+const start=html.indexOf(' // BEGIN SHARED EFFECTS'),end=html.indexOf(' // END SHARED EFFECTS',start)+' // END SHARED EFFECTS'.length;
+if(start<0||end<start)throw new Error('Missing effects markers');
+fs.writeFileSync(file,html.slice(0,start)+' // BEGIN SHARED EFFECTS\n const effects=('+factory+')();\n // END SHARED EFFECTS'+html.slice(end));

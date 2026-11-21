@@ -11,6 +11,25 @@
 <style>
 .tabs{flex-wrap:wrap}.photo-row{display:grid;grid-template-columns:minmax(130px,1fr) minmax(150px,2fr) 100px;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid rgba(127,127,127,.18)}.photo-row select{width:100%;min-width:0;padding:9px;border-radius:10px;background:var(--homey-background-color,#fff);color:inherit;border:1px solid rgba(127,127,127,.45)}.photo-row img{width:100px;height:70px;object-fit:cover;border-radius:8px}.photo-row .title{overflow-wrap:anywhere}@media(max-width:650px){.photo-row{grid-template-columns:minmax(0,1fr) 90px}.photo-row .title{grid-column:1/-1}.photo-row img{width:90px;height:64px}}
 </style>
+
+<style id="configuration-contrast">
+/* Matched text/background pairs avoid conflicting host theme variables. */
+:root{--config-bg:#ffffff;--config-text:#111827;--config-secondary:#394150;--config-control:#ffffff;--config-placeholder:#4b5563;--config-neutral:#e7ebf0;--config-border:#657083;--config-link:#064fa6;color-scheme:light}
+@media(prefers-color-scheme:dark){:root{--config-bg:#151a22;--config-text:#f8fafc;--config-secondary:#e0e6ef;--config-control:#202733;--config-placeholder:#c3cfdd;--config-neutral:#263242;--config-border:#a7b7ca;--config-link:#94c6ff;color-scheme:dark}}
+html,body{background:var(--config-bg);color:var(--config-text)}
+h1,h2,h3,label,.map-label,.title,.picker-selected-name,.status,.restart-notice,.ok{color:var(--config-text)}
+.sub,.hint,.group,.meta,.value,.picker-selected.empty,.picker-selected-meta,.inline-note,.preview-note,.support-mini,.custom-image-status,.custom-image-status.ok,.custom-image-status.error,.standby-style-note{opacity:1;color:var(--config-secondary)}
+input,select,textarea,.map-row select,.map-row input,.map-row input[type=number],.map-row input[type=text],.map-row input[type=time],.threshold input,.threshold select,.visual-grid select,.selected-row input,.picker-search,#search,.weather-map-row select,.photo-row select{background:var(--config-control);color:var(--config-text);border-color:var(--config-border)}
+select option,select optgroup{background:var(--config-control);color:var(--config-text)}
+input::placeholder,textarea::placeholder{color:var(--config-placeholder);opacity:1}
+input:disabled,select:disabled,textarea:disabled{color:var(--config-secondary);-webkit-text-fill-color:var(--config-secondary);opacity:1}
+button,button.primary,.tab[aria-selected=true]{background:#0753b5;color:#ffffff;opacity:1}
+button.remove,button.picker-clear,.tab:not([aria-selected=true]){background:var(--config-neutral);color:var(--config-text);opacity:1}
+button:disabled{opacity:1;background:var(--config-neutral);color:var(--config-secondary)}
+a,.support-mini a,.support-mini a:hover{color:var(--config-link);opacity:1}
+.savebar{background:linear-gradient(transparent,var(--config-bg) 30%)}
+input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible,a:focus-visible{outline:2px solid var(--config-link);outline-offset:2px}
+</style>
 </head>
 <body>
 <h1>HomeFlux</h1>
@@ -175,6 +194,54 @@ function onHomeyReady(Homey){
  function setText(selector,key,tokens){const el=document.querySelector(selector);if(el)el.textContent=tr(key,tokens);}
  function setFieldText(id,key,hintKey,tokens){const el=$(id);if(!el)return;const root=el.closest('.map-row,.threshold');if(!root)return;const label=root.querySelector('.map-label');const hint=root.querySelector('.hint');if(label)label.textContent=tr(key,tokens);if(hint&&hintKey)hint.textContent=tr(hintKey,tokens);}
  function setOptionText(id,value,key){const el=$(id);if(!el)return;const option=[...el.options].find(o=>o.value===value);if(option)option.textContent=tr(key);}
+
+ function buildEffectSettings(){
+   const card=document.createElement('div');card.id='lineEffectsCard';card.className='card';
+   const heading=document.createElement('h2');heading.textContent=tr('settings.effects_title');card.appendChild(heading);
+   const intro=document.createElement('div');intro.className='sub';intro.textContent=tr('settings.effects_intro');card.appendChild(intro);
+   const select=(id,key,options)=>row(id,key,options);
+   function row(id,key,options,min,max,step){
+     const wrap=document.createElement('div');wrap.className='map-row';wrap.id=id+'Wrap';
+     const label=document.createElement('div');label.className='map-label';label.textContent=tr('settings.'+key);wrap.appendChild(label);
+     const field=document.createElement(options?'select':'input');field.id=id;
+     if(options)for(const [value,text]of options){const option=document.createElement('option');option.value=value;option.textContent=tr(text);field.appendChild(option);}
+     else{field.type='number';field.min=min;field.max=max;field.step=step;}
+     wrap.appendChild(field);card.appendChild(wrap);return field;
+   }
+   const color=[['green','settings.green'],['yellow','settings.yellow']];
+   select('effectPvLineColor','effects_pv_line',color);select('effectPvValueColor','effects_pv_value',color);
+   select('effectLineStyle','effects_style',[['classic','settings.effects_classic'],['ribbon','settings.effects_ribbon'],['comet','settings.effects_comet']]);
+   select('effectPower','effects_power',[['fixed','settings.effects_fixed'],['speed','settings.effects_speed'],['thickness','settings.effects_thickness']]);
+   row('effectCycle','effects_cycle',null,100,10000,50);
+   row('effectWidth','effects_width',null,.25,3,.05);
+   row('effectStandbyWidth','effects_standby_width',null,.25,3,.05);
+   row('effectRibbonGlow','effects_glow',null,0,200,5);
+   row('effectCorners','effects_corners',null,0,100,5);
+   select('effectComets','effects_comets',[['1','settings.effects_one'],['2','settings.effects_two'],['3','settings.effects_three']]);
+   for(const name of ['solar','grid','battery','ev'])row('effectLimit_'+name,'effects_limit_'+name,null,1,1000000,100);
+   select('effectValues','effects_values',[['live','settings.effects_live'],['count','settings.effects_count'],['crossfade','settings.effects_crossfade']]);
+   row('effectDuration','effects_duration',null,50,20000,50);
+   $('settingsPanel').appendChild(card);
+   $('effectLineStyle').onchange=updateEffectSettingsVisibility;$('effectPower').onchange=updateEffectSettingsVisibility;$('effectValues').onchange=updateEffectSettingsVisibility;
+ }
+ function updateEffectSettingsVisibility(){
+   const mode=$('effectPower').value;
+   $('effectStandbyWidthWrap').classList.toggle('hidden-row',mode!=='thickness');
+   $('effectCycleWrap').querySelector('.map-label').textContent=tr(mode==='speed'?'settings.effects_fastest':'settings.effects_cycle');
+   $('effectRibbonGlowWrap').classList.toggle('hidden-row',$('effectLineStyle').value!=='ribbon');
+   $('effectCometsWrap').classList.toggle('hidden-row',$('effectLineStyle').value!=='comet');
+   for(const name of ['solar','grid','battery','ev'])$('effectLimit_'+name+'Wrap').classList.toggle('hidden-row',mode==='fixed');
+   $('effectDurationWrap').classList.toggle('hidden-row',$('effectValues').value==='live');
+ }
+ function fillEffectSettings(){
+   const c=state.visualConfig.effects||{};
+   for(const [id,key,fallback]of [['effectPvLineColor','pvLineColor','green'],['effectPvValueColor','pvValueColor','green'],['effectLineStyle','lineStyle','classic'],['effectPower','powerEffect','fixed'],['effectCycle','lineCycleMs',1150],['effectWidth','lineWidthScale',1],['effectStandbyWidth','standbyWidthScale',1],['effectRibbonGlow','ribbonGlow',100],['effectCorners','cornerRounding',0],['effectComets','cometCount',1],['effectValues','valueTransition','live'],['effectDuration','transitionMs',350]])$(id).value=String(c[key]??fallback);
+   for(const [name,fallback]of Object.entries({solar:5000,grid:3500,battery:6000,ev:3600}))$('effectLimit_'+name).value=String(c.powerLimits?.[name]??fallback);
+   updateEffectSettingsVisibility();
+ }
+ function readEffectSettings(){
+   return {pvLineColor:$('effectPvLineColor').value,pvValueColor:$('effectPvValueColor').value,lineStyle:$('effectLineStyle').value,powerEffect:$('effectPower').value,lineCycleMs:Number($('effectCycle').value),lineWidthScale:Number($('effectWidth').value),standbyWidthScale:Number($('effectStandbyWidth').value),ribbonGlow:Number($('effectRibbonGlow').value),cornerRounding:Number($('effectCorners').value),cometCount:Number($('effectComets').value),valueTransition:$('effectValues').value,transitionMs:Number($('effectDuration').value),powerLimits:Object.fromEntries(['solar','grid','battery','ev'].map(name=>[name,Number($('effectLimit_'+name).value)]))};
+ }
  function localizeStatic(){
    const bodyIntro=document.querySelector('body > .sub'); if(bodyIntro)bodyIntro.textContent=tr('settings.page_intro');
    const modeCard=$('dataModeCard'); if(modeCard){const h=modeCard.querySelector('h2');if(h)h.textContent=tr('settings.data_mode_title');$('dataModeIntro').textContent=tr('settings.data_mode_intro');}
@@ -205,7 +272,8 @@ function onHomeyReady(Homey){
    for(const device of ['solar','battery','grid']){
      setFieldText(`${device}StandbyLineEnabled`,`settings.${device}_standby_line_enabled`,`settings.${device}_standby_line_enabled_hint`); setOptionText(`${device}StandbyLineEnabled`,'false','settings.off'); setOptionText(`${device}StandbyLineEnabled`,'true','settings.on');
      setFieldText(`${device}StandbyLineBlink`,`settings.${device}_standby_line_blink`,`settings.${device}_standby_line_blink_hint`); setOptionText(`${device}StandbyLineBlink`,'false','settings.off'); setOptionText(`${device}StandbyLineBlink`,'true','settings.on');
-     setFieldText(`${device}StandbyLineStyle`,`settings.${device}_standby_line_style`,`settings.${device}_standby_line_style_hint`); setOptionText(`${device}StandbyLineStyle`,'blue','settings.blue'); setOptionText(`${device}StandbyLineStyle`,'green','settings.green'); setOptionText(`${device}StandbyLineStyle`,'greenblue','settings.greenblue');
+     setFieldText(`${device}StandbyLineStyle`,`settings.${device}_standby_line_style`,`settings.${device}_standby_line_style_hint`); if(!$(`${device}StandbyLineStyle`).querySelector('option[value=yellow]')){const option=document.createElement('option');option.value='yellow';option.textContent=tr('settings.yellow');$(`${device}StandbyLineStyle`).appendChild(option);}
+     setOptionText(`${device}StandbyLineStyle`,'blue','settings.blue'); setOptionText(`${device}StandbyLineStyle`,'green','settings.green'); setOptionText(`${device}StandbyLineStyle`,'greenblue','settings.greenblue');
    }
    setFieldText('showBattery24h','settings.show_battery_24h','settings.show_battery_24h_hint'); setOptionText('showBattery24h','true','settings.yes'); setOptionText('showBattery24h','false','settings.no');
    const backgroundCard=$('backgroundCard'); if(backgroundCard){const h=backgroundCard.querySelector('h2');const sub=backgroundCard.querySelector(':scope > .sub');if(h)h.textContent=tr('settings.background_title');if(sub)sub.textContent=tr('settings.background_intro');}
@@ -690,6 +758,7 @@ function onHomeyReady(Homey){
    $('gridPowerUnit').value=powerUnits.grid||'w';
    $('evPowerUnit').value=powerUnits.ev||'kw';
    $('evDisplayMode').value=state.visualConfig.evDisplayMode||'hide_zero';
+   fillEffectSettings();
    const labels=state.visualConfig.labels||{};
    $('labelSolar').value=labels.solar||''; $('labelGrid').value=labels.grid||''; $('labelBattery').value=labels.battery||''; $('labelHome').value=labels.home||''; $('labelEv').value=labels.ev||'';
    updateBackgroundMode();
@@ -771,6 +840,7 @@ function onHomeyReady(Homey){
  createAdditionalFields();
  localizeStatic();
  initializeTabs();
+ buildEffectSettings();
  initializeLayoutSettings();
  setupPickers();
  $('refreshMapping').onclick=refreshWeatherMappings;
@@ -808,7 +878,7 @@ function onHomeyReady(Homey){
      if(index<=energyConfig.batteryCount && energyConfig[`${batteryPrefix}Soc`]) configuredBatterySoc.push(batteryPrefix);
    }
    if(configuredBatterySoc.length>1 && configuredBatterySoc.some(prefix=>!(energyConfig[`${prefix}CapacityKwh`]>0))){Homey.alert(tr('settings.capacity_required'));return;}
-   const visualConfig={evDisplayMode:$('evDisplayMode').value,backgroundSet:$('backgroundSet').value||'house',backgroundMode:$('backgroundMode').value||'auto',weatherSource:selectedDataMode==='flow'?(state.visualConfig.weatherSource||''):($('weatherSource').value||''),periodMode:$('scenePeriod').value||'auto',dayNightMode:$('dayNightMode').value||'hours',dayStartTime:$('dayStartTime').value||'07:00',nightStartTime:$('nightStartTime').value||'20:00',weather:$('sceneWeather').value||'clear',panelTransparency:Number($('panelTransparency').value||30),overlayTheme:$('overlayTheme').value||'auto',lineBlinkTempo:Number($('lineBlinkTempo').value||2.4),solarStandbyLineEnabled:$('solarStandbyLineEnabled').value==='true',solarStandbyLineBlink:$('solarStandbyLineBlink').value==='true',solarStandbyLineStyle:$('solarStandbyLineStyle').value||'green',batteryStandbyLineEnabled:$('batteryStandbyLineEnabled').value==='true',batteryStandbyLineBlink:$('batteryStandbyLineBlink').value==='true',batteryStandbyLineStyle:$('batteryStandbyLineStyle').value||'blue',gridStandbyLineEnabled:$('gridStandbyLineEnabled').value==='true',gridStandbyLineBlink:$('gridStandbyLineBlink').value==='true',gridStandbyLineStyle:$('gridStandbyLineStyle').value||'blue',showBattery24h:$('showBattery24h').value!=='false',refreshSeconds:Number($('refreshSeconds').value||30),widgetTextScale:Number($('widgetTextScale').value||90),widgetTitleScale:Number($('widgetTitleScale').value||100),powerUnits:{solar:$('solarPowerUnit').value||'kw',battery:$('batteryPowerUnit').value||'kw',home:$('homePowerUnit').value||'w',grid:$('gridPowerUnit').value||'w',ev:$('evPowerUnit').value||'kw'},labels:{solar:$('labelSolar').value.trim(),grid:$('labelGrid').value.trim(),battery:$('labelBattery').value.trim(),home:$('labelHome').value.trim(),ev:$('labelEv').value.trim()}};
+   const visualConfig={effects:readEffectSettings(),evDisplayMode:$('evDisplayMode').value,backgroundSet:$('backgroundSet').value||'house',backgroundMode:$('backgroundMode').value||'auto',weatherSource:selectedDataMode==='flow'?(state.visualConfig.weatherSource||''):($('weatherSource').value||''),periodMode:$('scenePeriod').value||'auto',dayNightMode:$('dayNightMode').value||'hours',dayStartTime:$('dayStartTime').value||'07:00',nightStartTime:$('nightStartTime').value||'20:00',weather:$('sceneWeather').value||'clear',panelTransparency:Number($('panelTransparency').value||30),overlayTheme:$('overlayTheme').value||'auto',lineBlinkTempo:Number($('lineBlinkTempo').value||2.4),solarStandbyLineEnabled:$('solarStandbyLineEnabled').value==='true',solarStandbyLineBlink:$('solarStandbyLineBlink').value==='true',solarStandbyLineStyle:$('solarStandbyLineStyle').value||'green',batteryStandbyLineEnabled:$('batteryStandbyLineEnabled').value==='true',batteryStandbyLineBlink:$('batteryStandbyLineBlink').value==='true',batteryStandbyLineStyle:$('batteryStandbyLineStyle').value||'blue',gridStandbyLineEnabled:$('gridStandbyLineEnabled').value==='true',gridStandbyLineBlink:$('gridStandbyLineBlink').value==='true',gridStandbyLineStyle:$('gridStandbyLineStyle').value||'blue',showBattery24h:$('showBattery24h').value!=='false',refreshSeconds:Number($('refreshSeconds').value||30),widgetTextScale:Number($('widgetTextScale').value||90),widgetTitleScale:Number($('widgetTitleScale').value||100),powerUnits:{solar:$('solarPowerUnit').value||'kw',battery:$('batteryPowerUnit').value||'kw',home:$('homePowerUnit').value||'w',grid:$('gridPowerUnit').value||'w',ev:$('evPowerUnit').value||'kw'},labels:{solar:$('labelSolar').value.trim(),grid:$('labelGrid').value.trim(),battery:$('labelBattery').value.trim(),home:$('labelHome').value.trim(),ev:$('labelEv').value.trim()}};
    status.textContent=tr('settings.saving');
    try{
      visualConfig.componentPositions=chosenPositions;
