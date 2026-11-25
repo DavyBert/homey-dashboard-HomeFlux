@@ -775,6 +775,13 @@ class DashboardBridgeApp extends Homey.App {
     return { scenes: PHOTO_SCENES, mappings: this._photoMappings, gallery };
   }
 
+  async getGalleryPhotoForWidget(id, refresh = false) {
+    if (this.visualConfig.backgroundSet !== 'custom' || !Object.values(this._photoMappings || {}).some(photo => photo.id === id)) {
+      throw new Error('Gallery photo unavailable');
+    }
+    return this._gallery().photo(id, refresh);
+  }
+
   saveOwnPhoto(payload) {
     const pending = (this._photoSaveQueue || Promise.resolve()).then(() => this._saveOwnPhoto(payload));
     this._photoSaveQueue = pending.catch(() => {});

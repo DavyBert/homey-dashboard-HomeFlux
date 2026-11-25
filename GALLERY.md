@@ -1,4 +1,4 @@
-# HomeFlux 0.9.4 — Eigen foto's
+# HomeFlux — Eigen foto's
 
 De bestaande sets Huis en Tuin blijven de standaardkeuzes. Eigen foto's is een
 afzonderlijke, optionele set. De instellingen bevatten een nieuw tabblad met
@@ -21,8 +21,11 @@ Deze bevat per vaste Gallery-ID een naam, MIME-type en `/userdata/ID.ext`.
 De dropdown toont de door de gebruiker benoemde Gallery-naam; de technische
 bestandsnaam staat in de tooltip. Er hoeft geen URL ingevoerd te worden.
 
-De bestandsroute `/app/com.athom.gallery/userdata/ID.ext` volgt dezelfde methode
-als Athoms eigen Gallery Slideshow-widget. Er wordt geen tijdelijk
+De bestandsroute `/app/com.athom.gallery/userdata/ID.ext` wordt vanaf 1.0.3
+alleen door de HomeFlux-backend geladen. De widget ontvangt de afbeelding via
+`Homey.api('GET', '/photo/ID')` als een data-URL en hoeft geen Gallery-URL op
+het toestel te openen. Het Homey-adres komt uit de officiële SDK-methode
+`homey.cloud.getLocalAddress()`. Er wordt geen tijdelijk
 ManagerImages-ID opgeslagen. Gallery bewaart de vaste IDs en bestanden bij een
 app- of Homey-herstart; de tests voeren die initialisatie opnieuw uit.
 
@@ -87,14 +90,21 @@ achterliggende bestand. Alleen een HTTP-laadcontrole zou dus onvoldoende zijn.
 - Alleen mislukte herpogingen gebruiken een cachedoorbrekende queryparameter.
 - Wisselen van set of foto annuleert oude timers en negeert late antwoorden.
 - Energie-updates downloaden geen foto's en vragen geen Gallery-lijst op.
-- De backend bewaart alleen metadata. Afbeeldingsbytes en decodering blijven bij
-  de browser, met de gewone browsercache; er worden geen foto's in HomeFlux gekopieerd.
+- De backend bewaart maximaal één foto in het geheugen en deelt gelijktijdige
+  aanvragen voor dezelfde foto. Wisselen naar een andere foto verdringt de vorige.
+- De fotodownload is begrensd op 8 MiB en 12 seconden. Een fout of afgebroken
+  aanvraag wordt niet gecachet. Gallery-wijzigingen en afsluiten legen de cache.
+- Een herpoging na een decodeerfout ververst ook de servercache.
+- Er worden geen foto's naar HomeFlux-opslag gekopieerd en geen extra periodieke
+  taken toegevoegd. De ingebouwde afbeeldingen blijven de bestaande widgetbestanden.
 
 ## Gewijzigde bestanden
 
 - `app.js`: optionele Gallery-runtime, aparte fotokeuzes en derde set.
 - `lib/gallery.js`: SDK-koppeling, naam-/bestandsvalidatie, cache en foutherstel.
 - `api.js`: GET /photos en PUT /photo-mapping.
+- `widgets/dashboard/api.js` en `widget.compose.json`: GET /photo/:id; alleen
+  gekozen Gallery-foto's worden geleverd wanneer Eigen foto's actief is.
 - `settings/index.html`: vierde tab, derde setkeuze, dropdowns en previews.
 - `widgets/dashboard/public/index.html`: optioneel fotoladen en fallback/herstel.
 - `locales/en.json`, `locales/nl.json`: nieuwe teksten.
@@ -149,3 +159,18 @@ De infovensters kunnen via Instellingen tussen vier hoeken worden verwisseld.
 De lijnen volgen deze indeling. De achtergrondfoto wordt niet aangepast.
 De huis–batterijlijn kan naar het batterijvenster worden verlengd; zie LAYOUT.md.
 Niets is gepusht of gepubliceerd.
+
+
+## Verificatie van 1.0.3
+
+De browsertest bedient de widget vanaf een ander adres dan de Gallery-bestanden.
+Directe Gallery-afbeeldingsroutes op dat widgetadres leveren bewust HTTP 404.
+De widget-API loopt via de Homey-koppeling in de testomgeving. JPEG en een geldige
+PNG met een transportomvang van 3 MiB worden geladen, zonder directe
+Gallery-afbeeldingsaanvragen vanuit de widget. Alle 14 weersmodi en de bestaande
+terugval-, herstel- en lay-outcontroles worden uitgevoerd. Dit simuleert het
+adresverschil en is geen test op een fysieke iPhone of iPad.
+
+Bestandsextensies en MIME-types worden hoofdletterongevoelig gecontroleerd. De
+oorspronkelijke schrijfwijze van de bestandsnaam en Gallery-ID blijft behouden
+voor het ophalen van het bestand. Ondersteund: JPG/JPEG, PNG en GIF, ook gemengd.

@@ -637,32 +637,33 @@ function onHomeyReady(Homey){
  let photoTimer=null,photoLoad=null,photoGeneration=0;
  function clearPhotoLoad(){
    clearTimeout(photoTimer);photoTimer=null;
-   if(photoLoad){clearTimeout(photoLoad.timer);photoLoad.image.onload=null;photoLoad.image.onerror=null;photoLoad=null;}
+   if(photoLoad){clearTimeout(photoLoad.timer);photoLoad.finished=true;photoLoad.image.onload=null;photoLoad.image.onerror=null;photoLoad=null;}
  }
  function applyScene(scene,config,photo){
    const key=scene&&scene.key?scene.key:'day-clear';
    const custom=config&&config.backgroundSet==='custom';
    const setKey=config&&config.backgroundSet==='garden'?'garden':'house';
    const backgrounds=BACKGROUND_SETS[setKey]||BACKGROUND_SETS.house;
-   // Only relative Gallery userdata paths returned by our backend are allowed.
-   const photoUrl=custom&&photo&&/^\/app\/com\.athom\.gallery\/userdata\/[a-zA-Z0-9-]+\.(jpg|jpeg|png|gif)$/.test(photo.url||'')?photo.url:null;
-   const sceneSignature=JSON.stringify([custom?'custom':setKey,key,photoUrl]);
+   // Only selected Gallery IDs go through the widget API; no direct cross-app image URL.
+   const photoId=custom&&photo&&/^[a-zA-Z0-9-]{1,128}$/.test(photo.id||'')?photo.id:null;
+   const sceneSignature=JSON.stringify([custom?'custom':setKey,key,photoId]);
    frame.dataset.theme=sceneTheme(key,config);
    if(sceneSignature===currentScene)return;
    currentScene=sceneSignature;
    clearPhotoLoad();const generation=++photoGeneration;
    const url=backgrounds[key]||backgrounds['day-clear']||BACKGROUND_SETS.house['day-clear'];
    energyEl.style.backgroundImage=`url('${url}')`;
-   if(!photoUrl){const img=new Image();img.onload=()=>scheduleHeightSync(true);img.src=url;return;}
+   if(!photoId){const img=new Image();img.onload=()=>scheduleHeightSync(true);img.src=url;return;}
    // Keep the matching built-in scene visible until decoding succeeds. Failed
    // files are retried slowly; normal energy events do not reload the image.
    function loadPhoto(attempt=0){
      if(generation!==photoGeneration||document.hidden)return;
      const img=new Image();
-     const task={image:img,timer:null};
-     const requested=photoUrl+(attempt?'?hf_retry='+Date.now():'');
-     const finish=()=>{clearTimeout(task.timer);img.onload=null;img.onerror=null;if(photoLoad===task)photoLoad=null;};
+     const task={image:img,timer:null,finished:false};
+     let requested;
+     const finish=()=>{task.finished=true;clearTimeout(task.timer);img.onload=null;img.onerror=null;if(photoLoad===task)photoLoad=null;};
      const failed=()=>{
+       if(task.finished)return;
        finish();if(generation!==photoGeneration)return;
        energyEl.style.backgroundImage=`url('${url}')`;
        photoTimer=setTimeout(()=>loadPhoto(attempt+1),Math.min(300000,30000*2**Math.min(attempt,4)));
@@ -673,7 +674,13 @@ function onHomeyReady(Homey){
        finish();if(generation!==photoGeneration)return;
        energyEl.style.backgroundImage=`url('${requested}'),url('${url}')`;scheduleHeightSync(true);
      };
-     task.timer=setTimeout(failed,15000);photoLoad=task;img.src=requested;
+     task.timer=setTimeout(failed,15000);photoLoad=task;
+     Homey.api('GET','/photo/'+encodeURIComponent(photoId)+(attempt?'?refresh=1':''))
+       .then(result=>{
+         if(task.finished||generation!==photoGeneration)return;
+         if(result?.id!==photoId||typeof result.dataUrl!=='string'||!/^data:image\/(jpeg|png|gif);base64,[A-Za-z0-9+/]+={0,2}$/.test(result.dataUrl)){failed();return;}
+         requested=result.dataUrl;img.src=requested;
+       }).catch(failed);
    }
    loadPhoto();
  }

@@ -173,3 +173,18 @@ The HomeFlux app version follows the version that is actually published to Athom
 - DE: Optionale Flux-Ribbon- und Comet-Flow-Linien, leistungsabhängige Geschwindigkeit oder Dicke, abgerundete Ecken und Wertübergänge hinzugefügt. Gelb ist für PV-Linie und PV-Wert getrennt wählbar. Bestehende Farben, Layout und Datenaktualisierung bleiben erhalten.
 - FR: Ajout des lignes facultatives Flux Ribbon et Comet Flow, de la vitesse ou épaisseur selon la puissance, des angles arrondis et des transitions de valeurs. Le jaune est sélectionnable séparément pour la ligne et la valeur PV. Les couleurs, la disposition et l’actualisation existantes sont conservées.
 - ES: Añadidas líneas opcionales Flux Ribbon y Comet Flow, velocidad o grosor según potencia, esquinas redondeadas y transiciones de valores. El amarillo se puede seleccionar por separado para la línea y el valor FV. Se conservan los colores, la distribución y la actualización existentes.
+
+
+## 1.0.3
+
+- EN: Gallery filename extensions and image MIME types now accept uppercase and mixed case.
+- NL: Gallery-bestandsextensies en afbeeldings-MIME-types accepteren nu ook hoofdletters en gemengde schrijfwijzen.
+- DE: Gallery-Dateiendungen und Bild-MIME-Typen akzeptieren nun auch Groß- und gemischte Schreibweisen.
+- FR: Les extensions des fichiers Gallery et les types MIME des images acceptent désormais les majuscules et les casses mixtes.
+- ES: Las extensiones de archivos Gallery y los tipos MIME de imagen ahora aceptan mayúsculas y combinaciones de mayúsculas y minúsculas.
+
+- EN: Gallery backgrounds now load through the HomeFlux widget API instead of a direct Gallery URL on the viewing device. Added a bounded single-photo cache; existing photo selections and fallback scenes are retained.
+- NL: Gallery-achtergronden laden nu via de HomeFlux-widget-API in plaats van een directe Gallery-URL op het toestel. Een begrensde cache voor één foto toegevoegd; bestaande fotokeuzes en terugvalscènes blijven behouden.
+- DE: Gallery-Hintergründe werden nun über die HomeFlux-Widget-API statt über eine direkte Gallery-URL auf dem Anzeigegerät geladen. Begrenzten Cache für ein Foto hinzugefügt; bestehende Fotoauswahl und Ersatzszenen bleiben erhalten.
+- FR: Les arrière-plans Gallery se chargent désormais via l’API du widget HomeFlux au lieu d’une URL Gallery directe sur l’appareil. Ajout d’un cache limité à une photo ; les sélections et scènes de remplacement sont conservées.
+- ES: Los fondos de Gallery se cargan ahora mediante la API del widget HomeFlux en lugar de una URL directa de Gallery en el dispositivo. Se añade una caché limitada a una foto; se conservan las selecciones y las escenas de respaldo.

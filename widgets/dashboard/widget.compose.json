@@ -11,6 +11,10 @@
     "getDashboard": {
       "method": "GET",
       "path": "/dashboard"
+    },
+    "getGalleryPhoto": {
+      "method": "GET",
+      "path": "/photo/:id"
     }
   }
 }
