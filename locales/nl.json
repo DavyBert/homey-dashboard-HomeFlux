@@ -308,7 +308,9 @@
     "effects_crossfade": "Overvloeien",
     "effects_duration": "Overgangstijd (ms)",
     "effects_glow": "Ribbon-gloedsterkte (0–200%; 100% = huidige gloed)",
-    "effects_standby_width": "Factor voor stand-bylijndikte (1 = huidige dikte)"
+    "effects_standby_width": "Factor voor stand-bylijndikte (1 = huidige dikte)",
+    "input_invert": "Input omdraaien (× −1)",
+    "input_invert_hint": "Keert het teken van deze numerieke input om vóór de berekeningen in HomeFlux. De waarde op het bronapparaat blijft ongewijzigd."
   },
   "widget": {
     "aria_energy": "Live energie-overzicht",

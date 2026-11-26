@@ -188,3 +188,27 @@ The HomeFlux app version follows the version that is actually published to Athom
 - DE: Gallery-Hintergründe werden nun über die HomeFlux-Widget-API statt über eine direkte Gallery-URL auf dem Anzeigegerät geladen. Begrenzten Cache für ein Foto hinzugefügt; bestehende Fotoauswahl und Ersatzszenen bleiben erhalten.
 - FR: Les arrière-plans Gallery se chargent désormais via l’API du widget HomeFlux au lieu d’une URL Gallery directe sur l’appareil. Ajout d’un cache limité à une photo ; les sélections et scènes de remplacement sont conservées.
 - ES: Los fondos de Gallery se cargan ahora mediante la API del widget HomeFlux en lugar de una URL directa de Gallery en el dispositivo. Se añade una caché limitada a una foto; se conservan las selecciones y las escenas de respaldo.
+
+
+## 1.0.4
+
+- EN: Added an input inversion checkbox beside each numeric energy input on the Inputs screen. Values are corrected before totals and calculations, allowing negative PV production readings to be combined correctly. Existing battery power, line and animation settings are retained; inversion defaults to off.
+- NL: Een keuze om de input om te draaien toegevoegd bij elke numerieke energie-input op het scherm Inputs. De waarde wordt vóór totalen en berekeningen gecorrigeerd, zodat negatieve PV-productiemetingen correct worden opgeteld. Bestaande batterij-, lijn- en animatie-instellingen blijven behouden; omdraaien staat standaard uit.
+- DE: Ein Kontrollkästchen zum Umkehren jedes numerischen Energieeingangs auf der Eingangsseite hinzugefügt. Werte werden vor Summen und Berechnungen korrigiert, damit negative PV-Erzeugungswerte korrekt addiert werden. Bestehende Batterie-, Linien- und Animationseinstellungen bleiben erhalten; die Umkehrung ist standardmäßig aus.
+- FR: Ajout d’une case d’inversion à chaque entrée numérique d’énergie dans l’écran Entrées. Les valeurs sont corrigées avant les totaux et calculs afin d’additionner correctement les productions PV négatives. Les réglages existants de batterie, de lignes et d’animation sont conservés ; l’inversion est désactivée par défaut.
+- ES: Añadida una casilla de inversión junto a cada entrada numérica de energía en la pantalla Entradas. Los valores se corrigen antes de los totales y cálculos para sumar correctamente las mediciones FV negativas. Se conservan los ajustes de batería, líneas y animación; la inversión está desactivada por defecto.
+
+The checkbox is placed inside each existing input picker on the Inputs tab,
+including all PV, battery power/SOC, charger power, grid power and direct home
+consumption inputs (up to ten sources per device group). It multiplies a finite
+numeric reading by −1 within HomeFlux before unit conversion and aggregation.
+The original Homey/Flow source value remains unchanged. Text/status and weather
+inputs are not sign-inverted. The same option works in integrated and Flow mode.
+
+The existing battery power direction already normalizes the calculated battery
+power to positive for charging and negative for discharging. Battery line state
+and line motion can still be configured separately. The new input checkbox runs
+before these existing battery rules; they are not migrated or replaced. The
+widget normally displays the battery power magnitude with the charging or
+discharging status. All new checkboxes default to off, preserving existing
+installations. No new polling or subscriptions are added.

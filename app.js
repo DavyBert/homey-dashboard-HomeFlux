@@ -337,6 +337,7 @@ class DashboardBridgeApp extends Homey.App {
       gridPower: c.gridPower || '',
       gridThresholdW: Number.isFinite(Number(c.gridThresholdW)) ? Math.max(0, Number(c.gridThresholdW)) : 50,
       homePower: c.homePower || '',
+      inputInversions: Object.fromEntries(FLOW_NUMERIC_FIELDS.filter(field => c.inputInversions?.[field] === true).map(field => [field, true])),
       batteryThresholdKw: Number.isFinite(Number(c.batteryThresholdKw)) ? Number(c.batteryThresholdKw) : 0.2
     };
 
@@ -1166,7 +1167,7 @@ class DashboardBridgeApp extends Homey.App {
       const key = this._fieldSourceKey(`battery${suffix}Soc`);
       if (!key) continue;
       batteries.push({
-        key,
+        key, field: `battery${suffix}Soc`,
         capacity: Number(this.energyConfig[`battery${suffix}CapacityKwh`]) || 0
       });
     }
@@ -1176,7 +1177,10 @@ class DashboardBridgeApp extends Homey.App {
       return null;
     }
 
-    const insights = await Promise.all(batteries.map(item => this._fetchSoc24hInsight(item.key)));
+    const insights = await Promise.all(batteries.map(async item => {
+      const sample = await this._fetchSoc24hInsight(item.key);
+      return sample ? { ...sample, value: this._inputValue(item.field, sample.value) } : sample;
+    }));
     if (insights.some(item => !item)) {
       this._batteryInsights24h = null;
       return null;
@@ -1245,6 +1249,18 @@ class DashboardBridgeApp extends Homey.App {
     };
   }
 
+  _inputValue(field, value) {
+    return this.energyConfig.inputInversions?.[field] === true && typeof value === 'number' && Number.isFinite(value)
+      ? (value === 0 ? 0 : -value) : value;
+  }
+
+  _inputData(field) {
+    const data = this._sourceData(this._fieldSourceKey(field));
+    if (!data) return data;
+    const value = this._inputValue(field, data.rawValue);
+    return Object.is(value, data.rawValue) ? data : { ...data, value: this._formatValue(value), rawValue: value };
+  }
+
   _powerToWatts(data) {
     if (!data || !data.online || typeof data.rawValue !== 'number' || !Number.isFinite(data.rawValue)) return null;
     const value = Number(data.rawValue);
@@ -1279,11 +1295,11 @@ class DashboardBridgeApp extends Homey.App {
     };
   }
 
-  _sumPowerSources(keys, label) {
+  _sumPowerSources(fields, label) {
     let total = 0;
     let count = 0;
-    for (const key of keys.filter(Boolean)) {
-      const watts = this._powerToWatts(this._sourceData(key));
+    for (const field of fields) {
+      const watts = this._powerToWatts(this._inputData(field));
       if (watts === null) continue;
       total += watts;
       count += 1;
@@ -1294,8 +1310,8 @@ class DashboardBridgeApp extends Homey.App {
   _combinedSolarData() {
     const count = Math.max(0, Math.min(10, Number(this.energyConfig.solarCount) || 0));
     if (!count) return null;
-    const keys = Array.from({ length: count }, (_, index) => this._fieldSourceKey(index === 0 ? 'solar' : `solar${index + 1}`));
-    return this._sumPowerSources(keys, 'Zonnepanelen totaal');
+    const fields = Array.from({ length: count }, (_, index) => index === 0 ? 'solar' : `solar${index + 1}`);
+    return this._sumPowerSources(fields, 'Zonnepanelen totaal');
   }
 
   _batteryPowerWatts() {
@@ -1307,7 +1323,7 @@ class DashboardBridgeApp extends Homey.App {
       if (!key) continue;
       const direction = this.energyConfig[`battery${suffix}Direction`]
         || (this.energyConfig[`battery${suffix}Invert`] ? 'positive_discharge' : 'positive_discharge');
-      let watts = this._powerToWatts(this._sourceData(key));
+      let watts = this._powerToWatts(this._inputData(`battery${suffix}Power`));
       if (watts === null) continue;
       watts = this._normalizeBatteryWatts(watts, direction);
       total += watts;
@@ -1326,7 +1342,7 @@ class DashboardBridgeApp extends Homey.App {
       const powerDirection = this.energyConfig[`battery${suffix}Direction`]
         || (this.energyConfig[`battery${suffix}Invert`] ? 'positive_discharge' : 'positive_discharge');
       const lineDirection = this.energyConfig[`battery${suffix}LineDirection`] || 'follow_power';
-      let watts = this._powerToWatts(this._sourceData(key));
+      let watts = this._powerToWatts(this._inputData(`battery${suffix}Power`));
       if (watts === null) continue;
       watts = this._normalizeBatteryWatts(watts, this._resolveBatteryLineDirection(lineDirection, powerDirection));
       total += watts;
@@ -1348,7 +1364,7 @@ class DashboardBridgeApp extends Homey.App {
       const powerDirection = this.energyConfig[`${prefix}Direction`] || 'positive_discharge';
       const lineDirection = this.energyConfig[`${prefix}LineDirection`] || 'follow_power';
       const lineMotion = this.energyConfig[`${prefix}LineMotion`] || 'invert_flow';
-      let watts = this._powerToWatts(this._sourceData(key));
+      let watts = this._powerToWatts(this._inputData(`battery${suffix}Power`));
       if (watts === null) continue;
       watts = this._normalizeBatteryWatts(watts, this._resolveBatteryLineDirection(lineDirection, powerDirection));
       if (Math.abs(watts) <= thresholdW) continue;
@@ -1371,13 +1387,13 @@ class DashboardBridgeApp extends Homey.App {
       const suffix = index === 1 ? '' : String(index);
       const key = this._fieldSourceKey(`battery${suffix}Soc`);
       if (!key) continue;
-      entries.push({ key, capacity: Number(this.energyConfig[`battery${suffix}CapacityKwh`]) || 0 });
+      entries.push({ field: `battery${suffix}Soc`, key, capacity: Number(this.energyConfig[`battery${suffix}CapacityKwh`]) || 0 });
     }
     if (!entries.length) return null;
 
     const available = [];
     for (const entry of entries) {
-      const data = this._sourceData(entry.key);
+      const data = this._inputData(entry.field);
       if (!data || !data.online || typeof data.rawValue !== 'number' || !Number.isFinite(data.rawValue)) continue;
       available.push({ data, capacity: entry.capacity });
     }
@@ -1411,11 +1427,11 @@ class DashboardBridgeApp extends Homey.App {
   _combinedEvPowerData() {
     const count = Math.max(0, Math.min(10, Number(this.energyConfig.chargerCount) || 0));
     if (!count) return null;
-    const keys = Array.from({ length: count }, (_, index) => {
+    const fields = Array.from({ length: count }, (_, index) => {
       const suffix = index === 0 ? '' : String(index + 1);
-      return this._fieldSourceKey(`ev${suffix}Power`);
+      return `ev${suffix}Power`;
     });
-    return this._sumPowerSources(keys, 'Autoladers totaal');
+    return this._sumPowerSources(fields, 'Autoladers totaal');
   }
 
   _batteryFlowState() {
@@ -1437,7 +1453,7 @@ class DashboardBridgeApp extends Homey.App {
   }
 
   _gridFlowState() {
-    const grid = this._sourceData(this._fieldSourceKey('gridPower'));
+    const grid = this._inputData('gridPower');
     const watts = this._powerToWatts(grid);
     if (watts === null) return 'idle';
     const thresholdW = Math.max(0, Number(this.energyConfig.gridThresholdW) || 50);
@@ -1448,7 +1464,7 @@ class DashboardBridgeApp extends Homey.App {
 
   _derivedHomePower() {
     const solar = this._combinedSolarData();
-    const grid = this._sourceData(this._fieldSourceKey('gridPower'));
+    const grid = this._inputData('gridPower');
 
     const solarW = this.energyConfig.solarCount === 0 ? 0 : this._powerToWatts(solar);
     const gridW = this._powerToWatts(grid);
@@ -1477,7 +1493,7 @@ class DashboardBridgeApp extends Homey.App {
   }
 
   _homePowerData() {
-    const direct = this._sourceData(this._fieldSourceKey('homePower'));
+    const direct = this._inputData('homePower');
     if (direct && direct.online && typeof direct.rawValue === 'number') return { ...direct, derived: false };
     return this._derivedHomePower();
   }
@@ -1885,7 +1901,7 @@ class DashboardBridgeApp extends Homey.App {
       evPower: this._combinedEvPowerData(),
       evChargerCount: this.energyConfig.chargerCount,
       evStatus: this.energyConfig.chargerCount > 1 ? { value: String(this.energyConfig.chargerCount), rawValue: this.energyConfig.chargerCount, unit: '', online: true, synthetic: true } : this.energyConfig.chargerCount === 1 ? this._sourceData(this._fieldSourceKey('evStatus')) : null,
-      gridPower: this._sourceData(this._fieldSourceKey('gridPower')),
+      gridPower: this._inputData('gridPower'),
       gridFlow: this._gridFlowState(),
       homePower: this._homePowerData()
     };

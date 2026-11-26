@@ -185,6 +185,7 @@ function onHomeyReady(Homey){
  ];
  const state={sources:[],selected:[],energyConfig:{},visualConfig:{},dataMode:'integrated',activeDataMode:'integrated',flowStatus:{}}, $=id=>document.getElementById(id), list=$('list'), selected=$('selected'), search=$('search'), status=$('status');
  state.weatherMappings=[];
+ const numericInputFields=energyFields.filter(field=>!field.endsWith('Status'));
  const pickerFields=[...energyFields,'weatherSource'];
  const pickerMap={};
  const api=(method,path,body)=>new Promise((resolve,reject)=>Homey.api(method,path,body,(err,result)=>err?reject(err):resolve(result)));
@@ -666,6 +667,12 @@ function onHomeyReady(Homey){
    const selectedView=document.createElement('div'); selectedView.className='picker-selected empty';
    const clearBtn=document.createElement('button'); clearBtn.type='button'; clearBtn.className='picker-clear hidden-row'; clearBtn.textContent=field==='weatherSource'?tr('settings.clear_weather'):tr('settings.clear_link');
    picker.appendChild(searchInput); picker.appendChild(results); picker.appendChild(selectedView); picker.appendChild(clearBtn);
+   if(numericInputFields.includes(field)){
+     const label=document.createElement('label');label.className='toggle';label.title=tr('settings.input_invert_hint');
+     const checkbox=document.createElement('input');checkbox.type='checkbox';checkbox.id=field+'InputInvert';checkbox.checked=state.energyConfig.inputInversions?.[field]===true;
+     checkbox.onchange=()=>{state.energyConfig.inputInversions={...state.energyConfig.inputInversions,[field]:checkbox.checked};};
+     const text=document.createElement('span');text.textContent=tr('settings.input_invert');label.appendChild(checkbox);label.appendChild(text);picker.appendChild(label);
+   }
    select.parentNode.insertBefore(picker, select); select.style.display='none';
    pickerMap[field]={search:searchInput,results,selected:selectedView,clear:clearBtn};
    const openPicker=async()=>{
@@ -714,6 +721,7 @@ function onHomeyReady(Homey){
    const weatherCandidates=[...state.sources].sort((a,b)=>weatherScore(b)-weatherScore(a)||a.label.localeCompare(b.label));
    for(const src of weatherCandidates){const o=document.createElement('option');o.value=src.key;o.textContent=sourceText(src);weatherSelect.appendChild(o);}weatherSelect.value=currentWeather;
    updatePickerSelected('weatherSource');
+   for(const field of numericInputFields)$(field+'InputInvert').checked=state.energyConfig.inputInversions?.[field]===true;
    $('batteryThresholdKw').value=state.energyConfig.batteryThresholdKw ?? 0.2;
    $('gridThresholdW').value=state.energyConfig.gridThresholdW ?? 50;
    $('solarCount').value=String(Math.max(0,Math.min(10,Number(state.energyConfig.solarCount ?? 1))));
@@ -856,6 +864,7 @@ function onHomeyReady(Homey){
  $('save').onclick=async()=>{
    const selectedDataMode=uiDataMode();
    const energyConfig={}; for(const field of energyFields) energyConfig[field]=selectedDataMode==='flow'?(state.energyConfig[field]||''):($(field).value||'');
+   energyConfig.inputInversions=Object.fromEntries(numericInputFields.filter(field=>$(field+'InputInvert').checked).map(field=>[field,true]));
    energyConfig.batteryThresholdKw=Number($('batteryThresholdKw').value||0.2);
    energyConfig.gridThresholdW=Math.max(0,Number($('gridThresholdW').value||50));
    energyConfig.solarCount=Math.max(0,Math.min(10,Number($('solarCount').value)));

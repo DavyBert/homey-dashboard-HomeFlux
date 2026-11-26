@@ -308,7 +308,9 @@
     "effects_crossfade": "Fondu enchaîné",
     "effects_duration": "Durée de transition (ms)",
     "effects_glow": "Intensité lumineuse Ribbon (0–200 % ; 100 % = intensité actuelle)",
-    "effects_standby_width": "Facteur d’épaisseur des lignes en veille (1 = épaisseur actuelle)"
+    "effects_standby_width": "Facteur d’épaisseur des lignes en veille (1 = épaisseur actuelle)",
+    "input_invert": "Inverser l’entrée (× −1)",
+    "input_invert_hint": "Inverse le signe de cette entrée numérique avant les calculs HomeFlux. La valeur sur l’appareil source reste inchangée."
   },
   "widget": {
     "aria_energy": "Vue de l’énergie en direct",

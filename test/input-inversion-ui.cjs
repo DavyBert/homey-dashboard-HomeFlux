@@ -1,0 +1,34 @@
+'use strict';
+// Developer browser check; Playwright and Chromium are not runtime dependencies.
+const fs=require('node:fs'),http=require('node:http'),path=require('node:path'),assert=require('node:assert/strict'),Module=require('node:module');
+const {chromium}=require('playwright'),load=Module._load;
+Module._load=function(id,...args){return id==='homey'?{App:class{}}:load.call(this,id,...args);};const App=require('../app'),routes=require('../api');Module._load=load;
+(async()=>{
+ assert.equal(process.versions.node.split('.')[0],'22');const root=path.resolve(__dirname,'..'),settings={dataMode:'integrated',energyConfig:{solarCount:2,batteryCount:1,chargerCount:1,solar:'variable:pv1',solar2:'variable:pv2',batteryPower:'variable:bat',batterySoc:'variable:soc',gridPower:'variable:grid',batteryDirection:'positive_charge',batteryLineDirection:'positive_discharge',batteryLineMotion:'follow_flow'},visualConfig:{backgroundSet:'house',backgroundMode:'manual',periodMode:'day',weather:'clear'}};
+ const sources=[['pv1',1000,'W'],['pv2',-500,'W'],['bat',200,'W'],['soc',50,'%'],['grid',900,'W']].map(([id,value,unit])=>({key:'variable:'+id,type:'variable',valueType:'number',deviceName:'Logic',name:id,label:id,value,unit}));
+ const app=new App(),homey={manifest:{version:'1.0.4'},settings:{get:k=>settings[k],set:async(k,v)=>{settings[k]=v;}},api:{realtime(){}},flow:{getActionCard:()=>({registerRunListener(){}})},setTimeout,clearTimeout,setInterval,clearInterval};
+ homey.app=app;app.homey=homey;app.log=app.error=()=>{};app._refreshHomeyTimezone=async()=>{};app._ensureOwnerSession=async()=>{};app._setupTruePushSources=async()=>{};app._migrateLegacyDeviceLabels=async()=>{};app._startInsightsRefreshLoop=()=>{};app._refreshBattery24hFromInsights=async()=>null;await app.onInit();for(const s of sources)app.sourceCache.set(s.key,s);app.listSources=async()=>sources;
+ const server=http.createServer(async(req,res)=>{try{const u=new URL(req.url,'http://localhost');if(u.pathname.startsWith('/api/')){let body='';for await(const c of req)body+=c;const names={'/config':req.method==='GET'?'getConfig':'saveConfig','/sources':'listSources','/flow-status':'getFlowStatus'};res.setHeader('Content-Type','application/json');res.end(JSON.stringify(await routes[names[u.pathname.slice(4)]]({homey,body:body?JSON.parse(body):{},query:Object.fromEntries(u.searchParams)})));return;}if(u.pathname==='/homey.js'){res.end('document.addEventListener("DOMContentLoaded",()=>onHomeyReady(Homey));');return;}if(u.pathname==='/settings'){res.end(fs.readFileSync(path.join(root,'settings/index.html')));return;}res.writeHead(404);res.end();}catch(e){res.writeHead(500);res.end(JSON.stringify({error:e.message}));}});
+ await new Promise(r=>server.listen(0,'127.0.0.1',r));const origin='http://127.0.0.1:'+server.address().port,shell=(await import(process.env.CHROMIUM_MODULE)).default,browser=await chromium.launch({headless:true,executablePath:await shell.executablePath(),args:shell.args}),context=await browser.newContext({viewport:{width:1000,height:850}}),errors=[];
+ try{
+  for(const language of ['en','nl','de','fr','es']){
+   app.energyConfig.inputInversions={};const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));const locale=JSON.parse(fs.readFileSync(path.join(root,'locales',language+'.json')));
+   await page.addInitScript(locale=>{window.alerts=[];window.Homey={__:(key,t={})=>{let s=key.split('.').reduce((o,k)=>o?.[k],locale)||key;for(const[k,v]of Object.entries(t))s=s.replaceAll('__'+k+'__',v);return s;},on(){},ready(){window.ready=true;},alert:m=>alerts.push(m),api:(method,url,body,cb)=>{if(typeof body==='function'){cb=body;body=undefined;}fetch('/api'+url,{method,headers:{'Content-Type':'application/json'},body:body===undefined?undefined:JSON.stringify(body)}).then(async r=>{const data=await r.json();if(!r.ok)throw Error(data.error);cb?.(null,data);}).catch(e=>cb?.(e));}};},locale);
+   await page.goto(origin+'/settings');await page.waitForFunction(()=>window.ready);
+   assert.equal(await page.locator('#inputPanel input[id$="InputInvert"]').count(),42);assert.equal(await page.locator('#settingsPanel input[id$="InputInvert"]').count(),0);
+   assert.equal(await page.locator('#solar2InputInvert').isChecked(),false);assert.equal(await page.locator('#solar2InputInvert').locator('..').textContent(),locale.settings.input_invert);
+   assert.equal(await page.locator('#batteryStatusInputInvert,#evStatusInputInvert,#weatherSourceInputInvert').count(),0);
+   await page.locator('#solar2InputInvert').check();
+   await page.locator('#dataMode').selectOption('flow');assert(await page.locator('#solar2InputInvert').isVisible());assert(await page.locator('#solar2InputInvert').isChecked());await page.locator('#dataMode').selectOption('integrated');
+   await page.locator('#solarCount').selectOption('10');await page.locator('#batteryCount').selectOption('10');await page.locator('#chargerCount').selectOption('10');
+   assert.equal(await page.locator('#inputPanel input[id$="InputInvert"]:visible').count(),42);
+   await page.locator('#save').click();await page.waitForFunction(text=>document.getElementById('status').textContent===text,locale.settings.saved);
+   assert.deepEqual(app.energyConfig.inputInversions,{solar2:true});assert.equal(app.energyConfig.solar,'variable:pv1');assert.equal(app.energyConfig.solar2,'variable:pv2');assert.equal(app.energyConfig.batteryDirection,'positive_charge');assert.equal(app.energyConfig.batteryLineDirection,'positive_discharge');assert.equal(app.energyConfig.batteryLineMotion,'follow_flow');
+   const energy=app.getDashboard().energy;assert.equal(energy.solar.rawValue,1.5);assert.equal(energy.homePower.rawValue,2.2);assert.equal(app.sourceCache.get('variable:pv2').value,-500);
+   await page.reload();await page.waitForFunction(()=>window.ready);assert(await page.locator('#solar2InputInvert').isChecked());assert.equal(await page.locator('#solarInputInvert').isChecked(),false);
+   await page.locator('#tabSettings').click();assert.equal(await page.locator('#batteryDirection').inputValue(),'positive_charge');assert.equal(await page.locator('#batteryLineDirection').inputValue(),'positive_discharge');assert.equal(await page.locator('#batteryLineMotion').inputValue(),'follow_flow');await page.locator('#tabInput').click();
+   await page.setViewportSize({width:390,height:844});assert(await page.locator('#solar2InputInvert').isVisible());assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));assert.deepEqual(await page.evaluate(()=>alerts),[]);await page.close();console.log(language+': inline controls on Inputs, all 42 numeric fields, both input modes, persistence, original battery settings, PV total and mobile width passed');
+  }
+  assert.deepEqual(errors,[]);
+ }finally{await browser.close();await app.onUninit();await new Promise(r=>server.close(r));}
+})().catch(e=>{console.error(e);process.exitCode=1;});

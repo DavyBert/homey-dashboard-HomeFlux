@@ -1,3 +1,11 @@
+## v1.0.4
+
+- EN: Added an input inversion checkbox beside each numeric energy input on the Inputs screen. Values are corrected before totals and calculations, allowing negative PV production readings to be combined correctly. Existing battery power, line and animation settings are retained; inversion defaults to off.
+- NL: Een keuze om de input om te draaien toegevoegd bij elke numerieke energie-input op het scherm Inputs. De waarde wordt vóór totalen en berekeningen gecorrigeerd, zodat negatieve PV-productiemetingen correct worden opgeteld. Bestaande batterij-, lijn- en animatie-instellingen blijven behouden; omdraaien staat standaard uit.
+- DE: Ein Kontrollkästchen zum Umkehren jedes numerischen Energieeingangs auf der Eingangsseite hinzugefügt. Werte werden vor Summen und Berechnungen korrigiert, damit negative PV-Erzeugungswerte korrekt addiert werden. Bestehende Batterie-, Linien- und Animationseinstellungen bleiben erhalten; die Umkehrung ist standardmäßig aus.
+- FR: Ajout d’une case d’inversion à chaque entrée numérique d’énergie dans l’écran Entrées. Les valeurs sont corrigées avant les totaux et calculs afin d’additionner correctement les productions PV négatives. Les réglages existants de batterie, de lignes et d’animation sont conservés ; l’inversion est désactivée par défaut.
+- ES: Añadida una casilla de inversión junto a cada entrada numérica de energía en la pantalla Entradas. Los valores se corrigen antes de los totales y cálculos para sumar correctamente las mediciones FV negativas. Se conservan los ajustes de batería, líneas y animación; la inversión está desactivada por defecto.
+
 ## v1.0.3
 
 - EN: Gallery filename extensions and image MIME types now accept uppercase and mixed case.

@@ -308,7 +308,9 @@
     "effects_crossfade": "Fundido cruzado",
     "effects_duration": "Duración de transición (ms)",
     "effects_glow": "Intensidad del resplandor Ribbon (0–200%; 100% = resplandor actual)",
-    "effects_standby_width": "Factor de grosor de líneas en espera (1 = grosor actual)"
+    "effects_standby_width": "Factor de grosor de líneas en espera (1 = grosor actual)",
+    "input_invert": "Invertir entrada (× −1)",
+    "input_invert_hint": "Invierte el signo de esta entrada numérica antes de los cálculos de HomeFlux. El valor del dispositivo de origen no cambia."
   },
   "widget": {
     "aria_energy": "Resumen de energía en directo",

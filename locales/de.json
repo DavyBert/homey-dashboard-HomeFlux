@@ -308,7 +308,9 @@
     "effects_crossfade": "Überblenden",
     "effects_duration": "Übergangsdauer (ms)",
     "effects_glow": "Ribbon-Leuchtstärke (0–200%; 100% = bisheriges Leuchten)",
-    "effects_standby_width": "Faktor für Standby-Liniendicke (1 = aktuelle Dicke)"
+    "effects_standby_width": "Faktor für Standby-Liniendicke (1 = aktuelle Dicke)",
+    "input_invert": "Eingang umkehren (× −1)",
+    "input_invert_hint": "Kehrt das Vorzeichen dieses numerischen Eingangs vor den HomeFlux-Berechnungen um. Der Wert am Quellgerät bleibt unverändert."
   },
   "widget": {
     "aria_energy": "Live-Energieübersicht",

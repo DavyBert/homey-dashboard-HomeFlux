@@ -308,7 +308,9 @@
     "effects_crossfade": "Crossfade",
     "effects_duration": "Transition duration (ms)",
     "effects_glow": "Ribbon glow strength (0–200%; 100% = current glow)",
-    "effects_standby_width": "Standby line thickness factor (1 = current thickness)"
+    "effects_standby_width": "Standby line thickness factor (1 = current thickness)",
+    "input_invert": "Invert input (× −1)",
+    "input_invert_hint": "Reverses the sign of this numeric input before HomeFlux calculations. The source device value remains unchanged."
   },
   "widget": {
     "aria_energy": "Live energy overview",
